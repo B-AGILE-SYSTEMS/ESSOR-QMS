@@ -1,0 +1,4 @@
+# Profil "demo" : ajoute les données de démonstration (NC et actions sur les sites du tenant DEMO).
+spring:
+  flyway:
+    locations: classpath:db/migration,classpath:db/demo
