@@ -29,8 +29,8 @@ docker compose up -d --build postgres keycloak backend nginx
 
 Vérifier : `curl http://<serveur>/api/health` → `{"status":"UP"}`.
 
-Comptes de démonstration (realm `essor`, tenant `DEMO`) : `admin/admin`, `qualite/qualite`, `terrain/terrain`.
-**À désactiver ou changer avant toute mise en production** (console : `http://<serveur>/auth/admin`).
+**Comptes de démo, à désactiver en production** (realm `essor`, tenant `DEMO`) : `admin/admin`, `qualite/qualite`, `terrain/terrain`.
+Les désactiver ou changer leurs mots de passe avant toute mise en production (console : `http://<serveur>/auth/admin`).
 
 ## Réseau fermé
 

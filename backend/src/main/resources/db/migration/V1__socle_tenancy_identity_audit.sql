@@ -35,7 +35,7 @@ CREATE TABLE tenant (
 CREATE TABLE tenant_branding (
     tenant_id         uuid PRIMARY KEY REFERENCES tenant (id),
     primary_color     varchar(7)  NOT NULL DEFAULT '#1F4E79' CHECK (primary_color ~ '^#[0-9A-Fa-f]{6}$'),
-    theme             varchar(10) NOT NULL DEFAULT 'system' CHECK (theme IN ('light', 'dark', 'system')),
+    theme             varchar(10) NOT NULL DEFAULT 'clair' CHECK (theme IN ('clair', 'sombre', 'terrain')),
     logo_file         varchar(255),
     logo_content_type varchar(50),
     updated_at        timestamptz NOT NULL DEFAULT now()
@@ -63,6 +63,16 @@ CREATE TABLE app_user (
     last_login_at timestamptz,
     UNIQUE (tenant_id, id)
 );
+
+-- Recherche d'un utilisateur par "sub" OIDC, tous tenants confondus, AVANT que le tenant soit connu
+-- (détection d'un changement d'attribut "tenant" dans Keycloak). SECURITY DEFINER limité :
+-- ne renvoie que l'identifiant et le tenant, pour un subject exact. Le propriétaire doit contourner la RLS
+-- (superutilisateur ou BYPASSRLS) puisque app_user est en FORCE ROW LEVEL SECURITY.
+CREATE FUNCTION app_user_lookup(p_subject varchar)
+    RETURNS TABLE (user_id uuid, tenant_id uuid)
+    LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS
+$$ SELECT id, tenant_id FROM app_user WHERE subject = p_subject $$;
+REVOKE ALL ON FUNCTION app_user_lookup(varchar) FROM PUBLIC;
 
 -- Rattachement utilisateur -> sites (même tenant garanti par les clés composites). Tenant-scopé.
 CREATE TABLE user_site (
@@ -135,4 +145,4 @@ GRANT SELECT, INSERT, UPDATE ON tenant_branding, site, app_user TO essor_app;
 GRANT SELECT, INSERT, DELETE ON user_site TO essor_app;
 GRANT SELECT, INSERT ON audit_log TO essor_app;
 GRANT USAGE ON SEQUENCE audit_log_id_seq TO essor_app;
-GRANT EXECUTE ON FUNCTION app_current_tenant(), app_current_user() TO essor_app;
+GRANT EXECUTE ON FUNCTION app_current_tenant(), app_current_user(), app_user_lookup(varchar) TO essor_app;

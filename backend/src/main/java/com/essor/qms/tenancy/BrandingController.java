@@ -30,7 +30,7 @@ class BrandingController {
 
     record UpdateBranding(
             @NotNull @Pattern(regexp = "^#[0-9A-Fa-f]{6}$") String primaryColor,
-            @NotNull @Pattern(regexp = "^(light|dark|system)$") String theme) {
+            @NotNull @Pattern(regexp = "^(clair|sombre|terrain)$") String theme) {
     }
 
     private final BrandingService branding;

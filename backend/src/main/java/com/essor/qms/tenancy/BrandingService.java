@@ -24,6 +24,7 @@ public class BrandingService {
     static final String LOGO_URL = "/api/tenant/branding/logo";
 
     private static final byte[] PNG_MAGIC = {(byte) 0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A};
+    private static final byte[] JPEG_MAGIC = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF};
     private static final Pattern SVG_FORBIDDEN = Pattern.compile(
             "<script|javascript:|<foreignObject|\\son[a-z]+\\s*=|<!ENTITY", Pattern.CASE_INSENSITIVE);
 
@@ -73,7 +74,11 @@ public class BrandingService {
 
     public Branding storeLogo(byte[] content) {
         String contentType = detectType(content);
-        String ext = contentType.equals("image/png") ? "png" : "svg";
+        String ext = switch (contentType) {
+            case "image/png" -> "png";
+            case "image/jpeg" -> "jpg";
+            default -> "svg";
+        };
         tx.executeWithoutResult(s -> {
             UUID tenantId = jdbc.sql("select app_current_tenant()").query(UUID.class).single();
             Path dir = storageRoot.resolve("branding").resolve(tenantId.toString());
@@ -113,7 +118,7 @@ public class BrandingService {
         }
     }
 
-    /** Valide le contenu (et non l'en-tête déclaré par le client) : PNG ou SVG sans contenu actif. */
+    /** Valide le contenu (et non l'en-tête déclaré par le client) : PNG, JPEG ou SVG sans contenu actif. */
     static String detectType(byte[] content) {
         if (content == null || content.length == 0) {
             throw new InvalidLogoException("Fichier vide");
@@ -125,6 +130,10 @@ public class BrandingService {
                 && Arrays.equals(Arrays.copyOf(content, PNG_MAGIC.length), PNG_MAGIC)) {
             return "image/png";
         }
+        if (content.length >= JPEG_MAGIC.length
+                && Arrays.equals(Arrays.copyOf(content, JPEG_MAGIC.length), JPEG_MAGIC)) {
+            return "image/jpeg";
+        }
         String text = new String(content, StandardCharsets.UTF_8);
         String head = text.stripLeading();
         if ((head.startsWith("<?xml") || head.startsWith("<svg")) && text.contains("<svg")) {
@@ -133,7 +142,7 @@ public class BrandingService {
             }
             return "image/svg+xml";
         }
-        throw new InvalidLogoException("Format non pris en charge (PNG ou SVG uniquement)");
+        throw new InvalidLogoException("Format non pris en charge (PNG, JPEG ou SVG uniquement)");
     }
 
     private Row currentRow() {
@@ -141,6 +150,6 @@ public class BrandingService {
                 select primary_color, theme, logo_file, logo_content_type
                 from tenant_branding where tenant_id = app_current_tenant()
                 """).query(Row.class).optional()
-                .orElse(new Row("#1F4E79", "system", null, null));
+                .orElse(new Row("#1F4E79", "clair", null, null));
     }
 }

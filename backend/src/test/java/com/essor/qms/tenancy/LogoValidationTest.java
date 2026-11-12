@@ -20,6 +20,12 @@ class LogoValidationTest {
     }
 
     @Test
+    void jpeg_reconnu_par_signature() {
+        byte[] jpg = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0, 0, 0x10, 'J', 'F', 'I', 'F'};
+        assertThat(BrandingService.detectType(jpg)).isEqualTo("image/jpeg");
+    }
+
+    @Test
     void svg_simple_accepte() {
         assertThat(BrandingService.detectType(b("<?xml version=\"1.0\"?>\n<svg xmlns=\"http://www.w3.org/2000/svg\"/>")))
                 .isEqualTo("image/svg+xml");

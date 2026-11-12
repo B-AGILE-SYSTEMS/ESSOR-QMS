@@ -82,11 +82,27 @@ class SecurityConfig {
         return http.build();
     }
 
-    static JwtAuthenticationConverter jwtConverter() {
+    static final String MOBILE_CLIENT = "essor-mobile";
+
+    /**
+     * Conversion du JWT mobile : refuse (401) un jeton qui n'a pas été émis pour {@code essor-mobile}
+     * ({@code azp} ou {@code aud}), puis traduit les rôles realm.
+     */
+    static org.springframework.core.convert.converter.Converter<
+            org.springframework.security.oauth2.jwt.Jwt,
+            org.springframework.security.authentication.AbstractAuthenticationToken> jwtConverter() {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(jwt -> KeycloakRoles.fromClaims(jwt.getClaims()));
         converter.setPrincipalClaimName("preferred_username");
-        return converter;
+        return jwt -> {
+            boolean forMobile = MOBILE_CLIENT.equals(jwt.getClaimAsString("azp"))
+                    || (jwt.getAudience() != null && jwt.getAudience().contains(MOBILE_CLIENT));
+            if (!forMobile) {
+                throw new org.springframework.security.oauth2.server.resource.InvalidBearerTokenException(
+                        "Jeton non émis pour " + MOBILE_CLIENT);
+            }
+            return converter.convert(jwt);
+        };
     }
 
     static GrantedAuthoritiesMapper oidcAuthoritiesMapper() {

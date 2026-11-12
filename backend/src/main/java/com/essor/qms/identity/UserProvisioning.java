@@ -19,7 +19,12 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Service
 class UserProvisioning {
 
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(UserProvisioning.class);
+
     record ProvisionedUser(UUID userId, TenantRef tenant) {
+    }
+
+    private record Lookup(UUID userId, UUID tenantId) {
     }
 
     static class ProvisioningRefusedException extends RuntimeException {
@@ -50,10 +55,17 @@ class UserProvisioning {
                 .orElseThrow(() -> new ProvisioningRefusedException("Aucun tenant pour cet utilisateur"));
 
         UUID userId = ExecutionContext.callAs(null, tenant.id(), () -> tx.execute(s -> {
-            Optional<UUID> existing = jdbc.sql("select id from app_user where subject = :sub")
-                    .param("sub", p.subject()).query(UUID.class).optional();
+            // Recherche tous tenants confondus (fonction SECURITY DEFINER limitée), pour détecter
+            // un changement d'attribut "tenant" dans Keycloak.
+            Optional<Lookup> existing = jdbc.sql("select user_id, tenant_id from app_user_lookup(:sub)")
+                    .param("sub", p.subject()).query(Lookup.class).optional();
             if (existing.isPresent()) {
-                return existing.get();
+                if (!existing.get().tenantId().equals(tenant.id())) {
+                    // aucune donnée personnelle : identifiant technique uniquement
+                    LOG.warn("Changement de tenant refusé pour l'utilisateur {}", existing.get().userId());
+                    throw new ProvisioningRefusedException("Changement de tenant refusé");
+                }
+                return existing.get().userId();
             }
             UUID id = UUID.randomUUID();
             jdbc.sql("""

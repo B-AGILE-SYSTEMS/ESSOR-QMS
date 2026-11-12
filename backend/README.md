@@ -20,8 +20,8 @@ Java 21, Spring Boot 3.3, Spring Modulith, PostgreSQL 16 (Flyway, RLS), Keycloak
 | GET | `/api/me` → `{username, displayName, tenant:{id,code,name}, sites:[{id,code,name}], roles}` | authentifié |
 | GET / POST | `/api/tenants` (`{code,name}`) | ADMIN |
 | GET | `/api/tenant/branding` → `{logoUrl, primaryColor, theme}` | authentifié |
-| PUT | `/api/tenant/branding` (`{primaryColor:"#RRGGBB", theme:"light|dark|system"}`) | ADMIN |
-| POST | `/api/tenant/branding/logo` (multipart `file`, PNG ou SVG ≤ 512 Ko) | ADMIN |
+| PUT | `/api/tenant/branding` (`{primaryColor:"#RRGGBB", theme:"clair|sombre|terrain"}`) | ADMIN |
+| POST | `/api/tenant/branding/logo` (multipart `file`, PNG, SVG ou JPEG ≤ 512 Ko) | ADMIN |
 | GET | `/api/tenant/branding/logo` | authentifié |
 | GET | `/oauth2/authorization/keycloak` démarre la connexion web ; `POST /logout` | — |
 

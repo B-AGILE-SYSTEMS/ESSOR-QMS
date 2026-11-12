@@ -36,7 +36,7 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 class ApiIT extends AbstractIntegrationTest {
 
     /**
-     * Décodeur de test : le jeton "sub~username~tenant~ROLE1+ROLE2" devient un JWT Keycloak.
+     * Décodeur de test : le jeton "sub~username~tenant~ROLE1+ROLE2~azp" (ou "aud.<client>" en 5e partie) devient un JWT Keycloak.
      * La chaîne Bearer réelle (filtre, conversion des rôles realm) est ainsi exercée.
      */
     @TestConfiguration
@@ -45,7 +45,7 @@ class ApiIT extends AbstractIntegrationTest {
         JwtDecoder jwtDecoder() {
             return token -> {
                 String[] p = token.split("~", -1);
-                if (p.length != 4) {
+                if (p.length != 5) {
                     throw new BadJwtException("jeton invalide");
                 }
                 Jwt.Builder b = Jwt.withTokenValue(token).header("alg", "none")
@@ -54,6 +54,11 @@ class ApiIT extends AbstractIntegrationTest {
                         .issuedAt(Instant.now()).expiresAt(Instant.now().plusSeconds(300));
                 if (!p[2].isEmpty()) {
                     b.claim("tenant", p[2]);
+                }
+                if (p[4].startsWith("aud.")) {
+                    b.audience(List.of(p[4].substring(4)));
+                } else {
+                    b.claim("azp", p[4]);
                 }
                 return b.build();
             };
@@ -71,7 +76,38 @@ class ApiIT extends AbstractIntegrationTest {
     }
 
     static String bearer(String sub, String username, String tenant, String roles) {
-        return "Bearer " + sub + "~" + username + "~" + tenant + "~" + roles;
+        return bearer(sub, username, tenant, roles, "essor-mobile");
+    }
+
+    static String bearer(String sub, String username, String tenant, String roles, String azpOrAud) {
+        return "Bearer " + sub + "~" + username + "~" + tenant + "~" + roles + "~" + azpOrAud;
+    }
+
+    @Test
+    void bearerDUnAutreClientRefuse() throws Exception {
+        mvc.perform(get("/api/me").header("Authorization", bearer("sub-bff", "x", "", "READER", "essor-bff")))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/me").header("Authorization", bearer("sub-aud", "x", "", "READER", "aud.essor-mobile")))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void changementDeTenantDansKeycloakRefuseSansDoublon() throws Exception {
+        try (var c = ownerConnection(); var st = c.createStatement()) {
+            st.execute("insert into tenant (code, name) values ('AUTRE', 'Autre') on conflict do nothing");
+        }
+        mvc.perform(get("/api/me").header("Authorization", bearer("sub-mobile", "mobile", "DEMO", "READER")))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/me").header("Authorization", bearer("sub-mobile", "mobile", "AUTRE", "READER")))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/me").header("Authorization", bearer("sub-mobile", "mobile", "DEMO", "READER")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tenant.code").value("DEMO"));
+        try (var c = ownerConnection(); var st = c.createStatement();
+             var rs = st.executeQuery("select count(*) from app_user where subject = 'sub-mobile'")) {
+            rs.next();
+            org.assertj.core.api.Assertions.assertThat(rs.getInt(1)).isEqualTo(1);
+        }
     }
 
     @Test
@@ -163,7 +199,7 @@ class ApiIT extends AbstractIntegrationTest {
         // l'habillage modifié dans DEMO n'est pas visible dans ACME
         mvc.perform(put("/api/tenant/branding").with(bff("sub-admin", "admin", "ADMIN")).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"primaryColor\":\"#AA0000\",\"theme\":\"dark\"}"))
+                        .content("{\"primaryColor\":\"#AA0000\",\"theme\":\"sombre\"}"))
                 .andExpect(status().isOk());
         mvc.perform(get("/api/tenant/branding").header("Authorization", bearer("sub-acme", "acme.user", "ACME", "READER")))
                 .andExpect(status().isOk())
@@ -174,18 +210,18 @@ class ApiIT extends AbstractIntegrationTest {
     void brandingLectureEtModificationParAdmin() throws Exception {
         mvc.perform(put("/api/tenant/branding").with(bff("sub-lecteur", "lecteur", "READER")).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"primaryColor\":\"#123456\",\"theme\":\"light\"}"))
+                        .content("{\"primaryColor\":\"#123456\",\"theme\":\"terrain\"}"))
                 .andExpect(status().isForbidden());
         mvc.perform(put("/api/tenant/branding").with(bff("sub-admin", "admin", "ADMIN")).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"primaryColor\":\"rouge\",\"theme\":\"light\"}"))
+                        .content("{\"primaryColor\":\"rouge\",\"theme\":\"terrain\"}"))
                 .andExpect(status().isBadRequest());
         mvc.perform(put("/api/tenant/branding").with(bff("sub-admin", "admin", "ADMIN")).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"primaryColor\":\"#123456\",\"theme\":\"light\"}"))
+                        .content("{\"primaryColor\":\"#123456\",\"theme\":\"terrain\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.primaryColor").value("#123456"))
-                .andExpect(jsonPath("$.theme").value("light"));
+                .andExpect(jsonPath("$.theme").value("terrain"));
     }
 
     @Test
@@ -201,6 +237,19 @@ class ApiIT extends AbstractIntegrationTest {
                 .andExpect(content().contentType("image/png"))
                 .andExpect(header().string("X-Content-Type-Options", "nosniff"))
                 .andExpect(content().bytes(png));
+    }
+
+    @Test
+    void logoJpegTeleverseEtServi() throws Exception {
+        byte[] jpg = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0, 0, 0x10, 'J', 'F', 'I', 'F', 0};
+        mvc.perform(multipart("/api/tenant/branding/logo")
+                        .file(new MockMultipartFile("file", "logo.jpg", "image/jpeg", jpg))
+                        .with(bff("sub-admin", "admin", "ADMIN")).with(csrf()))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/tenant/branding/logo").with(bff("sub-admin", "admin", "ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("image/jpeg"))
+                .andExpect(content().bytes(jpg));
     }
 
     @Test
