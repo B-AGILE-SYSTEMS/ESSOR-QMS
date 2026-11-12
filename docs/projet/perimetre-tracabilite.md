@@ -1,6 +1,6 @@
 # Périmètre — Contrôles des flux et traçabilité complète (V1 exploitant)
 
-Statut : **proposition à valider [Driss — Métier]** · 12/11/2026
+Statut : **validé [Driss — Métier]** · 12/11/2026
 
 ## 1. Principe
 
