@@ -36,7 +36,13 @@ En déploiement : `docker compose --profile web up -d` depuis `deploy/` ; le Ngi
 - `features/nc` : liste filtrable/paginée, déclaration, fiche (barre d'étapes issue du workflow, onglets Description,
   Analyse — 5 pourquoi, cause racine et 6M dans `data.analyse5p|causeRacine|ishikawa` —, Actions, Historique).
   Les boutons de transition viennent de `availableTransitions` ; désactivés, ils listent `missing`.
+- `features/fiches` (M2, contrat `docs/pilotage/cartes/M2-contrat.md`) : `record-type-view.ts` donne les seuls libellés par type
+  (`data.view` des routes) ; la liste et la fiche de `features/nc` sont génériques et servent aussi « Incidents & sécurité »
+  (`/incidents`, type `INCIDENT`, champs `data.categorie|lieu|blesses|temoins`). Badge « déclaré depuis le mobile » quand la fiche
+  porte `clientId` ; date terrain `occurredAt` distincte de `createdAt`. Onglet « Pièces jointes » (`attachments.component.ts`) :
+  `GET/POST /api/records/{id}/attachments` (multipart `file`, en-tête `Idempotency-Key` UUID, JPEG/PNG/PDF ≤ 10 Mo contrôlés
+  avant envoi), vignettes et téléchargement par `GET /api/attachments/{id}`.
 - `features/parametrage` (ADMIN) : Workflows (diagramme états/transitions, édition JSON validée par le serveur via PUT),
   Règles de notification (matrice événement × canal).
-- `e2e/` : parcours NC complet et paramétrage, API simulée en mémoire (`page.route`), écran 1440 px.
+- `e2e/` : parcours NC complet, paramétrage, incidents et pièces jointes (contrôle de signature, Idempotency-Key, `sync/changes`), API simulée en mémoire (`page.route`), écran 1440 px.
 - Design system : variables CSS dans `src/styles.scss`. Polices Archivo et IBM Plex Mono embarquées via `@fontsource` (aucun CDN).

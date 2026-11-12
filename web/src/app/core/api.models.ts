@@ -56,6 +56,10 @@ export interface RecordSummary {
   /** Fiches ACTION : curative | corrective | preventive (dans `actionType` ou `data.actionType`). */
   actionType?: ActionType | null;
   data?: RecordData;
+  /** M2 : UUID généré par le mobile à la création ; présent ⇒ fiche déclarée depuis le mobile. */
+  clientId?: string | null;
+  /** M2 : date terrain de l'événement (distincte de `createdAt`). */
+  occurredAt?: string | null;
 }
 
 export type RecordData = Record<string, unknown>;
@@ -151,6 +155,19 @@ export interface NotificationRule {
   channel: string;
   enabled: boolean;
 }
+
+/** Pièce jointe (contrat M2). */
+export interface Attachment {
+  id: string;
+  fileName: string;
+  contentType: string;
+  size: number;
+  createdAt: string;
+  createdByName: string | null;
+}
+
+export const ATTACHMENT_TYPES = ['image/jpeg', 'image/png', 'application/pdf'] as const;
+export const ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024;
 
 export interface ApiError {
   error: string;

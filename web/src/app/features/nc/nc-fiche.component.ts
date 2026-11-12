@@ -6,27 +6,29 @@ import {
 import { errorMessage } from '../../core/api-error';
 import { SEVERITY_LABELS, fieldLabel, formatDate, formatDateTime, statusTone } from '../../core/labels';
 import { RecordsService } from '../../core/records.service';
+import { AttachmentsComponent } from '../fiches/attachments.component';
+import { NC_VIEW, RecordTypeView, dataValue, fromMobile } from '../fiches/record-type-view';
 import { NcActionsComponent } from './nc-actions.component';
 import { NcAnalyseComponent } from './nc-analyse.component';
 import { buildSteps } from './stepper';
 import { UserPickerComponent } from './user-picker.component';
 
-export type Tab = 'description' | 'analyse' | 'actions' | 'historique';
+export type Tab = 'description' | 'analyse' | 'actions' | 'pieces' | 'historique';
 
 /** Onglet ouvert par défaut selon l'étape de la fiche. */
 export function defaultTab(status: string): Tab {
-  if (status === 'ANALYSE') return 'analyse';
+  if (status === 'ANALYSE' || status === 'EN_ANALYSE') return 'analyse';
   if (status === 'ACTIONS' || status === 'VERIFICATION') return 'actions';
   return 'description';
 }
 
-const LOCKED = new Set(['CLOTUREE', 'REJETEE']);
+const LOCKED = new Set(['CLOTUREE', 'REJETEE', 'CLOS', 'CLASSE_SANS_SUITE']);
 
-/** Fiche NC : barre d'étapes, onglets, transitions issues de `availableTransitions`. */
+/** Fiche générique (NC, incident…) : barre d'étapes, onglets, transitions issues de `availableTransitions`. */
 @Component({
   selector: 'eq-nc-fiche',
   standalone: true,
-  imports: [FormsModule, NcAnalyseComponent, NcActionsComponent, UserPickerComponent],
+  imports: [FormsModule, NcAnalyseComponent, NcActionsComponent, UserPickerComponent, AttachmentsComponent],
   templateUrl: './nc-fiche.component.html',
   styleUrl: './nc-fiche.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -34,6 +36,8 @@ const LOCKED = new Set(['CLOTUREE', 'REJETEE']);
 export class NcFicheComponent {
   private readonly records = inject(RecordsService);
   readonly id = input.required<string>();
+  /** Libellés du type (route `data.view`). */
+  readonly view = input<RecordTypeView>(NC_VIEW);
 
   protected readonly record = signal<QmsRecord | null>(null);
   protected readonly workflow = signal<Workflow | null>(null);
@@ -46,11 +50,18 @@ export class NcFicheComponent {
   protected comment = '';
 
   protected readonly steps = computed(() => buildSteps(this.workflow(), this.record()?.status ?? ''));
-  protected readonly locked = computed(() => LOCKED.has(this.record()?.status ?? ''));
+  protected readonly locked = computed(() => {
+    const st = this.record()?.status ?? '';
+    return LOCKED.has(st) || !!this.workflow()?.states.find((s) => s.code === st)?.final;
+  });
+  protected readonly mobile = computed(() => !!this.record() && fromMobile(this.record()!));
+  protected readonly participle = computed(() => (this.view().feminine ? 'Déclarée' : 'Déclaré'));
+  protected readonly value = dataValue;
   protected readonly tabs: { id: Tab; label: string }[] = [
     { id: 'description', label: 'Description' },
     { id: 'analyse', label: 'Analyse' },
     { id: 'actions', label: 'Actions' },
+    { id: 'pieces', label: 'Pièces jointes' },
     { id: 'historique', label: 'Historique' },
   ];
   protected readonly severities = SEVERITIES;
@@ -66,7 +77,10 @@ export class NcFicheComponent {
   protected readonly newOwner = signal<UserRef | null>(null);
 
   constructor() {
-    this.records.workflow('NC').then((wf) => this.workflow.set(wf), () => undefined);
+    effect(() => {
+      const code = this.view().code;
+      untracked(() => this.records.workflow(code).then((wf) => this.workflow.set(wf), () => undefined));
+    });
     effect(() => {
       const id = this.id();
       untracked(() => void this.load(id, true));

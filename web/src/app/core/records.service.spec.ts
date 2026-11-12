@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
 import { errorMessage } from './api-error';
-import { RecordsService } from './records.service';
+import { RecordsService, attachmentUrl, newIdempotencyKey } from './records.service';
 
 describe('RecordsService', () => {
   let svc: RecordsService;
@@ -62,5 +62,24 @@ describe('RecordsService', () => {
     const e = new HttpErrorResponse({ status: 409, error: { error: 'transition_impossible', message: 'Manque : cause racine' } });
     expect(errorMessage(e)).toBe('Manque : cause racine');
     expect(errorMessage(new HttpErrorResponse({ status: 0 }))).toContain('injoignable');
+  });
+});
+
+describe('RecordsService — pièces jointes', () => {
+  it('liste les pièces jointes et génère des clés UUID v4 distinctes', async () => {
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+    const svc = TestBed.inject(RecordsService);
+    const http = TestBed.inject(HttpTestingController);
+    const p = svc.attachments('r 1');
+    http.expectOne('/api/records/r%201/attachments').flush([]);
+    expect(await p).toEqual([]);
+    expect(attachmentUrl('a/1')).toBe('/api/attachments/a%2F1');
+    expect(newIdempotencyKey()).not.toBe(newIdempotencyKey());
+    const fp = svc.addAttachment('r1', new File(['x'], 'x.png', { type: 'image/png' }), 'k-1');
+    const req = http.expectOne('/api/records/r1/attachments');
+    expect(req.request.headers.get('Idempotency-Key')).toBe('k-1');
+    req.flush({ id: 'a1' });
+    await fp;
+    http.verify();
   });
 });
