@@ -40,7 +40,7 @@ describe('NotificationsService', () => {
 
   it('charge la liste et compte les non lues', async () => {
     const p = svc.load();
-    http.expectOne('/api/notifications').flush([n('a'), n('b', true)]);
+    http.expectOne('/api/notifications').flush({ items: [n('a'), n('b', true)], total: 2, unread: 1, page: 0, size: 50 });
     await p;
     expect(svc.items().length).toBe(2);
     expect(svc.unread()).toBe(1);

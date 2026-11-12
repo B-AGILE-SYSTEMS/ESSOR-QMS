@@ -31,14 +31,14 @@ export const NC_WORKFLOW = {
     { code: 'lancer_analyse', label: "Lancer l'analyse", from: 'QUALIFIEE', to: 'ANALYSE', roles: ['QUALITE'], requires: [] },
     { code: 'valider_analyse', label: "Valider l'analyse", from: 'ANALYSE', to: 'ACTIONS', roles: ['QUALITE'], requires: ['data.causeRacine'] },
     { code: 'renvoyer_analyse', label: "Renvoyer en analyse", from: 'ACTIONS', to: 'ANALYSE', roles: ['QUALITE'], requires: [] },
-    { code: 'lancer_verification', label: 'Passer à la vérification', from: 'ACTIONS', to: 'VERIFICATION', roles: ['QUALITE'], requires: ['actions'] },
-    { code: 'cloturer', label: 'Clôturer la NC', from: 'VERIFICATION', to: 'CLOTUREE', roles: ['QUALITE'], requires: [] },
+    { code: 'lancer_verification', label: 'Lancer la vérification', from: 'ACTIONS', to: 'VERIFICATION', roles: ['QUALITE'], requires: ['actions'] },
+    { code: 'cloturer', label: 'Clôturer', from: 'VERIFICATION', to: 'CLOTUREE', roles: ['QUALITE'], requires: [] },
     { code: 'rouvrir_actions', label: 'Non efficace — rouvrir', from: 'VERIFICATION', to: 'ACTIONS', roles: ['QUALITE'], requires: [] },
   ],
 };
 const ACTION_TR = [
   { code: 'demarrer', label: 'Démarrer', from: 'A_FAIRE', to: 'EN_COURS' },
-  { code: 'terminer', label: 'Terminer', from: 'EN_COURS', to: 'FAITE' },
+  { code: 'terminer', label: 'Marquer faite', from: 'EN_COURS', to: 'FAITE' },
 ];
 const LABELS: Record<string, string> = {
   DECLAREE: 'Déclarée', QUALIFIEE: 'Qualifiée', ANALYSE: 'Analyse', ACTIONS: 'Actions', VERIFICATION: 'Vérification',
@@ -138,7 +138,7 @@ export class MockApi {
       const events = this.stream.splice(0).map((d) => `event: notification\ndata: ${d}\n\n`).join('');
       return route.fulfill({ status: 200, headers: { 'content-type': 'text/event-stream', 'cache-control': 'no-cache' }, body: `retry: 500\n\n${events}` });
     }
-    if (p === '/api/notifications') return json([...this.notifications].reverse());
+    if (p === '/api/notifications') { const items = [...this.notifications].reverse(); return json({ items, total: items.length, unread: items.filter((n) => !n.read).length, page: 0, size: 50 }); }
     if (p === '/api/notifications/read-all') { this.notifications.forEach((n) => (n.read = true)); return json(null); }
     if ((mm = p.match(/^\/api\/notifications\/([^/]+)\/read$/))) { const n = this.notifications.find((x) => x.id === mm![1]); if (n) n.read = true; return json(null); }
     if (p === '/api/notification-rules') { if (m === 'PUT') this.rules = body; return json(this.rules); }

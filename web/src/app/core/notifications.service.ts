@@ -27,8 +27,10 @@ export class NotificationsService {
   }
 
   async load(): Promise<void> {
-    const items = await firstValueFrom(this.http.get<AppNotification[]>('/api/notifications'));
-    this._items.set(sortByDate(items ?? []));
+    const page = await firstValueFrom(
+      this.http.get<{ items: AppNotification[]; unread: number }>('/api/notifications'),
+    );
+    this._items.set(sortByDate(page?.items ?? []));
   }
 
   /** Ouvre le flux SSE ; chaque message (anonyme ou `event: notification`) porte une notification JSON. */

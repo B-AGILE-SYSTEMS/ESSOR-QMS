@@ -93,7 +93,6 @@ services:
       context: ../web
     image: essor-qms/web:local
     restart: unless-stopped
-    profiles: ["web"]
 
   nginx:
     image: nginx:1.27-alpine

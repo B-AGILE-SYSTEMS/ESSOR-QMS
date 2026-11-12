@@ -62,7 +62,7 @@ test('parcours NC complet : déclarer → qualifier → analyser → actions →
   // Actions : ajout et suivi ; vérification bloquée tant qu'elles ne sont pas FAITE.
   await expect(page.locator('.flow li.cur')).toContainText('Actions');
   await expect(page.getByRole('tab', { name: /Actions/ })).toHaveAttribute('aria-selected', 'true');
-  const verif = page.locator('.nextbar').getByRole('button', { name: 'Passer à la vérification' });
+  const verif = page.locator('.nextbar').getByRole('button', { name: 'Lancer la vérification' });
   await expect(verif).toBeDisabled();
   await page.getByLabel('Type').selectOption('curative');
   await page.getByLabel('Intitulé *').fill('Tri 100 % du lot 2611-B');
@@ -74,7 +74,7 @@ test('parcours NC complet : déclarer → qualifier → analyser → actions →
   await expect(row).toContainText('À faire');
   await row.getByRole('button', { name: 'Démarrer' }).click();
   await expect(row).toContainText('En cours');
-  await row.getByRole('button', { name: 'Terminer' }).click();
+  await row.getByRole('button', { name: 'Marquer faite' }).click();
   await expect(row).toContainText('Faite');
   await expect(verif).toBeEnabled();
   await verif.click();
@@ -82,7 +82,7 @@ test('parcours NC complet : déclarer → qualifier → analyser → actions →
   // Vérification puis clôture avec commentaire.
   await expect(page.locator('.flow li.cur')).toContainText('Vérification');
   await page.getByLabel('Commentaire (joint à la transition)').fill('0 écart sur 372 pièces contrôlées.');
-  await page.locator('.nextbar').getByRole('button', { name: 'Clôturer la NC' }).click();
+  await page.locator('.nextbar').getByRole('button', { name: 'Clôturer' }).click();
   await expect(page.locator('.flow li.cur')).toContainText('Clôturée');
   await expect(page.locator('.nextbar')).toHaveCount(0);
 
@@ -91,7 +91,7 @@ test('parcours NC complet : déclarer → qualifier → analyser → actions →
   await expect(bell.locator('.badge')).toHaveText(/^[1-9]\d*$/, { timeout: 10_000 });
   await bell.click();
   const panel = page.getByRole('region', { name: 'Notifications' });
-  await expect(panel).toContainText('NC-2026-0003 : Clôturer la NC');
+  await expect(panel).toContainText('NC-2026-0003 : Clôturer');
   if (SHOTS) await page.screenshot({ path: `${SHOTS}/3-notifications.png` });
   await panel.getByRole('button', { name: /^Marquer lu/ }).first().click();
   await panel.getByRole('button', { name: 'Tout marquer lu' }).click();
