@@ -63,6 +63,24 @@ Notifications : assignation, transition (responsable + rôles des transitions su
 Données de démo : profil `demo` (`classpath:db/demo`) — sites USINE-CASA et ENTREPOT-TNG, 6 NC à tous les statuts
 et leurs actions ; comptes préparés `pending:<username>` rattachés au compte Keycloak du même nom.
 
+## API (M2) — voir `docs/pilotage/cartes/M2-contrat.md`
+
+| Méthode | Chemin | Accès |
+|---|---|---|
+| POST | `/api/records` accepte en plus `clientId` (UUID, unique par tenant : un renvoi rend la fiche existante) et `occurredAt` (ISO-8601, au plus 5 min dans le futur) | sauf READER |
+| GET | `/api/sync/changes?since=<ISO-8601>` → `{records:[RecordSummary], serverTime}` (responsable ou déclarant, `updated_at > since`, 500 max) | authentifié |
+| POST | `/api/records/{id}/attachments` (multipart `file`, JPEG/PNG/PDF ≤ 10 Mo, type vérifié sur le contenu) → 201 `{id,fileName,contentType,size,createdAt,createdByName}` | sauf READER |
+| GET | `/api/records/{id}/attachments` → liste ; `/api/attachments/{id}` (inline, `?download=true` : attachment ; `nosniff`) | authentifié |
+
+`RecordSummary` et `Record` gagnent `clientId`, `occurredAt`, `updatedAt` ; `RecordSummary` (dont `/api/my-tasks`) et les notifications gagnent `recordType` (badge « mobile » : `clientId` non nul).
+Idempotence : tout POST `/api/**` portant `Idempotency-Key` (UUID) est mémorisé 48 h par (tenant, clé) dans
+`idempotency_key` ; un renvoi rend le même statut et le même corps (en-tête `Idempotent-Replayed: true`).
+Clé réutilisée pour une autre URL : 409 `idempotency_key_reused` ; requête jumelle en cours : 409
+`idempotency_in_progress` ; 5xx non mémorisées. Fichier trop gros : 413 `too_large`.
+Type INCIDENT (préfixe INC, champs `data.categorie|lieu|blesses|temoins`) : DECLARE → EN_ANALYSE (`analyser`,
+exige un responsable) → ACTIONS (`planifier_actions`) → CLOS (`clore`, actions FAITE/VERIFIEE) ;
+`classer` / `classer_apres_analyse` → CLASSE_SANS_SUITE. Pièces jointes : `<essor.storage.dir>/attachments/<tenant>/<id>`.
+
 ## Multi-tenant et RLS
 
 - Un utilisateur appartient à un seul tenant (`app_user.tenant_id`), donné par l'attribut Keycloak `tenant`

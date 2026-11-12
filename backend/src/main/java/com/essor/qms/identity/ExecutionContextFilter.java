@@ -20,6 +20,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * le contexte (utilisateur, tenant) lu par le gestionnaire de transactions pour la RLS.
  */
 @Component
+@org.springframework.core.annotation.Order(org.springframework.core.Ordered.LOWEST_PRECEDENCE - 10)
 class ExecutionContextFilter extends OncePerRequestFilter {
 
     private final UserProvisioning provisioning;

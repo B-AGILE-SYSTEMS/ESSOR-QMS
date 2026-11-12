@@ -56,11 +56,11 @@ class RecordTypes {
         this.audit = audit;
     }
 
-    /** Types du tenant ; copie les modèles par défaut au premier usage (nouveau tenant). */
+    /** Types du tenant ; copie les modèles par défaut manquants au premier usage (nouveau tenant, nouveau type). */
     @Transactional(propagation = Propagation.MANDATORY)
     Map<String, RecordType> all() {
         List<Row> rows = load();
-        if (rows.isEmpty()) {
+        if (missingTemplates() > 0) {
             jdbc.sql("""
                     insert into record_type (tenant_id, code, label, ref_prefix, field_schema, workflow)
                     select app_current_tenant(), code, label, ref_prefix, field_schema, workflow
@@ -119,6 +119,13 @@ class RecordTypes {
     private static ApiException invalid(List<String> errors) {
         return new ApiException(HttpStatus.BAD_REQUEST, "invalid_workflow",
                 "Workflow invalide : " + String.join(" ; ", errors), Map.of("errors", errors));
+    }
+
+    private int missingTemplates() {
+        return jdbc.sql("""
+                select count(*) from record_type_template tt
+                where not exists (select 1 from record_type r where r.code = tt.code)
+                """).query(Integer.class).single();
     }
 
     private List<Row> load() {

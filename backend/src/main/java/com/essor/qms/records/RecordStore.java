@@ -24,7 +24,8 @@ class RecordStore {
             select r.id, r.type_code, r.reference, r.status, r.title, r.description, r.severity,
                    r.site_id, s.name as site_name, r.owner_id, coalesce(o.display_name, o.username) as owner_name,
                    r.due_date, r.parent_id, r.data::text as data, r.created_at, r.created_by,
-                   coalesce(c.display_name, c.username) as created_by_name
+                   coalesce(c.display_name, c.username) as created_by_name,
+                   r.client_id, r.occurred_at, r.updated_at
             from record r
             left join site s on s.id = r.site_id
             left join app_user o on o.id = r.owner_id
@@ -33,7 +34,8 @@ class RecordStore {
 
     record Row(UUID id, String typeCode, String reference, String status, String title, String description,
                String severity, UUID siteId, String siteName, UUID ownerId, String ownerName, LocalDate dueDate,
-               UUID parentId, String data, OffsetDateTime createdAt, UUID createdBy, String createdByName) {
+               UUID parentId, String data, OffsetDateTime createdAt, UUID createdBy, String createdByName,
+               UUID clientId, OffsetDateTime occurredAt, OffsetDateTime updatedAt) {
     }
 
     private static final TypeReference<LinkedHashMap<String, Object>> MAP = new TypeReference<>() {
@@ -53,6 +55,11 @@ class RecordStore {
             jdbc.sql("select id from record where id = :id for update").param("id", id).query(UUID.class).optional();
         }
         return jdbc.sql(SELECT + " where r.id = :id").param("id", id).query(Row.class).optional();
+    }
+
+    Optional<UUID> findByClientId(UUID clientId) {
+        return jdbc.sql("select id from record where client_id = :c").param("c", clientId).query(UUID.class)
+                .optional();
     }
 
     List<Row> children(UUID parentId) {
