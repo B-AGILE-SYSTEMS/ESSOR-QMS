@@ -1,7 +1,7 @@
 # Règles de travail
 
 - Une tâche = une branche `m<N>/<id-carte>`, intégrée dans la branche du milestone `integration/m<N>`.
-- Une seule PR par milestone : `integration/m<N>` → `main`, après la vérification du milestone.
+- Fin de milestone : une fois la vérification du milestone validée (tests et démo verts), le coordinateur fusionne `integration/m<N>` dans `main` sans attendre de validation humaine (accord de Driss du 12/11/2026).
 - Ne sors jamais du périmètre de ta carte (liste de dossiers autorisés).
 - Définition de terminé : build vert, tests verts, critères d'acceptation de la carte démontrés, README du module à jour.
 - Interdits : secrets en dur, dépendance à un service cloud, désactiver un test, modifier un dossier hors périmètre.
