@@ -213,7 +213,12 @@ class RecordService {
         }
         audit.record("RECORD_CREATED", "record", id.toString(),
                 body.clientId() == null ? null : store.write(Map.of("clientId", body.clientId())));
-        return get(id);
+        Workflow wf = type.workflow();
+        List<String> firstRoles = wf.from(wf.initial()).stream().flatMap(tr -> tr.roles().stream()).distinct().toList();
+        RecordView created = get(id);
+        events.publishEvent(new RecordTransitioned(id, created.reference(), created.title(), "Déclaration",
+                wf.label(wf.initial()), null, firstRoles, ExecutionContext.userId()));
+        return created;
     }
 
     RecordView addAction(UUID parentId, CreateAction body) {
