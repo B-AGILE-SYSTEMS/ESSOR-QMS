@@ -10,6 +10,7 @@ npm start          # http://localhost:4200 (proxifier /api, /oauth2, /logout ver
 npm run lint
 npm test           # Karma + Chrome headless (CHROME_BIN si besoin)
 npm run build      # dist/web/browser
+npm run e2e        # Playwright contre l'API simulée e2e/mock-api.ts (CHROME_BIN ou `npx playwright install chromium`)
 docker build -t essor-qms/web:local .   # Nginx statique, port 80
 ```
 
@@ -25,6 +26,16 @@ En déploiement : `docker compose --profile web up -d` depuis `deploy/` ; le Ngi
 - `core/branding.service.ts` : `GET/PUT /api/tenant/branding`, `POST /api/tenant/branding/logo` (champ `file`,
   PNG/SVG/JPEG ≤ 512 Ko). Thème (`data-skin` = `clair|sombre|terrain`) et `--acc` appliqués en direct sur `<html>`.
 - `shell/` : navigation en 5 familles, fil d'Ariane (`data.crumbs` des routes), palette Ctrl K, « + Déclarer une NC »,
-  sélecteur de site (sites de `/api/me`), panneau de notifications (vide).
-- `features/mes-actions` : accueil, **données d'exemple** (`mes-actions.exemple.ts`), affichées comme telles. Métier en M1.
+  sélecteur de site (sites de `/api/me`), panneau de notifications (`shell/notifications/`).
+- `core/records.service.ts` : moteur de fiches (contrat M1 `docs/pilotage/cartes/M1-contrat.md`) ; `core/api.models.ts` : types du contrat ;
+  `core/api-error.ts` : message français des erreurs `{error, message, details}` (409 de transition affiché tel quel).
+- `core/notifications.service.ts` : liste, compteur non lues, marquer lu / tout lu, temps réel par SSE
+  (`/api/notifications/stream`, messages anonymes ou `event: notification`, une notification JSON par message).
+- `features/mes-actions` : accueil branché sur `/api/my-tasks` et `/api/dashboard/summary`.
+- `features/nc` : liste filtrable/paginée, déclaration, fiche (barre d'étapes issue du workflow, onglets Description,
+  Analyse — 5 pourquoi, cause racine et 6M dans `data.analyse5p|causeRacine|ishikawa` —, Actions, Historique).
+  Les boutons de transition viennent de `availableTransitions` ; désactivés, ils listent `missing`.
+- `features/parametrage` (ADMIN) : Workflows (diagramme états/transitions, édition JSON validée par le serveur via PUT),
+  Règles de notification (matrice événement × canal).
+- `e2e/` : parcours NC complet et paramétrage, API simulée en mémoire (`page.route`), écran 1440 px.
 - Design system : variables CSS dans `src/styles.scss`. Polices Archivo et IBM Plex Mono embarquées via `@fontsource` (aucun CDN).

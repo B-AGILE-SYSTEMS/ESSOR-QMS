@@ -20,13 +20,39 @@ export const routes: Routes = [
         loadComponent: () => import('./features/mes-actions/mes-actions.component').then((m) => m.MesActionsComponent),
         data: { crumbs: ['Mon travail', 'Mes actions'] },
       },
-      aVenir('non-conformites/declarer', 'Terrain', 'Déclarer une non-conformité'),
-      aVenir('non-conformites', 'Terrain', 'Non-conformités'),
+      {
+        path: 'non-conformites/declarer',
+        loadComponent: () => import('./features/nc/nc-declarer.component').then((m) => m.NcDeclarerComponent),
+        data: { crumbs: ['Terrain', 'Non-conformités', 'Déclarer'] },
+      },
+      {
+        path: 'non-conformites/:id',
+        loadComponent: () => import('./features/nc/nc-fiche.component').then((m) => m.NcFicheComponent),
+        data: { crumbs: ['Terrain', 'Non-conformités', 'Fiche'] },
+      },
+      {
+        path: 'non-conformites',
+        loadComponent: () => import('./features/nc/nc-liste.component').then((m) => m.NcListeComponent),
+        data: { crumbs: ['Terrain', 'Non-conformités'] },
+      },
       aVenir('audits', 'Terrain', 'Audits & inspections'),
       aVenir('indicateurs', 'Pilotage', 'Indicateurs'),
       aVenir('risques', 'Pilotage', 'Risques & conformité'),
       aVenir('equipements', 'Ressources', 'Équipements'),
       aVenir('documents', 'Ressources', 'Documents'),
+      {
+        path: 'parametrage/workflows',
+        canMatch: [roleGuard('ADMIN')],
+        loadComponent: () => import('./features/parametrage/workflows.component').then((m) => m.WorkflowsComponent),
+        data: { crumbs: ['Administration', 'Paramétrage', 'Workflows'] },
+      },
+      {
+        path: 'parametrage/notifications',
+        canMatch: [roleGuard('ADMIN')],
+        loadComponent: () =>
+          import('./features/parametrage/regles-notification.component').then((m) => m.ReglesNotificationComponent),
+        data: { crumbs: ['Administration', 'Paramétrage', 'Règles de notification'] },
+      },
       {
         path: 'parametrage/apparence',
         canMatch: [roleGuard('ADMIN')],

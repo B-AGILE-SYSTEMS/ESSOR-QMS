@@ -1,0 +1,26 @@
+.flow {
+  display: flex; border: var(--bw) solid var(--line); background: var(--surf); margin: 0 0 18px; padding: 0; list-style: none; overflow-x: auto;
+  li { flex: 1; min-width: 120px; padding: 10px 14px; color: var(--ink2); border-right: var(--bw) solid var(--line); font-size: 13px; position: relative; }
+  li:last-child { border-right: 0; }
+  b { display: block; font-size: 14px; color: var(--ink); }
+  .n { font-family: var(--mono); font-size: 12px; }
+  li.done { color: var(--ok); }
+  li.cur { background: var(--ink); color: var(--surf); b { color: var(--surf); } }
+  li.cur::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: var(--acc); }
+}
+.tabs {
+  display: flex; border-bottom: var(--bw) solid var(--line); margin-bottom: 14px; flex-wrap: wrap;
+  button { background: none; border: 0; border-bottom: 3px solid transparent; padding: 10px 14px; font-weight: 600; font-size: 14px; color: var(--ink2); cursor: pointer; }
+  button[aria-selected='true'] { color: var(--ink); border-color: var(--acc); }
+  button:hover { color: var(--ink); }
+}
+.pick { margin-top: 14px; }
+.hist {
+  list-style: none; margin: 0;
+  li { border-left: 3px solid var(--line2); padding: 6px 0 6px 14px; margin-bottom: 8px; }
+  .cmt { margin: 4px 0 0; font-style: italic; }
+}
+.cmt-in { flex: 1 1 320px; textarea { width: 100%; border: var(--bw) solid var(--line2); background: var(--surf); padding: 7px 9px; } }
+.trs { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-start; }
+.tr { display: flex; flex-direction: column; gap: 4px; max-width: 260px; }
+.miss { font-size: 12px; color: var(--crit); font-weight: 600; }
