@@ -14,7 +14,11 @@ import com.essor.qms.records.RecordTypes.RecordType;
 import com.essor.qms.shared.ApiException;
 import com.essor.qms.shared.AuditLog;
 import com.essor.qms.shared.ExecutionContext;
+import com.essor.qms.records.RecordDtos.SyncChanges;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -40,6 +44,8 @@ class RecordService {
 
     static final String ACTION_TYPE = "ACTION";
     static final ZoneId ZONE = ZoneId.of("Africa/Casablanca");
+    static final int MAX_SYNC_RECORDS = 500;
+    private static final Duration MAX_CLOCK_SKEW = Duration.ofMinutes(5);
     private static final int MAX_DATA_BYTES = 64 * 1024;
     private static final Pattern SEVERITY = Pattern.compile("^(mineure|majeure|critique)$");
     private static final Set<String> PATCHABLE = Set.of(
@@ -152,6 +158,29 @@ class RecordService {
                 .map(r -> summary(r, all)).toList();
     }
 
+    /**
+     * Fiches dont l'utilisateur est responsable ou déclarant, modifiées strictement après {@code since}
+     * (toutes si absent). Au plus {@value #MAX_SYNC_RECORDS} ; si la limite est atteinte, {@code serverTime}
+     * vaut la dernière date de modification rendue, pour que l'appel suivant reprenne là.
+     */
+    @Transactional
+    SyncChanges changes(Instant since) {
+        OffsetDateTime serverTime = store.jdbc().sql("select now()").query(OffsetDateTime.class).single();
+        Map<String, Object> p = new HashMap<>();
+        StringBuilder where = new StringBuilder(
+                "(r.owner_id = app_current_user() or r.created_by = app_current_user()) and r.updated_at <= :now");
+        p.put("now", serverTime);
+        if (since != null) {
+            where.append(" and r.updated_at > :since");
+            p.put("since", since.atOffset(ZoneOffset.UTC));
+        }
+        Map<String, RecordType> all = types.all();
+        List<Row> rows = store.query(where.toString(), p, "r.updated_at, r.id", MAX_SYNC_RECORDS, 0);
+        Instant next = rows.size() == MAX_SYNC_RECORDS
+                ? rows.get(rows.size() - 1).updatedAt().toInstant() : serverTime.toInstant();
+        return new SyncChanges(rows.stream().map(r -> summary(r, all)).toList(), next);
+    }
+
     // ---------------------------------------------------------------- écriture
 
     RecordView create(CreateRecord body) {
@@ -160,13 +189,30 @@ class RecordService {
         if (ACTION_TYPE.equals(type.code())) {
             throw ApiException.badRequest("Une action se crée depuis sa fiche parente (POST /api/records/{id}/actions)");
         }
+        if (body.clientId() != null) {
+            // renvoi depuis le téléphone (clé d'idempotence perdue) : pas de doublon, on rend la fiche existante
+            var existing = store.findByClientId(body.clientId());
+            if (existing.isPresent()) {
+                return get(existing.get());
+            }
+        }
         if (!store.currentUserHasSite(body.siteId())) {
             throw ApiException.badRequest("Site inconnu ou non rattaché à l'utilisateur");
+        }
+        if (body.occurredAt() != null && body.occurredAt().isAfter(Instant.now().plus(MAX_CLOCK_SKEW))) {
+            throw ApiException.badRequest("occurredAt ne peut pas être dans le futur");
         }
         Map<String, Object> data = body.data() == null ? new LinkedHashMap<>() : new LinkedHashMap<>(body.data());
         UUID id = insert(type, body.title(), body.description(), body.severity(), body.siteId(), null, null, null,
                 data);
-        audit.record("RECORD_CREATED", "record", id.toString(), null);
+        if (body.clientId() != null || body.occurredAt() != null) {
+            store.jdbc().sql("update record set client_id = :c, occurred_at = :o where id = :id")
+                    .param("c", body.clientId())
+                    .param("o", body.occurredAt() == null ? null : body.occurredAt().atOffset(ZoneOffset.UTC))
+                    .param("id", id).update();
+        }
+        audit.record("RECORD_CREATED", "record", id.toString(),
+                body.clientId() == null ? null : store.write(Map.of("clientId", body.clientId())));
         return get(id);
     }
 
@@ -381,7 +427,7 @@ class RecordService {
         return new RecordView(r.id(), r.reference(), r.typeCode(), r.status(), type.workflow().label(r.status()),
                 r.title(), r.description(), r.severity(), r.siteId(), r.siteName(), r.ownerId(), r.ownerName(),
                 r.dueDate(), actionType(r), store.data(r), r.createdAt().toInstant(), r.createdBy(), r.createdByName(),
-                r.parentId(), available, children);
+                r.parentId(), available, children, r.clientId(), instant(r.occurredAt()), instant(r.updatedAt()));
     }
 
     private String actionType(Row r) {
@@ -396,7 +442,12 @@ class RecordService {
         boolean overdue = !done && r.dueDate() != null && r.dueDate().isBefore(LocalDate.now(ZONE));
         return new RecordSummary(r.id(), r.reference(), r.typeCode(), r.status(),
                 wf == null ? r.status() : wf.label(r.status()), r.title(), r.severity(), r.siteId(), r.siteName(),
-                r.ownerId(), r.ownerName(), r.dueDate(), r.createdAt().toInstant(), overdue);
+                r.ownerId(), r.ownerName(), r.dueDate(), r.createdAt().toInstant(), overdue, r.clientId(),
+                instant(r.occurredAt()), instant(r.updatedAt()));
+    }
+
+    private static Instant instant(OffsetDateTime t) {
+        return t == null ? null : t.toInstant();
     }
 
     /** Statuts « réalisés » : ceux qu'une transition parente attend des enfants (ex. FAITE). */

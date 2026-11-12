@@ -22,7 +22,9 @@ final class RecordDtos {
             @NotBlank @Size(max = 200) String title,
             @Size(max = 10000) String description,
             @Pattern(regexp = "^(mineure|majeure|critique)$", message = "mineure, majeure ou critique") String severity,
-            Map<String, Object> data) {
+            Map<String, Object> data,
+            UUID clientId,
+            Instant occurredAt) {
     }
 
     record CreateAction(
@@ -41,14 +43,20 @@ final class RecordDtos {
 
     record RecordSummary(UUID id, String reference, String type, String status, String statusLabel, String title,
                          String severity, UUID siteId, String siteName, UUID ownerId, String ownerName,
-                         LocalDate dueDate, Instant createdAt, boolean overdue) {
+                         LocalDate dueDate, Instant createdAt, boolean overdue, UUID clientId, Instant occurredAt,
+                         Instant updatedAt) {
     }
 
     record RecordView(UUID id, String reference, String type, String status, String statusLabel, String title,
                       String description, String severity, UUID siteId, String siteName, UUID ownerId,
                       String ownerName, LocalDate dueDate, String actionType, Map<String, Object> data, Instant createdAt,
                       UUID createdBy, String createdByName, UUID parentId,
-                      List<AvailableTransition> availableTransitions, List<RecordSummary> children) {
+                      List<AvailableTransition> availableTransitions, List<RecordSummary> children,
+                      UUID clientId, Instant occurredAt, Instant updatedAt) {
+    }
+
+    /** Réponse de {@code GET /api/sync/changes}. */
+    record SyncChanges(List<RecordSummary> records, Instant serverTime) {
     }
 
     record Page<T>(List<T> items, long total, int page, int size) {
