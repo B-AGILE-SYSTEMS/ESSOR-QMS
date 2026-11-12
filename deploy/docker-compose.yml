@@ -1,0 +1,101 @@
+# ESSOR QMS — déploiement on-premise (un serveur Linux, aucun service cloud).
+# Usage : cp .env.example .env && (éditer .env) && docker compose up -d --build
+name: essor
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: essor
+      POSTGRES_USER: essor_owner
+      POSTGRES_PASSWORD: ${POSTGRES_OWNER_PASSWORD:?POSTGRES_OWNER_PASSWORD manquant}
+      ESSOR_DB_APP_PASSWORD: ${ESSOR_DB_APP_PASSWORD:?ESSOR_DB_APP_PASSWORD manquant}
+      KEYCLOAK_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:?KEYCLOAK_DB_PASSWORD manquant}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U essor_owner -d essor"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0.7
+    restart: unless-stopped
+    command: ["start", "--import-realm"]
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+      KC_HTTP_ENABLED: "true"
+      KC_HTTP_RELATIVE_PATH: /auth
+      # Les jetons portent l'URL publique ; le back-end joint Keycloak par le réseau interne.
+      KC_HOSTNAME: ${ESSOR_PUBLIC_URL:-http://localhost}/auth
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_PROXY_HEADERS: xforwarded
+      KC_HEALTH_ENABLED: "true"
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:?KEYCLOAK_ADMIN manquant}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?KEYCLOAK_ADMIN_PASSWORD manquant}
+      # Substitués dans realm-essor.json à l'import.
+      ESSOR_OIDC_CLIENT_SECRET: ${ESSOR_OIDC_CLIENT_SECRET:?ESSOR_OIDC_CLIENT_SECRET manquant}
+      ESSOR_PUBLIC_URL: ${ESSOR_PUBLIC_URL:-http://localhost}
+    volumes:
+      - ./keycloak/realm-essor.json:/opt/keycloak/data/import/realm-essor.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: ../deploy/backend.Dockerfile
+    image: essor-qms/backend:local
+    restart: unless-stopped
+    environment:
+      ESSOR_DB_URL: jdbc:postgresql://postgres:5432/essor
+      ESSOR_DB_APP_USER: essor_app
+      ESSOR_DB_APP_PASSWORD: ${ESSOR_DB_APP_PASSWORD}
+      ESSOR_DB_OWNER_USER: essor_owner
+      ESSOR_DB_OWNER_PASSWORD: ${POSTGRES_OWNER_PASSWORD}
+      ESSOR_OIDC_CLIENT_ID: essor-bff
+      ESSOR_OIDC_CLIENT_SECRET: ${ESSOR_OIDC_CLIENT_SECRET}
+      ESSOR_OIDC_PUBLIC_URL: ${ESSOR_PUBLIC_URL:-http://localhost}/auth/realms/essor
+      ESSOR_OIDC_INTERNAL_URL: http://keycloak:8080/auth/realms/essor
+      ESSOR_PUBLIC_URL: ${ESSOR_PUBLIC_URL:-http://localhost}
+      ESSOR_COOKIE_SECURE: ${ESSOR_COOKIE_SECURE:-false}
+      ESSOR_DEFAULT_TENANT_CODE: ${ESSOR_DEFAULT_TENANT_CODE:-DEMO}
+      ESSOR_STORAGE_DIR: /var/lib/essor/files
+    volumes:
+      - files:/var/lib/essor/files
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+
+  # Front Angular servi par Nginx (image construite depuis ../web, livrée par la carte web).
+  # Absent tant que ../web n'existe pas : lancer alors avec  docker compose up -d postgres keycloak backend nginx
+  web:
+    build:
+      context: ../web
+    image: essor-qms/web:local
+    restart: unless-stopped
+    profiles: ["web"]
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "${ESSOR_HTTP_PORT:-80}:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+      - keycloak
+
+volumes:
+  pgdata:
+  files:

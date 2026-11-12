@@ -1,0 +1,149 @@
+{
+  "realm": "essor",
+  "displayName": "ESSOR QMS",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "resetPasswordAllowed": false,
+  "bruteForceProtected": true,
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 28800,
+  "offlineSessionIdleTimeout": 2592000,
+  "internationalizationEnabled": true,
+  "supportedLocales": ["fr"],
+  "defaultLocale": "fr",
+  "roles": {
+    "realm": [
+      { "name": "ADMIN", "description": "Administrateur du tenant" },
+      { "name": "QUALITY_MANAGER", "description": "Responsable qualité" },
+      { "name": "AUDITOR", "description": "Auditeur" },
+      { "name": "FIELD_USER", "description": "Utilisateur terrain" },
+      { "name": "READER", "description": "Lecteur" }
+    ]
+  },
+  "components": {
+    "org.keycloak.userprofile.UserProfileProvider": [
+      {
+        "providerId": "declarative-user-profile",
+        "subComponents": {},
+        "config": {
+          "kc.user.profile.config": [
+            "{\"unmanagedAttributePolicy\":\"ADMIN_EDIT\",\"attributes\":[{\"name\":\"username\",\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\"]},\"validations\":{\"length\":{\"min\":3,\"max\":255},\"username-prohibited-characters\":{},\"up-username-not-idn-homograph\":{}}},{\"name\":\"email\",\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\"]},\"validations\":{\"email\":{},\"length\":{\"max\":255}}},{\"name\":\"firstName\",\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\"]},\"validations\":{\"length\":{\"max\":255}}},{\"name\":\"lastName\",\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\"]},\"validations\":{\"length\":{\"max\":255}}}],\"groups\":[]}"
+          ]
+        }
+      }
+    ]
+  },
+  "clientScopes": [
+    {
+      "name": "essor",
+      "description": "Rôles realm et tenant ESSOR dans les jetons ID, d'accès et userinfo",
+      "protocol": "openid-connect",
+      "attributes": { "include.in.token.scope": "false" },
+      "protocolMappers": [
+        {
+          "name": "realm-roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "config": {
+            "claim.name": "realm_access.roles",
+            "multivalued": "true",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "tenant",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "tenant",
+            "claim.name": "tenant",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "essor-bff",
+      "name": "ESSOR QMS - web (BFF)",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${ESSOR_OIDC_CLIENT_SECRET}",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": ["${ESSOR_PUBLIC_URL}/login/oauth2/code/keycloak"],
+      "webOrigins": ["${ESSOR_PUBLIC_URL}"],
+      "attributes": {
+        "post.logout.redirect.uris": "${ESSOR_PUBLIC_URL}/",
+        "pkce.code.challenge.method": "S256"
+      },
+      "defaultClientScopes": ["web-origins", "profile", "email", "roles", "essor"]
+    },
+    {
+      "clientId": "essor-mobile",
+      "name": "ESSOR QMS - mobile",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "redirectUris": ["com.essor.qms:/oauthredirect", "http://localhost:*"],
+      "webOrigins": ["+"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "com.essor.qms:/logout"
+      },
+      "defaultClientScopes": ["web-origins", "profile", "email", "roles", "essor"],
+      "optionalClientScopes": ["offline_access"]
+    }
+  ],
+  "users": [
+    {
+      "username": "admin",
+      "enabled": true,
+      "firstName": "Admin",
+      "lastName": "Démo",
+      "email": "admin@essor.local",
+      "emailVerified": true,
+      "attributes": { "tenant": ["DEMO"] },
+      "credentials": [{ "type": "password", "value": "admin", "temporary": false }],
+      "realmRoles": ["ADMIN", "QUALITY_MANAGER"]
+    },
+    {
+      "username": "qualite",
+      "enabled": true,
+      "firstName": "Qualité",
+      "lastName": "Démo",
+      "email": "qualite@essor.local",
+      "emailVerified": true,
+      "attributes": { "tenant": ["DEMO"] },
+      "credentials": [{ "type": "password", "value": "qualite", "temporary": false }],
+      "realmRoles": ["QUALITY_MANAGER"]
+    },
+    {
+      "username": "terrain",
+      "enabled": true,
+      "firstName": "Terrain",
+      "lastName": "Démo",
+      "email": "terrain@essor.local",
+      "emailVerified": true,
+      "attributes": { "tenant": ["DEMO"] },
+      "credentials": [{ "type": "password", "value": "terrain", "temporary": false }],
+      "realmRoles": ["FIELD_USER"]
+    }
+  ]
+}
