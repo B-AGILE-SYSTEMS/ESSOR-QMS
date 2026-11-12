@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:essor_mobile/core/api/api_client.dart';
 import 'package:essor_mobile/core/api/models.dart';
+import 'package:essor_mobile/core/api/profile_cache.dart';
 import 'package:essor_mobile/core/auth/auth_service.dart';
 import 'package:essor_mobile/core/config/server_config.dart';
 import 'package:essor_mobile/core/sync/sync_database.dart';
@@ -28,6 +29,10 @@ final authServiceProvider = Provider<AuthService>(
     ref.watch(oidcClientProvider),
     ref.watch(secureStoreProvider),
   ),
+);
+
+final profileCacheProvider = Provider<ProfileCache>(
+  (ref) => ProfileCache(ref.watch(secureStoreProvider)),
 );
 
 /// Fabrique du client API (surchargée en test).
@@ -86,8 +91,17 @@ final class NeedsLogin extends SessionState {
 }
 
 final class Authenticated extends SessionState {
-  const Authenticated(this.server, this.me, this.branding, this.logoUrl);
+  const Authenticated(
+    this.server,
+    this.me,
+    this.branding,
+    this.logoUrl, {
+    this.fromCache = false,
+  });
   final ServerUrl server;
+
+  /// `true` si le profil vient du cache (serveur injoignable au démarrage).
+  final bool fromCache;
   final Me me;
   final Branding branding;
   final String? logoUrl;
@@ -120,7 +134,7 @@ class SessionController extends Notifier<SessionState> {
   }
 
   Future<void> changeServer() async {
-    await ref.read(authServiceProvider).logout();
+    await _clearSession();
     state = const NeedsServer();
   }
 
@@ -143,26 +157,44 @@ class SessionController extends Notifier<SessionState> {
 
   Future<void> logout() async {
     final current = state;
-    await ref.read(authServiceProvider).logout();
+    await _clearSession();
     if (current is Authenticated) state = NeedsLogin(current.server);
   }
 
+  Future<void> _clearSession() async {
+    await ref.read(authServiceProvider).logout();
+    await ref.read(profileCacheProvider).clear();
+  }
+
+  /// Charge le profil. Sans réseau (ou serveur injoignable), reprend le
+  /// dernier profil connu ; seul un 401 reçu du serveur ferme la session.
   Future<void> _loadProfile(ServerUrl server) async {
     final api = ref.read(apiClientFactoryProvider)(server);
+    final cache = ref.read(profileCacheProvider);
     try {
       final results = await Future.wait([api.me(), api.branding()]);
+      final me = results[0] as Me;
       final branding = results[1] as Branding;
-      state = Authenticated(
-        server,
-        results[0] as Me,
-        branding,
-        api.logoUri(branding),
-      );
+      await cache.save(server, me, branding);
+      state = Authenticated(server, me, branding, api.logoUri(branding));
     } on DioException catch (e) {
       if (e.response?.statusCode == 401) {
-        await ref.read(authServiceProvider).logout();
+        await _clearSession();
+        state = NeedsLogin(server, error: 'Session expirée. Reconnectez-vous.');
+        return;
       }
-      state = NeedsLogin(server, error: 'Profil indisponible. Réessayez.');
+      final cached = await cache.load(server);
+      if (cached == null) {
+        state = NeedsLogin(server, error: 'Profil indisponible. Réessayez.');
+        return;
+      }
+      state = Authenticated(
+        server,
+        cached.me,
+        cached.branding,
+        api.logoUri(cached.branding),
+        fromCache: true,
+      );
     }
   }
 }

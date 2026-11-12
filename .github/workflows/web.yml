@@ -6,6 +6,9 @@ on:
   pull_request:
     paths: ['web/**', '.github/workflows/web.yml']
 
+permissions:
+  contents: read
+
 jobs:
   web:
     runs-on: ubuntu-latest
@@ -21,7 +24,35 @@ jobs:
           cache-dependency-path: web/package-lock.json
       - run: npm ci
       - run: npm run lint
+      # Tests + couverture (seuil 60 % lignes dans karma.conf.js) ; rapport texte dans le journal.
       - run: npm test
         env:
           CHROME_BIN: /usr/bin/google-chrome
+      - name: Couverture dans le résumé du job
+        if: always()
+        run: |
+          echo '### Couverture web' >> "$GITHUB_STEP_SUMMARY"
+          awk -F: '/^LF:/{lf+=$2} /^LH:/{lh+=$2} END {printf "Lignes : %.1f %% (%d/%d)\n", 100*lh/lf, lh, lf}' \
+            coverage/lcov.info >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: couverture-web
+          path: web/coverage
+          retention-days: 7
       - run: npm run build
+
+  audit:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Non bloquant en attendant l'arbitrage Angular 18 → 19 (4 alertes hautes corrigées seulement en 19.2.26).
+      - name: npm audit (dépendances de production)
+        continue-on-error: true
+        run: npm audit --omit=dev --audit-level=high

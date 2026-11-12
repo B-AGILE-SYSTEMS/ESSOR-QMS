@@ -1,14 +1,14 @@
 # Image du back-end ESSOR QMS, construction multi-étape.
 # Contexte de construction : ../backend (voir docker-compose.yml).
 
-FROM maven:3.9-eclipse-temurin-21 AS build
+FROM maven:3.9.16-eclipse-temurin-21 AS build
 WORKDIR /src
 COPY pom.xml .
 RUN mvn -B -q dependency:go-offline
 COPY src ./src
 RUN mvn -B -q package -DskipTests
 
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:21.0.13_9-jre-alpine
 RUN addgroup -S essor && adduser -S essor -G essor \
     && mkdir -p /var/lib/essor/files && chown -R essor:essor /var/lib/essor
 WORKDIR /app

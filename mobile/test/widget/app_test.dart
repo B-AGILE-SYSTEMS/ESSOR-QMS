@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +8,7 @@ import 'package:material_ui/material_ui.dart';
 
 import 'package:essor_mobile/app.dart';
 import 'package:essor_mobile/core/api/api_client.dart';
+import 'package:essor_mobile/core/api/profile_cache.dart';
 import 'package:essor_mobile/core/auth/auth_service.dart';
 import 'package:essor_mobile/core/config/server_config.dart';
 import 'package:essor_mobile/core/providers.dart';
@@ -18,6 +21,7 @@ Future<ProviderContainer> pumpApp(
   WidgetTester tester, {
   required MemoryStore store,
   bool online = false,
+  Responder? respond,
 }) async {
   final db = SyncDatabase(NativeDatabase.memory());
   final container = ProviderContainer(
@@ -30,7 +34,8 @@ Future<ProviderContainer> pumpApp(
         (ref) => (server) {
           final dio = Dio()
             ..httpClientAdapter = FakeAdapter(
-              (o) => (200, o.path.endsWith('/me') ? meJson : brandingJson),
+              respond ??
+                  (o) => (200, o.path.endsWith('/me') ? meJson : brandingJson),
             );
           return ApiClient(server, ref.read(authServiceProvider), dio: dio);
         },
@@ -120,6 +125,48 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('loginButton')), findsOneWidget);
     expect(store.values.containsKey(AuthService.accessKey), isFalse);
+  });
+
+  testWidgets('sans réseau : accueil avec le dernier profil connu', (
+    tester,
+  ) async {
+    final store = loggedInStore();
+    final first = await pumpApp(tester, store: store);
+    expect(store.values.containsKey(ProfileCache.key), isTrue);
+    first.dispose();
+
+    await pumpApp(
+      tester,
+      store: store,
+      respond: (o) => throw const SocketException('pas de réseau'),
+    );
+    expect(find.text('Bonjour Youssef'), findsOneWidget);
+    expect(find.text('Hors ligne'), findsOneWidget);
+    final ctx = tester.element(find.byKey(const Key('reportButton')));
+    expect(Theme.of(ctx).colorScheme.primary, const Color(0xFF1D4ED8));
+    expect(store.values[AuthService.accessKey], 'tok');
+  });
+
+  testWidgets('sans réseau ni cache : retour à la connexion', (tester) async {
+    await pumpApp(
+      tester,
+      store: loggedInStore(),
+      respond: (o) => throw const SocketException('pas de réseau'),
+    );
+    expect(find.byKey(const Key('loginButton')), findsOneWidget);
+    expect(find.text('Profil indisponible. Réessayez.'), findsOneWidget);
+  });
+
+  testWidgets('jeton révoqué (401) : session et cache effacés', (tester) async {
+    final store = loggedInStore();
+    final first = await pumpApp(tester, store: store);
+    first.dispose();
+
+    await pumpApp(tester, store: store, respond: (o) => (401, null));
+    expect(find.byKey(const Key('loginButton')), findsOneWidget);
+    expect(find.text('Session expirée. Reconnectez-vous.'), findsOneWidget);
+    expect(store.values.containsKey(AuthService.accessKey), isFalse);
+    expect(store.values.containsKey(ProfileCache.key), isFalse);
   });
 
   test('libellés de l\'indicateur', () {

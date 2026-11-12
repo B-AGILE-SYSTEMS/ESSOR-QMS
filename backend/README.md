@@ -81,8 +81,8 @@ et leurs actions ; comptes préparés `pending:<username>` rattachés au compte 
 ```bash
 mvn -B verify            # tests unitaires + intégration (Testcontainers, Docker requis)
 ```
-`KeycloakLoginIT` démarre un vrai Keycloak (`quay.io/keycloak/keycloak:26.0.7`, autre image via
-`-Dessor.keycloak.image=keycloak/keycloak:26.0.7`) avec `deploy/keycloak/realm-essor.json` et joue la connexion
+`KeycloakLoginIT` démarre un vrai Keycloak (`quay.io/keycloak/keycloak:26.8.2`, autre image via
+`-Dessor.keycloak.image=keycloak/keycloak:26.8.2`) avec `deploy/keycloak/realm-essor.json` et joue la connexion
 BFF (code + PKCE) jusqu'à `/api/me`, avec le profil `demo`.
 Sans Docker, sur un PostgreSQL 16 local (base remise à zéro par les tests) :
 ```bash
@@ -90,6 +90,11 @@ ESSOR_TEST_DB_URL=jdbc:postgresql://localhost:5432/essor_test \
 ESSOR_TEST_DB_OWNER=essor_owner ESSOR_TEST_DB_OWNER_PASSWORD=owner mvn -B verify
 ```
 Le rôle propriétaire doit pouvoir créer des rôles (le test crée `essor_app`).
+
+Analyse OWASP des dépendances (non bloquante, base NVD requise) : `mvn org.owasp:dependency-check-maven:check`,
+rapport dans `target/dependency-check-report.html` (job CI `dependency-check`).
+
+Fiche (`GET /api/records/{id}`) : `createdBy` (identifiant) et `createdByName` (nom lisible) ; historique : `author` = nom lisible.
 
 ## Configuration
 

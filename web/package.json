@@ -6,7 +6,7 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test --no-watch --browsers=ChromeHeadlessCI",
+    "test": "ng test --no-watch --code-coverage --browsers=ChromeHeadlessCI",
     "lint": "ng lint",
     "e2e": "playwright test"
   },
@@ -31,7 +31,7 @@
     "@angular-eslint/builder": "^18.4.3",
     "@angular/cli": "^18.2.21",
     "@angular/compiler-cli": "^18.2.0",
-    "@playwright/test": "^1.48.2",
+    "@playwright/test": "^1.65.0",
     "@types/jasmine": "~5.1.0",
     "angular-eslint": "^18.4.3",
     "eslint": "^9.39.5",
@@ -43,5 +43,24 @@
     "karma-jasmine-html-reporter": "~2.1.0",
     "typescript": "~5.5.2",
     "typescript-eslint": "^8.72.2"
+  },
+  "overrides": {
+    "piscina": "4.9.4",
+    "http-proxy-middleware": "3.0.10",
+    "rollup": "^4.68.2",
+    "postcss": "^8.5.32",
+    "picomatch@4": "4.0.7",
+    "@babel/core": "7.29.13",
+    "@sigstore/core": "3.2.1",
+    "ajv@8": "8.20.0",
+    "glob@10": "10.5.0",
+    "minimatch@9": "9.0.9",
+    "serialize-javascript": "7.1.4",
+    "tmp": "0.2.7",
+    "uuid": "11.1.1",
+    "webpack": "5.104.1",
+    "webpack-dev-middleware": "7.4.6",
+    "tar": "7.5.23",
+    "webpack-dev-server": "5.2.7"
   }
 }

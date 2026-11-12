@@ -64,6 +64,8 @@ export interface QmsRecord extends RecordSummary {
   description: string | null;
   data: RecordData;
   createdBy: string;
+  /** Nom lisible du déclarant (display_name, à défaut username). */
+  createdByName?: string | null;
   availableTransitions: AvailableTransition[];
   children: RecordSummary[];
 }
