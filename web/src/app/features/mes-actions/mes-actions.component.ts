@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { DashboardSummary, MyTask } from '../../core/api.models';
+import { DashboardSummary, MyTask, recordPath } from '../../core/api.models';
 import { errorMessage } from '../../core/api-error';
 import { formatDate, formatMad, statusTone } from '../../core/labels';
 import { RecordsService } from '../../core/records.service';
@@ -33,6 +33,10 @@ interface Kpi {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MesActionsComponent {
+  pathOf(t: MyTask): string {
+    return recordPath(t.recordType ?? t.type, t.id);
+  }
+
   private readonly records = inject(RecordsService);
 
   protected readonly tasks = signal<MyTask[]>([]);

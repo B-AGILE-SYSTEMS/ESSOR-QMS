@@ -124,6 +124,7 @@ export interface HistoryEntry {
 
 export interface MyTask extends RecordSummary {
   overdue: boolean;
+  recordType?: string | null;
 }
 
 export interface UserRef {
@@ -144,6 +145,7 @@ export interface AppNotification {
   type: string;
   title: string;
   recordId?: string | null;
+  recordType?: string | null;
   link?: string | null;
   read: boolean;
   createdAt: string;
@@ -173,4 +175,10 @@ export interface ApiError {
   error: string;
   message: string;
   details?: Record<string, unknown>;
+}
+
+/** Chemin de la fiche selon son type (INCIDENT → /incidents, sinon non-conformités). */
+export function recordPath(type: string | null | undefined, id: string): string {
+  const base = type === 'INCIDENT' ? '/incidents' : '/non-conformites';
+  return `${base}/${encodeURIComponent(id)}`;
 }
