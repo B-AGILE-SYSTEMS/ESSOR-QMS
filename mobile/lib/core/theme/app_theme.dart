@@ -29,7 +29,10 @@ ThemeData buildTheme(Branding b) {
   ).copyWith(primary: primary, onPrimary: onColor(primary));
 
   final base = ThemeData(colorScheme: scheme, useMaterial3: true);
-  const label = TextStyle(fontSize: 18, fontWeight: FontWeight.w700);
+  final label = (base.textTheme.labelLarge ?? const TextStyle()).copyWith(
+    fontSize: 18,
+    fontWeight: FontWeight.w700,
+  );
   return base.copyWith(
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(

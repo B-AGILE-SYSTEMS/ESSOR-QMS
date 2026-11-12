@@ -1,14 +1,18 @@
-import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'package:essor_mobile/core/api/models.dart';
+import 'package:essor_mobile/core/media/device_services.dart';
 import 'package:essor_mobile/core/providers.dart';
+import 'package:essor_mobile/core/scan/qr_location.dart';
+import 'package:essor_mobile/core/widgets/terrain.dart';
 import 'package:essor_mobile/core/theme/app_theme.dart';
 import 'package:essor_mobile/features/home/sync_indicator.dart';
 
-/// Accueil terrain (maquette mobile, écran 1). Actions métiers simulées : M2.
+/// Accueil terrain (maquette mobile, écran 1). Tuiles : « mes tâches » en cache.
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
@@ -16,6 +20,7 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(sessionProvider);
     if (session is! Authenticated) return const SizedBox.shrink();
+    final tasks = ref.watch(tasksProvider).value ?? const [];
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -26,16 +31,25 @@ class HomeScreen extends ConsumerWidget {
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.all(16),
-                children: const [
-                  PendingBanner(),
-                  _Tile(
-                    title: 'Audit 5S — ligne 2',
-                    subtitle: '12 questions · à faire aujourd\'hui',
-                  ),
-                  _Tile(
-                    title: 'Action : contrôle compteur outil',
-                    subtitle: 'Échéance 20/11 · PR-USI-07',
-                  ),
+                children: [
+                  const PendingBanner(),
+                  const ReviewBanner(),
+                  for (final t in tasks.take(3))
+                    _Tile(
+                      key: Key('tile-${t.id}'),
+                      title: t.title,
+                      subtitle: [
+                        t.reference,
+                        if (t.dueDate != null) 'Échéance ${t.dueDate}',
+                        t.statusLabel,
+                      ].join(' · '),
+                      onTap: () => context.go('/fiche/${t.id}'),
+                    ),
+                  if (tasks.isEmpty)
+                    const Text(
+                      'Aucune tâche en cache pour l\'instant.',
+                      style: TextStyle(fontSize: 16),
+                    ),
                 ],
               ),
             ),
@@ -64,7 +78,11 @@ class _Header extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          TenantLogo(url: session.logoUrl, tenant: me.tenant),
+          TenantLogo(
+            url: session.logoUrl,
+            tenant: me.tenant,
+            bytes: ref.watch(logoBytesProvider).value,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -95,8 +113,16 @@ class _Header extends ConsumerWidget {
 
 /// Logo de l'exploitant, ou ses initiales sur la couleur principale.
 class TenantLogo extends StatelessWidget {
-  const TenantLogo({super.key, required this.url, required this.tenant});
+  const TenantLogo({
+    super.key,
+    required this.url,
+    required this.tenant,
+    this.bytes,
+  });
   final String? url;
+
+  /// Logo en cache local (prioritaire, disponible hors ligne).
+  final Uint8List? bytes;
   final NamedRef tenant;
 
   @override
@@ -112,44 +138,58 @@ class TenantLogo extends StatelessWidget {
         style: TextStyle(color: onColor(primary), fontWeight: FontWeight.w800),
       ),
     );
-    final logo = url;
+    final cached = bytes;
     return SizedBox.square(
       dimension: 48,
-      child: logo == null
-          ? fallback
-          : Image.network(
-              logo,
+      child: cached != null && cached.isNotEmpty
+          ? Image.memory(
+              cached,
               fit: BoxFit.contain,
               errorBuilder: (_, _, _) => fallback,
-            ),
+            )
+          : fallback,
     );
   }
 }
 
 class _Tile extends StatelessWidget {
-  const _Tile({required this.title, required this.subtitle});
+  const _Tile({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
   final String title;
   final String subtitle;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: scheme.surface,
         border: Border.all(color: scheme.onSurface, width: 2),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              Text(subtitle, style: const TextStyle(fontSize: 15)),
+            ],
           ),
-          Text(subtitle, style: const TextStyle(fontSize: 15)),
-        ],
+        ),
       ),
     );
   }
@@ -158,65 +198,55 @@ class _Tile extends StatelessWidget {
 class _Footer extends ConsumerWidget {
   const _Footer();
 
-  /// Simulation M2 : l'action est mise en file locale.
-  Future<void> _simulate(
-    BuildContext context,
-    WidgetRef ref,
-    String kind,
-    String message,
-  ) async {
-    await ref.read(syncDatabaseProvider).enqueue(kind, '{"simule":true}');
-    unawaited(ref.read(syncServiceProvider).syncNow());
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+  Future<void> _scan(BuildContext context, WidgetRef ref) async {
+    final raw = await ref.read(qrScannerProvider)(context);
+    if (!context.mounted || raw == null) return;
+    if (parseQrLocation(raw) == null) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(const SnackBar(content: Text('QR code non reconnu')));
+      return;
+    }
+    context.go(Uri(path: '/signaler', queryParameters: {'qr': raw}).toString());
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        border: Border(top: BorderSide(color: scheme.outlineVariant)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          FilledButton.icon(
-            key: const Key('reportButton'),
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(tapBigHeight),
-              textStyle: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
+    return BottomActions(
+      children: [
+        FilledButton.icon(
+          key: const Key('reportButton'),
+          style: FilledButton.styleFrom(
+            minimumSize: const Size.fromHeight(tapBigHeight),
+            textStyle: Theme.of(context).textTheme.labelLarge
+                ?.copyWith(fontSize: 20, fontWeight: FontWeight.w700),
+          ),
+          onPressed: () => context.go('/signaler'),
+          icon: const Icon(Icons.warning_amber_rounded, size: 28),
+          label: const Text('Signaler un problème'),
+        ),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                key: const Key('tasksButton'),
+                onPressed: () => context.go('/taches'),
+                icon: const Icon(Icons.checklist, size: 26),
+                label: const Text('Mes tâches'),
               ),
             ),
-            onPressed: () => _simulate(
-              context,
-              ref,
-              'nc.signaler',
-              'Signalement enregistré (simulation M2)',
+            const SizedBox(width: 10),
+            Expanded(
+              child: OutlinedButton.icon(
+                key: const Key('scanButton'),
+                onPressed: () => _scan(context, ref),
+                icon: const Icon(Icons.qr_code_scanner, size: 26),
+                label: const Text('Scanner'),
+              ),
             ),
-            icon: const Icon(Icons.warning_amber_rounded, size: 28),
-            label: const Text('Signaler un problème'),
-          ),
-          const SizedBox(height: 10),
-          OutlinedButton.icon(
-            key: const Key('scanButton'),
-            onPressed: () => _simulate(
-              context,
-              ref,
-              'instrument.scanner',
-              'Scan enregistré (simulation M2)',
-            ),
-            icon: const Icon(Icons.qr_code_scanner, size: 26),
-            label: const Text('Scanner un instrument'),
-          ),
-        ],
-      ),
+          ],
+        ),
+      ],
     );
   }
 }
