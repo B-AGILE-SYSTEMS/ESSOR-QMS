@@ -1,6 +1,8 @@
 # ESSOR QMS — front-end web
 
-Angular 18 (standalone, signals, SCSS), sans bibliothèque UI. Direction visuelle : `docs/ux/maquettes-v2.html`.
+Angular 19.2 (19.2.25, dernier correctif publié de la branche 19 ; standalone, signals, SCSS), sans bibliothèque UI. Direction visuelle : `docs/ux/maquettes-v2.html`.
+
+Audit : 3 alertes hautes (`@angular/core`, `common`, `compiler` ≤ 19.2.25) n'ont pas de correctif en 19.x ; le job CI « audit » reste non bloquant en attendant l'arbitrage.
 
 ## Commandes
 

@@ -13,10 +13,9 @@ interface ActionRow {
 
 /** Onglet Actions : plan d'actions (fiches ACTION enfants), ajout et suivi du statut. */
 @Component({
-  selector: 'eq-nc-actions',
-  standalone: true,
-  imports: [FormsModule, UserPickerComponent],
-  template: `
+    selector: 'eq-nc-actions',
+    imports: [FormsModule, UserPickerComponent],
+    template: `
     @if (error(); as msg) { <p class="err" role="alert">{{ msg }}</p> }
     <div class="box tw">
       <table>
@@ -59,7 +58,7 @@ interface ActionRow {
       </form>
     }
   `,
-  styles: `
+    styles: `
     .ref { color: var(--ink2); font-size: 12px; }
     .acts { display: flex; gap: 6px; flex-wrap: wrap; }
     .acts .btn { min-height: 32px; padding: 4px 10px; font-size: 13px; }
@@ -68,7 +67,7 @@ interface ActionRow {
     .grid { display: grid; grid-template-columns: 1fr 2fr 1.4fr 1fr; gap: 12px; }
     @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class NcActionsComponent {
   private readonly records = inject(RecordsService);

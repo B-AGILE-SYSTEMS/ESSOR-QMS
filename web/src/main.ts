@@ -4,10 +4,9 @@ import { RouterOutlet } from '@angular/router';
 import { appConfig } from './app/app.config';
 
 @Component({
-  selector: 'eq-root',
-  standalone: true,
-  imports: [RouterOutlet],
-  template: '<router-outlet />',
+    selector: 'eq-root',
+    imports: [RouterOutlet],
+    template: '<router-outlet />'
 })
 class RootComponent {}
 

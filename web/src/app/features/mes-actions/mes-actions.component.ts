@@ -25,12 +25,11 @@ interface Kpi {
 
 /** Accueil « Mes actions » : `/api/my-tasks` (trié par échéance) et `/api/dashboard/summary`. */
 @Component({
-  selector: 'eq-mes-actions',
-  standalone: true,
-  imports: [RouterLink],
-  templateUrl: './mes-actions.component.html',
-  styleUrl: './mes-actions.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'eq-mes-actions',
+    imports: [RouterLink],
+    templateUrl: './mes-actions.component.html',
+    styleUrl: './mes-actions.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MesActionsComponent {
   pathOf(t: MyTask): string {

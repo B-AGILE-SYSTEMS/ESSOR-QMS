@@ -11,10 +11,9 @@ export const PAGE_SIZE = 20;
 
 /** Liste des non-conformités : filtres (statut, gravité, site, texte) et pagination serveur. */
 @Component({
-  selector: 'eq-nc-liste',
-  standalone: true,
-  imports: [RouterLink],
-  template: `
+    selector: 'eq-nc-liste',
+    imports: [RouterLink],
+    template: `
     <div class="ph">
       <div><span class="ref">Terrain</span><h2>{{ view().plural }}</h2></div>
       @if (view().declarePath; as dp) { <a class="btn pri" [routerLink]="dp">＋ Déclarer</a> }
@@ -71,7 +70,7 @@ export const PAGE_SIZE = 20;
       <button type="button" class="btn" [disabled]="page() + 1 >= pages()" (click)="go(page() + 1)">Suivante →</button>
     </nav>
   `,
-  styles: `
+    styles: `
     .filters { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: 12px; align-items: end; margin-bottom: 14px; }
     .filters .field { margin: 0; }
     .pager { display: flex; gap: 8px; align-items: center; justify-content: flex-end; margin-top: 12px; }
@@ -79,7 +78,7 @@ export const PAGE_SIZE = 20;
     .mob { margin-left: 6px; }
     @media (max-width: 860px) { .filters { grid-template-columns: 1fr 1fr; } }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class NcListeComponent {
   protected readonly auth = inject(AuthService);
