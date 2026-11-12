@@ -1,0 +1,10 @@
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-secret: test-secret
+essor:
+  storage:
+    dir: ${java.io.tmpdir}/essor-qms-test-files
