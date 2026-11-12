@@ -48,6 +48,19 @@ class UserProvisioning {
         this.defaultTenantCode = defaultTenantCode;
     }
 
+    static final String PENDING_PREFIX = "pending:";
+
+    /** Mémorise les rôles realm et l'e-mail (utilisés par le workflow et les notifications), sans écriture inutile. */
+    private void refresh(UUID userId, PrincipalInfo p) {
+        jdbc.sql("""
+                update app_user set roles = cast(:roles as text[]), email = :email, display_name = :name
+                where id = :id and (roles is distinct from cast(:roles as text[]) or email is distinct from :email
+                                    or display_name is distinct from :name)
+                """)
+                .param("roles", p.roles().toArray(String[]::new)).param("email", p.email())
+                .param("name", p.displayName()).param("id", userId).update();
+    }
+
     ProvisionedUser provision(PrincipalInfo p) {
         String code = p.tenantCode() != null ? p.tenantCode() : defaultTenantCode;
         TenantRef tenant = Optional.ofNullable(code).filter(c -> !c.isBlank())
@@ -65,13 +78,24 @@ class UserProvisioning {
                     LOG.warn("Changement de tenant refusé pour l'utilisateur {}", existing.get().userId());
                     throw new ProvisioningRefusedException("Changement de tenant refusé");
                 }
+                refresh(existing.get().userId(), p);
                 return existing.get().userId();
+            }
+            // Compte préparé (données de démo) : "pending:<username>" est rattaché au premier login.
+            Optional<UUID> pending = jdbc.sql("select id from app_user where subject = :pending")
+                    .param("pending", PENDING_PREFIX + p.username()).query(UUID.class).optional();
+            if (pending.isPresent()) {
+                jdbc.sql("update app_user set subject = :sub where id = :id")
+                        .param("sub", p.subject()).param("id", pending.get()).update();
+                refresh(pending.get(), p);
+                return pending.get();
             }
             UUID id = UUID.randomUUID();
             jdbc.sql("""
-                    insert into app_user (id, tenant_id, subject, username, display_name, last_login_at)
-                    values (:id, app_current_tenant(), :sub, :username, :name, now())
+                    insert into app_user (id, tenant_id, subject, username, display_name, last_login_at, roles, email)
+                    values (:id, app_current_tenant(), :sub, :username, :name, now(), cast(:roles as text[]), :email)
                     """)
+                    .param("roles", p.roles().toArray(String[]::new)).param("email", p.email())
                     .param("id", id).param("sub", p.subject())
                     .param("username", p.username()).param("name", p.displayName())
                     .update();
