@@ -53,6 +53,17 @@ class ApiErrorHandler {
         return bad("Corps de requête illisible", Map.of());
     }
 
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    ResponseEntity<ApiError> tooLarge(org.springframework.web.multipart.MaxUploadSizeExceededException e) {
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                .body(new ApiError("too_large", "Fichier trop volumineux (10 Mo maximum)", Map.of()));
+    }
+
+    @ExceptionHandler(org.springframework.web.multipart.support.MissingServletRequestPartException.class)
+    ResponseEntity<ApiError> missingPart(org.springframework.web.multipart.support.MissingServletRequestPartException e) {
+        return bad("Fichier manquant (champ multipart file)", Map.of());
+    }
+
     private static ResponseEntity<ApiError> bad(String message, Map<String, Object> details) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiError("invalid", message, details));
     }

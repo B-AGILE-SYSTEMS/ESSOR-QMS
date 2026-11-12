@@ -16,6 +16,7 @@ export const NAV_FAMILIES: NavFamily[] = [
     label: 'Terrain',
     items: [
       { label: 'Non-conformités', path: '/non-conformites' },
+      { label: 'Incidents & sécurité', path: '/incidents' },
       { label: 'Audits & inspections', path: '/audits' },
     ],
   },

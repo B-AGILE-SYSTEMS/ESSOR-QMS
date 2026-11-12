@@ -4,6 +4,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { QmsRecord } from '../../core/api.models';
 import { NcFicheComponent } from './nc-fiche.component';
+import { INCIDENT_VIEW } from '../fiches/record-type-view';
 
 const REC: QmsRecord = {
   id: 'r1', reference: 'NC-2026-0001', type: 'NC', status: 'ANALYSE', statusLabel: 'Analyse', title: 'Fuite',
@@ -73,5 +74,46 @@ describe('NcFicheComponent', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     expect(el().querySelector('[role=alert]')!.textContent).toContain('cause racine manquante');
+  });
+});
+
+describe('NcFicheComponent — incident (composant générique)', () => {
+  it('charge le workflow INCIDENT, affiche le badge mobile, la date terrain et les champs data', async () => {
+    TestBed.configureTestingModule({
+      imports: [NcFicheComponent],
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
+    });
+    const http = TestBed.inject(HttpTestingController);
+    const fixture = TestBed.createComponent(NcFicheComponent);
+    fixture.componentRef.setInput('id', 'i1');
+    fixture.componentRef.setInput('view', INCIDENT_VIEW);
+    fixture.detectChanges();
+    http.expectOne('/api/record-types/INCIDENT/workflow').flush({
+      initial: 'DECLARE', transitions: [],
+      states: [{ code: 'DECLARE', label: 'Déclaré', final: false }, { code: 'CLOS', label: 'Clos', final: true }],
+    });
+    http.expectOne('/api/records/i1').flush({
+      ...REC, id: 'i1', type: 'INCIDENT', reference: 'INC-2026-0001', status: 'DECLARE', statusLabel: 'Déclaré',
+      clientId: '7f1c2a40-0000-4000-8000-000000000001', occurredAt: '2026-11-11T22:15:00Z',
+      data: { categorie: 'presqu_accident', lieu: 'Quai 4', blesses: false, temoins: 'A. Idrissi' }, availableTransitions: [],
+    });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('.badge')!.textContent).toContain('Déclaré depuis le mobile');
+    const dd = (label: string) =>
+      Array.from(el.querySelectorAll('dt')).find((d) => d.textContent === label)?.nextElementSibling?.textContent;
+    expect(dd('Catégorie')).toBe("Presqu'accident");
+    expect(dd('Blessés')).toBe('Non');
+    expect(dd('Date terrain')).toContain('/11/2026');
+    expect(dd('Déclaré par')).toBe('Y. Amrani');
+
+    Array.from(el.querySelectorAll<HTMLButtonElement>('[role=tab]')).find((b) => b.textContent!.includes('Pièces jointes'))!.click();
+    fixture.detectChanges();
+    http.expectOne('/api/records/i1/attachments').flush([]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(el.textContent).toContain('Aucune pièce jointe.');
+    http.verify();
   });
 });

@@ -5,8 +5,13 @@ import 'package:material_ui/material_ui.dart';
 import 'package:essor_mobile/core/providers.dart';
 import 'package:essor_mobile/core/theme/app_theme.dart';
 import 'package:essor_mobile/features/home/home_screen.dart';
+import 'package:essor_mobile/features/record/record_screen.dart';
+import 'package:essor_mobile/features/report/report_screen.dart';
+import 'package:essor_mobile/features/tasks/tasks_screen.dart';
 import 'package:essor_mobile/features/setup/login_screen.dart';
 import 'package:essor_mobile/features/setup/server_screen.dart';
+
+const _setupRoutes = {'/chargement', '/serveur', '/connexion'};
 
 /// Route imposée par l'état de session, `null` si la route courante convient.
 String? redirectFor(SessionState s, String location) {
@@ -14,7 +19,7 @@ String? redirectFor(SessionState s, String location) {
     SessionLoading() => '/chargement',
     NeedsServer() => '/serveur',
     NeedsLogin() => '/connexion',
-    Authenticated() => '/',
+    Authenticated() => _setupRoutes.contains(location) ? '/' : location,
   };
   return target == location ? null : target;
 }
@@ -35,6 +40,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/serveur', builder: (_, _) => const ServerScreen()),
       GoRoute(path: '/connexion', builder: (_, _) => const LoginScreen()),
       GoRoute(path: '/', builder: (_, _) => const HomeScreen()),
+      GoRoute(
+        path: '/signaler',
+        builder: (_, state) =>
+            ReportScreen(initialQr: state.uri.queryParameters['qr']),
+      ),
+      GoRoute(path: '/taches', builder: (_, _) => const TasksScreen()),
+      GoRoute(path: '/envois', builder: (_, _) => const OperationsScreen()),
+      GoRoute(
+        path: '/fiche/:id',
+        builder: (_, state) => RecordScreen(id: state.pathParameters['id']!),
+      ),
     ],
   );
   ref.onDispose(() {
@@ -49,6 +65,7 @@ class EssorApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(syncSchedulerProvider);
     return MaterialApp.router(
       title: 'ESSOR QMS',
       debugShowCheckedModeBanner: false,

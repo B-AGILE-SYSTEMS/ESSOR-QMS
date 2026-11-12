@@ -12,7 +12,11 @@ export interface Step {
  */
 export function buildSteps(wf: Workflow | null, current: string): Step[] {
   if (!wf) return [];
-  const last = wf.states[wf.states.length - 1]?.code;
+  // État final du chemin principal : celui atteint depuis le dernier état non final.
+  const finals = new Set(wf.states.filter((s) => s.final).map((s) => s.code));
+  const lastOpen = [...wf.states].reverse().find((s) => !s.final)?.code;
+  const last =
+    wf.transitions.find((t) => t.from === lastOpen && finals.has(t.to))?.to ?? [...wf.states].reverse().find((s) => s.final)?.code;
   const shown = wf.states.filter((s) => !s.final || s.code === current || s.code === last);
   const idx = shown.findIndex((s) => s.code === current);
   return shown.map((s, i) => ({

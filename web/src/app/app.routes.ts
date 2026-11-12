@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { roleGuard } from './core/role.guard';
+import { INCIDENT_VIEW, NC_VIEW } from './features/fiches/record-type-view';
 import { AVenirComponent } from './features/a-venir/a-venir.component';
 import { ShellComponent } from './shell/shell.component';
 
@@ -28,12 +29,22 @@ export const routes: Routes = [
       {
         path: 'non-conformites/:id',
         loadComponent: () => import('./features/nc/nc-fiche.component').then((m) => m.NcFicheComponent),
-        data: { crumbs: ['Terrain', 'Non-conformités', 'Fiche'] },
+        data: { crumbs: ['Terrain', 'Non-conformités', 'Fiche'], view: NC_VIEW },
       },
       {
         path: 'non-conformites',
         loadComponent: () => import('./features/nc/nc-liste.component').then((m) => m.NcListeComponent),
-        data: { crumbs: ['Terrain', 'Non-conformités'] },
+        data: { crumbs: ['Terrain', 'Non-conformités'], view: NC_VIEW },
+      },
+      {
+        path: 'incidents/:id',
+        loadComponent: () => import('./features/nc/nc-fiche.component').then((m) => m.NcFicheComponent),
+        data: { crumbs: ['Terrain', 'Incidents & sécurité', 'Fiche'], view: INCIDENT_VIEW },
+      },
+      {
+        path: 'incidents',
+        loadComponent: () => import('./features/nc/nc-liste.component').then((m) => m.NcListeComponent),
+        data: { crumbs: ['Terrain', 'Incidents & sécurité'], view: INCIDENT_VIEW },
       },
       aVenir('audits', 'Terrain', 'Audits & inspections'),
       aVenir('indicateurs', 'Pilotage', 'Indicateurs'),

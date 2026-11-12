@@ -36,7 +36,7 @@
         @for (t of visibles(); track t.id) {
           <tr>
             <td class="mono">{{ date(t.dueDate) }}</td>
-            <td><a class="lnk" [routerLink]="['/non-conformites', t.id]">{{ t.title }}</a></td>
+            <td><a class="lnk" [routerLink]="pathOf(t)">{{ t.title }}</a></td>
             <td class="mono">{{ t.reference }}</td>
             <td>{{ t.siteName ?? '—' }}</td>
             <td>

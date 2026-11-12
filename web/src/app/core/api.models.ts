@@ -56,6 +56,10 @@ export interface RecordSummary {
   /** Fiches ACTION : curative | corrective | preventive (dans `actionType` ou `data.actionType`). */
   actionType?: ActionType | null;
   data?: RecordData;
+  /** M2 : UUID généré par le mobile à la création ; présent ⇒ fiche déclarée depuis le mobile. */
+  clientId?: string | null;
+  /** M2 : date terrain de l'événement (distincte de `createdAt`). */
+  occurredAt?: string | null;
 }
 
 export type RecordData = Record<string, unknown>;
@@ -120,6 +124,7 @@ export interface HistoryEntry {
 
 export interface MyTask extends RecordSummary {
   overdue: boolean;
+  recordType?: string | null;
 }
 
 export interface UserRef {
@@ -140,6 +145,7 @@ export interface AppNotification {
   type: string;
   title: string;
   recordId?: string | null;
+  recordType?: string | null;
   link?: string | null;
   read: boolean;
   createdAt: string;
@@ -152,8 +158,27 @@ export interface NotificationRule {
   enabled: boolean;
 }
 
+/** Pièce jointe (contrat M2). */
+export interface Attachment {
+  id: string;
+  fileName: string;
+  contentType: string;
+  size: number;
+  createdAt: string;
+  createdByName: string | null;
+}
+
+export const ATTACHMENT_TYPES = ['image/jpeg', 'image/png', 'application/pdf'] as const;
+export const ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024;
+
 export interface ApiError {
   error: string;
   message: string;
   details?: Record<string, unknown>;
+}
+
+/** Chemin de la fiche selon son type (INCIDENT → /incidents, sinon non-conformités). */
+export function recordPath(type: string | null | undefined, id: string): string {
+  const base = type === 'INCIDENT' ? '/incidents' : '/non-conformites';
+  return `${base}/${encodeURIComponent(id)}`;
 }

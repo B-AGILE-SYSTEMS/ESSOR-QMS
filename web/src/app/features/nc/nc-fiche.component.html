@@ -6,6 +6,7 @@
     <div>
       <span class="ref">{{ r.reference }} · {{ r.siteName ?? '—' }} · responsable {{ r.ownerName ?? 'non désigné' }}</span>
       <h2>{{ r.title }}</h2>
+      @if (mobile()) { <span class="badge mob">Déclaré depuis le mobile</span> }
     </div>
     <span [class]="'st ' + tone(r.status)"><i></i>{{ r.statusLabel }}@if (r.severity) { · {{ sevLabel[r.severity] }} }</span>
   </div>
@@ -48,8 +49,10 @@
             <dl class="kv">
               <dt>Référence</dt><dd class="mono">{{ r.reference }}</dd>
               <dt>Site</dt><dd>{{ r.siteName ?? '—' }}</dd>
-              <dt>Déclarée le</dt><dd class="mono">{{ dateTime(r.createdAt) }}</dd>
-              <dt>Déclarée par</dt><dd>{{ r.createdByName ?? '—' }}</dd>
+              @if (r.occurredAt) { <dt>Date terrain</dt><dd class="mono">{{ dateTime(r.occurredAt) }}</dd> }
+              <dt>{{ participle() }} le</dt><dd class="mono">{{ dateTime(r.createdAt) }}</dd>
+              @for (f of view().dataFields; track f.key) { <dt>{{ f.label }}</dt><dd>{{ value(f.key, r.data[f.key]) }}</dd> }
+              <dt>{{ participle() }} par</dt><dd>{{ r.createdByName ?? '—' }}</dd>
               <dt>Responsable</dt><dd>{{ newOwner()?.displayName ?? r.ownerName ?? 'non désigné' }}</dd>
             </dl>
             @if (!locked()) {
@@ -65,6 +68,9 @@
       }
       @case ('actions') {
         <eq-nc-actions [record]="r" [canAdd]="!locked()" (changed)="load()" />
+      }
+      @case ('pieces') {
+        <eq-attachments [recordId]="r.id" [canAdd]="!locked()" />
       }
       @case ('historique') {
         <ol class="hist box pad">

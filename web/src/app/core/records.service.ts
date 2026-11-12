@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import {
-  DashboardSummary, HistoryEntry, MyTask, NewAction, NewRecord, Page, QmsRecord, RecordPatch, RecordQuery,
+  Attachment, DashboardSummary, HistoryEntry, MyTask, NewAction, NewRecord, Page, QmsRecord, RecordPatch, RecordQuery,
   RecordSummary, RecordType, UserRef, Workflow,
 } from './api.models';
 
@@ -67,7 +67,35 @@ export class RecordsService {
     return firstValueFrom(this.http.get<Workflow>(`/api/record-types/${enc(code)}/workflow`));
   }
 
+  attachments(id: string): Promise<Attachment[]> {
+    return firstValueFrom(this.http.get<Attachment[]>(`/api/records/${enc(id)}/attachments`));
+  }
+
+  /** Envoi multipart (`file`) avec `Idempotency-Key` : un renvoi ne crée pas de doublon. */
+  addAttachment(id: string, file: File, key: string = newIdempotencyKey()): Promise<Attachment> {
+    const form = new FormData();
+    form.append('file', file, file.name);
+    return firstValueFrom(
+      this.http.post<Attachment>(`/api/records/${enc(id)}/attachments`, form, { headers: { 'Idempotency-Key': key } }),
+    );
+  }
+
   saveWorkflow(code: string, wf: unknown): Promise<Workflow> {
     return firstValueFrom(this.http.put<Workflow>(`/api/record-types/${enc(code)}/workflow`, wf));
   }
+}
+
+/** URL de téléchargement d'une pièce jointe (même origine : cookie de session BFF). */
+export function attachmentUrl(id: string): string {
+  return `/api/attachments/${enc(id)}`;
+}
+
+export function newIdempotencyKey(): string {
+  // randomUUID n'existe qu'en contexte sécurisé (HTTPS) : repli sur getRandomValues en HTTP sur réseau fermé.
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  const b = crypto.getRandomValues(new Uint8Array(16));
+  b[6] = (b[6] & 0x0f) | 0x40;
+  b[8] = (b[8] & 0x3f) | 0x80;
+  const h = Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('');
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
 }

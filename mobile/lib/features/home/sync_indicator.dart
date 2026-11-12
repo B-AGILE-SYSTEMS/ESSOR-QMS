@@ -40,12 +40,15 @@ class SyncStatusBar extends ConsumerWidget {
               color: online ? _onlineColor : _offlineColor,
             ),
             const SizedBox(width: 6),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
+            Flexible(
+              child: Text(
+                label,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],
@@ -72,6 +75,30 @@ class PendingBanner extends ConsumerWidget {
       child: Text(
         '⟳ $pending envoi(s) en attente — synchro auto dès le retour du réseau',
         style: const TextStyle(fontSize: 15),
+      ),
+    );
+  }
+}
+
+/// Bandeau des opérations refusées par le serveur (« à revoir »).
+class ReviewBanner extends ConsumerWidget {
+  const ReviewBanner({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final review = ref.watch(reviewCountProvider).value ?? 0;
+    if (review == 0) return const SizedBox.shrink();
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      key: const Key('reviewBanner'),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        border: Border.all(color: scheme.error, width: 2),
+      ),
+      child: Text(
+        '✕ $review envoi(s) à revoir — voir « État des envois »',
+        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
       ),
     );
   }

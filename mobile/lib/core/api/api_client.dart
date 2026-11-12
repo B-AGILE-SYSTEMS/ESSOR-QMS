@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:essor_mobile/core/auth/auth_service.dart';
 import 'package:essor_mobile/core/config/server_config.dart';
 import 'package:essor_mobile/core/api/models.dart';
+import 'package:essor_mobile/core/api/records.dart';
 
 /// Client HTTP : ajoute le Bearer et tente un renouvellement sur 401.
 class ApiClient {
@@ -62,5 +63,34 @@ class ApiClient {
     final l = b.logoUrl;
     if (l == null || l.isEmpty) return null;
     return Uri.parse('${server.base}/').resolve(l).toString();
+  }
+
+  Future<List<RecordSummary>> myTasks() async {
+    final r = await _dio.get<List<dynamic>>('/my-tasks');
+    return [
+      for (final j in r.data ?? const [])
+        RecordSummary.fromJson(j as Map<String, dynamic>),
+    ];
+  }
+
+  /// `GET /api/sync/changes?since=` → fiches modifiées et heure serveur.
+  Future<(List<RecordSummary>, String?)> changes(String? since) async {
+    final r = await _dio.get<Map<String, dynamic>>(
+      '/sync/changes',
+      queryParameters: {'since': ?since},
+    );
+    final body = r.data ?? const {};
+    return (
+      [
+        for (final j in body['records'] as List<dynamic>? ?? const [])
+          RecordSummary.fromJson(j as Map<String, dynamic>),
+      ],
+      body['serverTime'] as String?,
+    );
+  }
+
+  Future<RecordDetail> record(String id) async {
+    final r = await _dio.get<Map<String, dynamic>>('/records/$id');
+    return RecordDetail.fromJson(r.data!);
   }
 }

@@ -30,7 +30,7 @@ class NotificationService {
     enum Channel { IN_APP, EMAIL }
 
     record Notification(UUID id, String type, String title, UUID recordId, String link, boolean read,
-                        OffsetDateTime createdAt) {
+                        OffsetDateTime createdAt, String recordType) {
     }
 
     private final JdbcClient jdbc;
@@ -103,7 +103,8 @@ class NotificationService {
                 insert into notification (tenant_id, recipient_id, type, title, record_id, link, dedup_key)
                 values (app_current_tenant(), :r, :type, :title, :rec, :link, :dedup)
                 on conflict (tenant_id, recipient_id, dedup_key) do nothing
-                returning id, type, title, record_id, link, read, created_at
+                returning id, type, title, record_id, link, read, created_at,
+                          (select r.type_code from record r where r.id = record_id) as record_type
                 """)
                 .param("r", recipient).param("type", type.name()).param("title", title).param("rec", recordId)
                 .param("link", recordId == null ? null : "/records/" + recordId).param("dedup", dedupKey)

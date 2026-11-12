@@ -1,10 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { RecordSummary, SEVERITIES, Severity, WorkflowState } from '../../core/api.models';
 import { errorMessage } from '../../core/api-error';
 import { AuthService } from '../../core/auth.service';
 import { SEVERITY_LABELS, formatDate, statusTone } from '../../core/labels';
 import { RecordsService } from '../../core/records.service';
+import { NC_VIEW, RecordTypeView, fromMobile } from '../fiches/record-type-view';
 
 export const PAGE_SIZE = 20;
 
@@ -15,8 +16,8 @@ export const PAGE_SIZE = 20;
   imports: [RouterLink],
   template: `
     <div class="ph">
-      <div><span class="ref">Terrain</span><h2>Non-conformités</h2></div>
-      <a class="btn pri" routerLink="/non-conformites/declarer">＋ Déclarer</a>
+      <div><span class="ref">Terrain</span><h2>{{ view().plural }}</h2></div>
+      @if (view().declarePath; as dp) { <a class="btn pri" [routerLink]="dp">＋ Déclarer</a> }
     </div>
     <form class="filters box pad" role="search" (submit)="$event.preventDefault(); search()">
       <label class="field"><span>Recherche</span>
@@ -50,7 +51,8 @@ export const PAGE_SIZE = 20;
           @for (r of items(); track r.id) {
             <tr class="go" (click)="open(r)">
               <td class="mono">{{ r.reference }}</td>
-              <td><a class="lnk" [routerLink]="['/non-conformites', r.id]" (click)="$event.stopPropagation()">{{ r.title }}</a></td>
+              <td><a class="lnk" [routerLink]="[view().path, r.id]" (click)="$event.stopPropagation()">{{ r.title }}</a>
+                @if (mobile(r)) { <span class="badge mob" title="Déclaré depuis le mobile">mobile</span> }</td>
               <td>{{ r.siteName ?? '—' }}</td>
               <td>{{ r.severity ? sevLabel[r.severity] : '—' }}</td>
               <td>{{ r.ownerName ?? '—' }}</td>
@@ -58,7 +60,7 @@ export const PAGE_SIZE = 20;
               <td><span [class]="'st ' + tone(r.status)"><i></i>{{ r.statusLabel }}</span></td>
             </tr>
           } @empty {
-            <tr><td colspan="7" class="note">{{ loading() ? 'Chargement…' : 'Aucune non-conformité.' }}</td></tr>
+            <tr><td colspan="7" class="note">{{ loading() ? 'Chargement…' : 'Aucune fiche.' }}</td></tr>
           }
         </tbody>
       </table>
@@ -74,6 +76,7 @@ export const PAGE_SIZE = 20;
     .filters .field { margin: 0; }
     .pager { display: flex; gap: 8px; align-items: center; justify-content: flex-end; margin-top: 12px; }
     .pager .note { margin-right: auto; }
+    .mob { margin-left: 6px; }
     @media (max-width: 860px) { .filters { grid-template-columns: 1fr 1fr; } }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -87,6 +90,9 @@ export class NcListeComponent {
   protected readonly sevLabel: Record<Severity, string> = SEVERITY_LABELS;
   protected readonly date = formatDate;
   protected readonly tone = statusTone;
+  protected readonly mobile = fromMobile;
+  /** Type affiché (route `data.view`). */
+  readonly view = input<RecordTypeView>(NC_VIEW);
 
   protected readonly states = signal<WorkflowState[]>([]);
   protected readonly query = signal('');
@@ -101,8 +107,13 @@ export class NcListeComponent {
   protected readonly pages = computed(() => Math.max(1, Math.ceil(this.total() / PAGE_SIZE)));
 
   constructor() {
-    this.records.workflow('NC').then((wf) => this.states.set(wf.states), () => undefined);
-    void this.fetch();
+    effect(() => {
+      const code = this.view().code;
+      untracked(() => {
+        this.records.workflow(code).then((wf) => this.states.set(wf.states), () => undefined);
+        void this.fetch();
+      });
+    });
   }
 
   search(): void {
@@ -116,7 +127,7 @@ export class NcListeComponent {
   }
 
   protected open(r: RecordSummary): void {
-    void this.router.navigate(['/non-conformites', r.id]);
+    void this.router.navigate([this.view().path, r.id]);
   }
 
   private async fetch(): Promise<void> {
@@ -124,13 +135,13 @@ export class NcListeComponent {
     this.error.set(null);
     try {
       const res = await this.records.list({
-        type: 'NC', status: this.status(), severity: this.severity(), siteId: this.siteId(), q: this.query().trim(),
+        type: this.view().code, status: this.status(), severity: this.severity(), siteId: this.siteId(), q: this.query().trim(),
         page: this.page(), size: PAGE_SIZE,
       });
       this.items.set(res.items);
       this.total.set(res.total);
     } catch (e) {
-      this.error.set(errorMessage(e, 'Impossible de charger les non-conformités.'));
+      this.error.set(errorMessage(e, `Impossible de charger : ${this.view().plural.toLowerCase()}.`));
     } finally {
       this.loading.set(false);
     }

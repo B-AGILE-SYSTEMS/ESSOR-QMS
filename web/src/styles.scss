@@ -105,3 +105,6 @@ th.r, td.r { text-align: right; }
   p { margin: 0; }
 }
 .kv { display: grid; grid-template-columns: 150px 1fr; gap: 8px 14px; font-size: 14px; margin: 0; dt { color: var(--ink2); } dd { margin: 0; } }
+
+/* Badge court (ex. « déclaré depuis le mobile »). */
+.badge { display: inline-block; font: 600 11px/1 var(--mono); text-transform: uppercase; letter-spacing: .04em; padding: 3px 6px; border: var(--bw) solid var(--acc); color: var(--acc); background: var(--surf); }

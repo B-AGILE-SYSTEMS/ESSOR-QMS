@@ -1,14 +1,15 @@
 import { ChangeDetectionStrategy, Component, inject, output, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { AppNotification } from '../../core/api.models';
+import { AppNotification, recordPath } from '../../core/api.models';
 import { errorMessage } from '../../core/api-error';
 import { formatDateTime } from '../../core/labels';
 import { NotificationsService } from '../../core/notifications.service';
 
 /** Lien interne vers la fiche (jamais d'URL externe). */
 export function notificationTarget(n: AppNotification): string | null {
-  if (n.link && n.link.startsWith('/') && !n.link.startsWith('//')) return n.link;
-  return n.recordId ? `/non-conformites/${encodeURIComponent(n.recordId)}` : null;
+  if (n.recordId) return recordPath(n.recordType, n.recordId);
+  if (n.link && n.link.startsWith('/') && !n.link.startsWith('//') && !n.link.startsWith('/records/')) return n.link;
+  return null;
 }
 
 /** Panneau des notifications : liste, marquer lu, tout marquer lu. */
