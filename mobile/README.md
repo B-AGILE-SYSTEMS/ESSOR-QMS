@@ -14,6 +14,12 @@ Application terrain Android et iOS, hors ligne d'abord.
 - Les jetons sont gardés uniquement dans `flutter_secure_storage`.
 - Après la connexion, l'application appelle `GET /api/me` et `GET /api/tenant/branding`, puis applique le logo, la couleur principale et le thème (`clair`, `sombre`, `terrain` = contraste maximal).
 
+## Hors ligne au démarrage
+- Après chaque chargement réussi, le profil (`/api/me`) et l'apparence sont mis en cache dans le stockage sécurisé (`lib/core/api/profile_cache.dart`), liés à l'URL du serveur.
+- Si le serveur est injoignable au démarrage, l'application ouvre l'accueil avec le dernier profil connu ; la barre d'état affiche « Hors ligne ».
+- Seul un 401 reçu du serveur (jeton révoqué, renouvellement refusé) efface jetons et cache et renvoie vers la connexion. La déconnexion et le changement de serveur effacent aussi le cache.
+- Sans cache (premier usage hors ligne), l'application renvoie vers la connexion.
+
 ## Accueil terrain
 Il suit l'écran 1 de la maquette mobile : barre d'état hors ligne / synchro toujours visible, tuiles, gros boutons en bas (84 px et 64 px). Les actions sont simulées : elles sont mises dans la file locale (M2).
 
@@ -28,5 +34,6 @@ flutter build apk --debug
 Le code généré (`*.g.dart`) est versionné. La CI vérifie qu'il est à jour (`.github/workflows/mobile.yml`).
 
 ## Limites M0
-- Sans réseau au démarrage, le profil (`/api/me`, apparence) n'est pas encore mis en cache : l'application renvoie vers la connexion.
+- Le profil en cache n'est pas rafraîchi automatiquement au retour du réseau : il l'est au prochain démarrage.
+- Le logo n'est pas mis en cache : hors ligne, les initiales du client s'affichent à sa place si l'image ne charge pas.
 - HTTP en clair : Android et iOS le bloquent par défaut. Le serveur doit être en HTTPS (certificat interne installé sur les terminaux).

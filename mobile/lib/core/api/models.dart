@@ -10,6 +10,8 @@ class NamedRef {
     code: j['code'] as String? ?? '',
     name: j['name'] as String? ?? '',
   );
+
+  Map<String, dynamic> toJson() => {'id': id, 'code': code, 'name': name};
 }
 
 class Me {
@@ -41,6 +43,14 @@ class Me {
       ),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'username': username,
+    'displayName': displayName,
+    'tenant': tenant.toJson(),
+    'sites': [for (final s in sites) s.toJson()],
+    'roles': roles,
+  };
 }
 
 enum AppTheme { clair, sombre, terrain }
@@ -65,4 +75,10 @@ class Branding {
       orElse: () => AppTheme.clair,
     ),
   );
+
+  Map<String, dynamic> toJson() => {
+    'logoUrl': logoUrl,
+    'primaryColor': primaryColor,
+    'theme': theme.name,
+  };
 }
