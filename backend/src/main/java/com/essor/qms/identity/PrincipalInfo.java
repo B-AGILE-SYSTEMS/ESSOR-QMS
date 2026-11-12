@@ -8,7 +8,8 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
 /** Informations d'identité extraites d'une session OIDC (BFF) ou d'un jeton Bearer (mobile). */
-record PrincipalInfo(String subject, String username, String displayName, String tenantCode, List<String> roles) {
+record PrincipalInfo(String subject, String username, String displayName, String tenantCode, List<String> roles,
+                     String email) {
 
     static PrincipalInfo from(Authentication auth, String tenantClaim) {
         Map<String, Object> claims;
@@ -31,7 +32,8 @@ record PrincipalInfo(String subject, String username, String displayName, String
                 .sorted()
                 .toList();
         return new PrincipalInfo(sub.toString(), username, str(claims.get("name"), username),
-                str(claims.get(tenantClaim), null), roles);
+                str(claims.get(tenantClaim), null), roles,
+                str(claims.get("email"), null));
     }
 
     private static String str(Object value, String fallback) {

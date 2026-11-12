@@ -45,14 +45,16 @@
           class="btn ghost"
           [attr.aria-expanded]="notifOpen()"
           aria-controls="notif-panel"
+          [attr.aria-label]="'Notifications, ' + notifications.unread() + ' non lue(s)'"
           (click)="notifOpen.set(!notifOpen())"
         >
           Notifications
+          @if (notifications.unread()) {
+            <span class="badge" aria-hidden="true">{{ notifications.unread() }}</span>
+          }
         </button>
         @if (notifOpen()) {
-          <div id="notif-panel" class="notif-panel" role="region" aria-label="Notifications">
-            <p class="note">Aucune notification.</p>
-          </div>
+          <eq-notifications-panel (closed)="notifOpen.set(false)" />
         }
       </div>
       <div class="who">

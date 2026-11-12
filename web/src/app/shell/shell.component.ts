@@ -5,6 +5,8 @@ import { filter, map } from 'rxjs';
 import { AuthService } from '../core/auth.service';
 import { BrandingService } from '../core/branding.service';
 import { NAV_FAMILIES, NavItem } from './navigation.model';
+import { NotificationsService } from '../core/notifications.service';
+import { NotificationsPanelComponent } from './notifications/notifications-panel.component';
 import { PaletteComponent } from './palette.component';
 
 interface Crumb {
@@ -14,7 +16,7 @@ interface Crumb {
 @Component({
   selector: 'eq-shell',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, PaletteComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, PaletteComponent, NotificationsPanelComponent],
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -22,6 +24,7 @@ interface Crumb {
 export class ShellComponent {
   protected readonly auth = inject(AuthService);
   protected readonly branding = inject(BrandingService);
+  protected readonly notifications = inject(NotificationsService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
@@ -39,6 +42,11 @@ export class ShellComponent {
     ),
     { initialValue: this.buildCrumbs() },
   );
+
+  constructor() {
+    this.notifications.load().catch(() => undefined);
+    this.notifications.connect();
+  }
 
   private visible(i: NavItem): boolean {
     return !i.role || this.auth.hasRole(i.role);

@@ -24,6 +24,20 @@ spring:
     # Les migrations s'exécutent avec le rôle propriétaire.
     user: ${ESSOR_DB_OWNER_USER:essor_owner}
     password: ${ESSOR_DB_OWNER_PASSWORD:}
+  # E-mail des notifications : désactivé tant que ESSOR_SMTP_HOST est vide.
+  mail:
+    host: ${ESSOR_SMTP_HOST:}
+    port: ${ESSOR_SMTP_PORT:25}
+    username: ${ESSOR_SMTP_USERNAME:}
+    password: ${ESSOR_SMTP_PASSWORD:}
+    properties:
+      mail.smtp.auth: ${ESSOR_SMTP_AUTH:false}
+      mail.smtp.starttls.enable: ${ESSOR_SMTP_STARTTLS:false}
+      mail.smtp.connectiontimeout: 5000
+      mail.smtp.timeout: 5000
+  mvc:
+    async:
+      request-timeout: 1800000   # flux SSE des notifications (30 min)
   servlet:
     multipart:
       max-file-size: 1MB      # le service refuse au-delà de 512 Ko avec un message clair
@@ -58,6 +72,10 @@ essor:
   tenancy:
     default-tenant-code: ${ESSOR_DEFAULT_TENANT_CODE:DEMO}
     tenant-claim: tenant
+  smtp:
+    from: ${ESSOR_SMTP_FROM:essor-qms@localhost}
+  notifications:
+    deadline-cron: ${ESSOR_DEADLINE_CRON:0 0 6 * * *}   # retards et échéances J-2, chaque jour à 6 h
   security:
     end-session-uri: ${ESSOR_OIDC_PUBLIC_URL:http://localhost/auth/realms/essor}/protocol/openid-connect/logout
     post-logout-redirect-uri: ${ESSOR_PUBLIC_URL:http://localhost}/
@@ -67,6 +85,9 @@ management:
     web:
       exposure:
         include: health
+  health:
+    mail:
+      enabled: false   # un SMTP indisponible ne rend pas l'application « DOWN »
   endpoint:
     health:
       probes:

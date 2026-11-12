@@ -68,6 +68,16 @@ services:
       ESSOR_COOKIE_SECURE: ${ESSOR_COOKIE_SECURE:-false}
       ESSOR_DEFAULT_TENANT_CODE: ${ESSOR_DEFAULT_TENANT_CODE:-DEMO}
       ESSOR_STORAGE_DIR: /var/lib/essor/files
+      # "demo" : charge les données de démonstration (NC et actions) ; vide en production.
+      SPRING_PROFILES_ACTIVE: ${ESSOR_PROFILES:-}
+      # E-mail des notifications : désactivé si ESSOR_SMTP_HOST est vide.
+      ESSOR_SMTP_HOST: ${ESSOR_SMTP_HOST:-}
+      ESSOR_SMTP_PORT: ${ESSOR_SMTP_PORT:-25}
+      ESSOR_SMTP_USERNAME: ${ESSOR_SMTP_USERNAME:-}
+      ESSOR_SMTP_PASSWORD: ${ESSOR_SMTP_PASSWORD:-}
+      ESSOR_SMTP_AUTH: ${ESSOR_SMTP_AUTH:-false}
+      ESSOR_SMTP_STARTTLS: ${ESSOR_SMTP_STARTTLS:-false}
+      ESSOR_SMTP_FROM: ${ESSOR_SMTP_FROM:-essor-qms@localhost}
     volumes:
       - files:/var/lib/essor/files
     depends_on:
@@ -83,7 +93,6 @@ services:
       context: ../web
     image: essor-qms/web:local
     restart: unless-stopped
-    profiles: ["web"]
 
   nginx:
     image: nginx:1.27-alpine

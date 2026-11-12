@@ -29,10 +29,7 @@ nav[aria-label='Navigation principale'] { padding: 10px 0; flex: 1; }
   kbd { margin-left: auto; font-family: var(--mono); font-size: 12px; border: 1px solid var(--line2); padding: 0 5px; }
 }
 .notif { position: relative; }
-.notif-panel {
-  position: absolute; right: 0; top: calc(100% + 6px); width: 300px; z-index: 20; background: var(--surf);
-  border: var(--bw) solid var(--line2); padding: 12px 14px;
-}
+.badge { font-family: var(--mono); font-size: 12px; background: var(--acc); color: var(--acc-ink); padding: 0 6px; min-width: 20px; }
 .who { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink2); }
 .av { width: 32px; height: 32px; display: grid; place-items: center; background: var(--ink); color: var(--surf); font-weight: 700; font-size: 12px; }
 .crumb { font-size: 13px; color: var(--ink2); padding: 14px 24px 0; display: flex; gap: 6px; flex-wrap: wrap; b { color: var(--ink); } }

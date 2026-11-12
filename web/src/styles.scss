@@ -75,3 +75,33 @@ button, input, select, textarea { font: inherit; color: inherit; }
   letter-spacing: .08em; border: var(--bw) dashed var(--warn); color: var(--warn); padding: 1px 6px;
 }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Tableaux et blocs partagés */
+.tw { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th {
+  text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink2);
+  font-weight: 700; padding: 10px 12px; border-bottom: 2px solid var(--ink); white-space: nowrap;
+}
+td { padding: 11px 12px; border-bottom: var(--bw) solid var(--line); vertical-align: middle; }
+tr.go { cursor: pointer; &:hover td { background: var(--surf2); } }
+td a.lnk, a.lnk { color: inherit; font-weight: 700; text-decoration: none; &:hover { text-decoration: underline; } }
+th.r, td.r { text-align: right; }
+.sec { margin-top: 22px; }
+.sec h3 {
+  font-size: 13px; text-transform: uppercase; letter-spacing: .1em; margin: 0 0 8px; color: var(--ink2);
+  display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+}
+.err { border: var(--bw) solid var(--crit); color: var(--crit); background: var(--surf); padding: 10px 14px; margin: 0 0 14px; font-size: 14px; }
+.ok-msg { border: var(--bw) solid var(--ok); color: var(--ok); background: var(--surf); padding: 10px 14px; margin: 0 0 14px; font-size: 14px; }
+.field input, .field select, .field textarea {
+  width: 100%; border: var(--bw) solid var(--line2); background: var(--surf); padding: 9px 10px; min-height: 40px;
+}
+.two { display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; }
+@media (max-width: 860px) { .two { grid-template-columns: 1fr; } }
+.nextbar {
+  display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap;
+  border: var(--bw) solid var(--line); border-top: 3px solid var(--acc); background: var(--surf); padding: 14px 18px; margin-top: 20px;
+  p { margin: 0; }
+}
+.kv { display: grid; grid-template-columns: 150px 1fr; gap: 8px 14px; font-size: 14px; margin: 0; dt { color: var(--ink2); } dd { margin: 0; } }
