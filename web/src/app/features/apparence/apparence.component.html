@@ -1,0 +1,58 @@
+<div class="ph">
+  <div><span class="ref">Paramétrage · Entreprise</span><h2>Apparence de l'application</h2></div>
+  <div class="chips">
+    <button type="button" class="btn" [disabled]="!dirty() || busy()" (click)="cancel()">Annuler</button>
+    <button type="button" class="btn pri" [disabled]="!dirty() || busy()" (click)="save()">Enregistrer</button>
+  </div>
+</div>
+@if (message(); as m) {
+  <p class="msg" [class.err]="m.kind === 'err'" role="status">{{ m.text }}</p>
+}
+<div class="two">
+  <div class="box pad">
+    <span class="field"><span id="lbl-theme">Thème par défaut</span></span>
+    <div class="chips grp" role="group" aria-labelledby="lbl-theme">
+      @for (t of themes; track t.id) {
+        <button type="button" class="chip" [attr.aria-pressed]="branding.current().theme === t.id" (click)="setTheme(t.id)">
+          {{ t.label }}
+        </button>
+      }
+    </div>
+    <span class="field"><span id="lbl-color">Couleur principale</span></span>
+    <div class="chips grp" role="group" aria-labelledby="lbl-color">
+      @for (c of colors; track c.hex) {
+        <button type="button" class="chip" [attr.aria-pressed]="branding.current().primaryColor === c.hex" (click)="setColor(c.hex)">
+          <span class="sw" [style.background]="c.hex"></span>{{ c.label }}
+        </button>
+      }
+      <label class="chip custom">
+        <input #picker type="color" [value]="branding.current().primaryColor" (input)="setColor(picker.value)" aria-label="Couleur personnalisée" />
+        Personnalisée <span class="mono">{{ branding.current().primaryColor }}</span>
+      </label>
+    </div>
+    <span class="field"><span>Logo de l'entreprise (PNG, SVG, JPEG · ≤ 512 Ko)</span></span>
+    <div class="logo-row">
+      <div class="logo-box big">
+        @if (branding.logoSrc(); as src) { <img [src]="src" alt="Logo actuel" /> } @else { {{ (auth.me()?.tenant?.code ?? 'EQ').slice(0, 2) }} }
+      </div>
+      <label class="btn">
+        Choisir un fichier…
+        <input type="file" accept="image/png,image/svg+xml,image/jpeg" class="visually-hidden" (change)="onLogo($event)" [disabled]="busy()" />
+      </label>
+      <span class="note">Utilisé dans l'en-tête web, le mobile et les rapports PDF.</span>
+    </div>
+  </div>
+  <div>
+    <p class="note cap">Aperçu d'en-tête de rapport PDF</p>
+    <div class="pdf">
+      <div class="hd">
+        <div class="lg">
+          @if (branding.logoSrc(); as src) { <img [src]="src" alt="" /> } @else { {{ (auth.me()?.tenant?.code ?? 'EQ').slice(0, 2) }} }
+        </div>
+        <div><h4>Rapport de non-conformité</h4><p>{{ auth.me()?.tenant?.name }}</p></div>
+        <div class="meta">NC-EXEMPLE<br />Édité le {{ today }}<br />Page 1/1</div>
+      </div>
+      <p class="body">Aperçu indicatif — le rapport PDF arrive avec le module métier.</p>
+    </div>
+  </div>
+</div>

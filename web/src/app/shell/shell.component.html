@@ -1,0 +1,80 @@
+<div class="shell">
+  <aside class="rail">
+    <div class="brand">
+      <div class="logo-box">
+        @if (branding.logoSrc(); as src) {
+          <img [src]="src" alt="Logo de l'entreprise" />
+        } @else {
+          {{ (auth.me()?.tenant?.code ?? 'EQ').slice(0, 2) }}
+        }
+      </div>
+      <div>
+        <b>{{ auth.me()?.tenant?.name }}</b>
+        <small>ESSOR QMS</small>
+      </div>
+    </div>
+    <nav aria-label="Navigation principale">
+      @for (fam of families(); track fam.label) {
+        <div class="fam">{{ fam.label }}</div>
+        @for (item of fam.items; track item.path) {
+          <a [routerLink]="item.path" routerLinkActive="on" ariaCurrentWhenActive="page">{{ item.label }}</a>
+        }
+      }
+    </nav>
+    <label class="site">
+      Site actif
+      <select (change)="onSite($event)" aria-label="Site actif">
+        <option value="">Tous les sites</option>
+        @for (s of auth.me()?.sites ?? []; track s.id) {
+          <option [value]="s.id">{{ s.name }}</option>
+        }
+      </select>
+    </label>
+  </aside>
+
+  <div class="main">
+    <header class="top">
+      <button type="button" class="cmd" (click)="paletteOpen.set(true)">
+        <span aria-hidden="true">⌕</span> Rechercher une NC, un équipement, une action… ou taper une commande
+        <kbd>Ctrl K</kbd>
+      </button>
+      <a class="btn pri" routerLink="/non-conformites/declarer">＋ Déclarer une NC</a>
+      <div class="notif">
+        <button
+          type="button"
+          class="btn ghost"
+          [attr.aria-expanded]="notifOpen()"
+          aria-controls="notif-panel"
+          (click)="notifOpen.set(!notifOpen())"
+        >
+          Notifications
+        </button>
+        @if (notifOpen()) {
+          <div id="notif-panel" class="notif-panel" role="region" aria-label="Notifications">
+            <p class="note">Aucune notification.</p>
+          </div>
+        }
+      </div>
+      <div class="who">
+        <div class="av" aria-hidden="true">{{ auth.initials() }}</div>
+        <span>{{ auth.me()?.displayName }}</span>
+        <button type="button" class="btn ghost" (click)="logout()">Se déconnecter</button>
+      </div>
+    </header>
+    <nav class="crumb" aria-label="Fil d'Ariane">
+      @for (c of crumbs(); track $index; let last = $last) {
+        @if (last) {
+          <b aria-current="page">{{ c.label }}</b>
+        } @else {
+          <span>{{ c.label }}</span><span aria-hidden="true">›</span>
+        }
+      }
+    </nav>
+    <main class="page">
+      <router-outlet />
+    </main>
+  </div>
+</div>
+@if (paletteOpen()) {
+  <eq-palette (closed)="paletteOpen.set(false)" />
+}
