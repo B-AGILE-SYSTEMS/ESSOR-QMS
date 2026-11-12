@@ -216,4 +216,45 @@ class MobileSyncIT extends AbstractIntegrationTest {
                 .path("records").findValuesAsText("id")).containsExactly(id);
         call(get("/api/sync/changes").param("since", "hier"), TERRAIN, null, null, 400);
     }
+
+    @Test
+    void recordTypeDansMesTachesEtNotificationsEtClientIdNulSurLeWeb() throws Exception {
+        String terrainId = null;
+        call(get("/api/me"), TERRAIN, null, null, 200);
+        for (JsonNode u : call(get("/api/users").param("q", "m.terrain"), QUALITE, null, null, 200)) {
+            terrainId = u.path("id").asText();
+        }
+        JsonNode web = call(post("/api/records"), QUALITE, """
+                {"type":"INCIDENT","siteId":"%s","title":"Déclaré sur le web"}""".formatted(siteId(QUALITE)), null,
+                201);
+        assertThat(web.get("clientId").isNull()).isTrue();
+        assertThat(web.get("occurredAt").isNull()).isTrue();
+        String id = web.path("id").asText();
+        call(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch("/api/records/" + id), QUALITE,
+                "{\"ownerId\":\"" + terrainId + "\"}", null, 200);
+
+        JsonNode tasks = call(get("/api/my-tasks"), TERRAIN, null, null, 200);
+        JsonNode mine = null;
+        for (JsonNode t : tasks) {
+            if (t.path("id").asText().equals(id)) {
+                mine = t;
+            }
+        }
+        assertThat(mine).isNotNull();
+        assertThat(mine.path("recordType").asText()).isEqualTo("INCIDENT");
+        JsonNode notifs = call(get("/api/notifications"), TERRAIN, null, null, 200).path("items");
+        boolean found = false;
+        for (JsonNode n : notifs) {
+            if (n.path("recordId").asText().equals(id)) {
+                found = true;
+                assertThat(n.path("recordType").asText()).isEqualTo("INCIDENT");
+            }
+        }
+        assertThat(found).isTrue();
+        JsonNode wf = call(get("/api/record-types/INCIDENT/workflow"), TERRAIN, null, null, 200);
+        for (JsonNode st : wf.path("states")) {
+            boolean expectedFinal = st.path("code").asText().matches("CLOS|CLASSE_SANS_SUITE");
+            assertThat(st.path("final").asBoolean()).as(st.path("code").asText()).isEqualTo(expectedFinal);
+        }
+    }
 }

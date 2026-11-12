@@ -57,7 +57,9 @@ class NotificationController {
               @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
         String filter = Boolean.TRUE.equals(unread) ? " and not read" : "";
         List<Notification> items = jdbc.sql("""
-                select id, type, title, record_id, link, read, created_at from notification
+                select id, type, title, record_id, link, read, created_at,
+                       (select r.type_code from record r where r.id = notification.record_id) as record_type
+                from notification
                 where recipient_id = app_current_user()""" + filter + """
                  order by created_at desc, id limit :size offset :offset
                 """).param("size", size).param("offset", (long) page * size).query(Notification.class).list();

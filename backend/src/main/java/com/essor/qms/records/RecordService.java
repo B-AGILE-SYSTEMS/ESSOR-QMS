@@ -443,7 +443,7 @@ class RecordService {
         return new RecordSummary(r.id(), r.reference(), r.typeCode(), r.status(),
                 wf == null ? r.status() : wf.label(r.status()), r.title(), r.severity(), r.siteId(), r.siteName(),
                 r.ownerId(), r.ownerName(), r.dueDate(), r.createdAt().toInstant(), overdue, r.clientId(),
-                instant(r.occurredAt()), instant(r.updatedAt()));
+                instant(r.occurredAt()), instant(r.updatedAt()), r.typeCode());
     }
 
     private static Instant instant(OffsetDateTime t) {

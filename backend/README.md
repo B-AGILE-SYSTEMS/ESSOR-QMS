@@ -72,7 +72,7 @@ et leurs actions ; comptes préparés `pending:<username>` rattachés au compte 
 | POST | `/api/records/{id}/attachments` (multipart `file`, JPEG/PNG/PDF ≤ 10 Mo, type vérifié sur le contenu) → 201 `{id,fileName,contentType,size,createdAt,createdByName}` | sauf READER |
 | GET | `/api/records/{id}/attachments` → liste ; `/api/attachments/{id}` (inline, `?download=true` : attachment ; `nosniff`) | authentifié |
 
-`RecordSummary` et `Record` gagnent `clientId`, `occurredAt`, `updatedAt` (badge « mobile » : `clientId` non nul).
+`RecordSummary` et `Record` gagnent `clientId`, `occurredAt`, `updatedAt` ; `RecordSummary` (dont `/api/my-tasks`) et les notifications gagnent `recordType` (badge « mobile » : `clientId` non nul).
 Idempotence : tout POST `/api/**` portant `Idempotency-Key` (UUID) est mémorisé 48 h par (tenant, clé) dans
 `idempotency_key` ; un renvoi rend le même statut et le même corps (en-tête `Idempotent-Replayed: true`).
 Clé réutilisée pour une autre URL : 409 `idempotency_key_reused` ; requête jumelle en cours : 409

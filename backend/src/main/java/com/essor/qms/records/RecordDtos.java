@@ -44,7 +44,7 @@ final class RecordDtos {
     record RecordSummary(UUID id, String reference, String type, String status, String statusLabel, String title,
                          String severity, UUID siteId, String siteName, UUID ownerId, String ownerName,
                          LocalDate dueDate, Instant createdAt, boolean overdue, UUID clientId, Instant occurredAt,
-                         Instant updatedAt) {
+                         Instant updatedAt, String recordType) {
     }
 
     record RecordView(UUID id, String reference, String type, String status, String statusLabel, String title,
