@@ -131,7 +131,7 @@
       "directAccessGrantsEnabled": false,
       "implicitFlowEnabled": false,
       "redirectUris": [
-        "com.essor.qms:/oauthredirect",
+        "ma.bagile.essor:/oauthredirect",
         "http://localhost:*"
       ],
       "webOrigins": [
