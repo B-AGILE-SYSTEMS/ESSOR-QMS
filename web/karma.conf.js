@@ -10,7 +10,12 @@ module.exports = function (config) {
       require('@angular-devkit/build-angular/plugins/karma'),
     ],
     reporters: ['progress', 'coverage'],
-    coverageReporter: { dir: require('path').join(__dirname, './coverage'), reporters: [{ type: 'text-summary' }] },
+    coverageReporter: {
+      dir: require('path').join(__dirname, './coverage'),
+      subdir: '.',
+      reporters: [{ type: 'lcovonly' }, { type: 'text-summary' }, { type: 'text' }],
+      check: { global: { lines: 60 } },
+    },
     customLaunchers: {
       ChromeHeadlessCI: { base: 'ChromeHeadless', flags: ['--no-sandbox', '--disable-gpu'] },
     },

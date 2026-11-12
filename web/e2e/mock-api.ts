@@ -7,7 +7,7 @@ import { Page, Route } from '@playwright/test';
 type Rec = {
   id: string; reference: string; type: string; status: string; title: string; description: string | null;
   severity: string | null; siteId: string; siteName: string; ownerId: string | null; ownerName: string | null;
-  dueDate: string | null; data: Record<string, unknown>; createdAt: string; createdBy: string; parentId?: string;
+  dueDate: string | null; data: Record<string, unknown>; createdAt: string; createdBy: string; createdByName: string; parentId?: string;
   actionType?: string;
 };
 
@@ -76,7 +76,7 @@ export class MockApi {
       status: status ?? (type === 'NC' ? 'DECLAREE' : 'A_FAIRE'), title: String(b['title']), description: (b['description'] as string) ?? null,
       severity: (b['severity'] as string) ?? null, siteId: site.id, siteName: site.name, ownerId: owner?.id ?? null,
       ownerName: owner?.displayName ?? null, dueDate: (b['dueDate'] as string) ?? null, data: (b['data'] as Record<string, unknown>) ?? {},
-      createdAt: this.now(), createdBy: 'Youssef Amrani', parentId, actionType: b['actionType'] as string | undefined,
+      createdAt: this.now(), createdBy: 'u-youssef', createdByName: 'Youssef Amrani', parentId, actionType: b['actionType'] as string | undefined,
     };
     this.records.push(rec);
     return rec;
@@ -106,8 +106,8 @@ export class MockApi {
   }
 
   summary(r: Rec) {
-    const { data, description, createdBy, parentId, ...s } = r;
-    void data; void description; void createdBy; void parentId;
+    const { data, description, createdBy, createdByName, parentId, ...s } = r;
+    void data; void description; void createdBy; void createdByName; void parentId;
     return { ...s, statusLabel: LABELS[r.status] };
   }
 
@@ -172,7 +172,7 @@ export class MockApi {
         if (body.ownerId) r.ownerName = USERS.find((u) => u.id === body.ownerId)?.displayName ?? null;
         return json(this.full(r));
       }
-      if (rest === '/history') return json([{ at: r.createdAt, author: r.createdBy, action: 'Création', comment: null }]);
+      if (rest === '/history') return json([{ at: r.createdAt, author: r.createdByName, action: 'Création', comment: null }]);
       if (rest === '/actions') return json(this.full(this.create({ ...body, type: 'ACTION', siteId: r.siteId }, 'A_FAIRE', body.ownerId, r.id)), 201);
       const tm = rest.match(/^\/transitions\/(.+)$/);
       if (tm) {

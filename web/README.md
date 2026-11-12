@@ -8,7 +8,8 @@ Angular 18 (standalone, signals, SCSS), sans bibliothèque UI. Direction visuell
 npm ci
 npm start          # http://localhost:4200 (proxifier /api, /oauth2, /logout vers le back-end)
 npm run lint
-npm test           # Karma + Chrome headless (CHROME_BIN si besoin)
+npm test           # Karma + Chrome headless (CHROME_BIN si besoin) ; couverture lcov + texte dans coverage/, seuil 60 % lignes
+npm audit --omit=dev --audit-level=high   # job CI « audit »
 npm run build      # dist/web/browser
 npm run e2e        # Playwright contre l'API simulée e2e/mock-api.ts (CHROME_BIN ou `npx playwright install chromium`)
 docker build -t essor-qms/web:local .   # Nginx statique, port 80

@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.3.5</version>
+    <version>3.5.16</version>
     <relativePath/>
   </parent>
   <groupId>com.essor</groupId>
@@ -15,7 +15,7 @@
 
   <properties>
     <java.version>21</java.version>
-    <spring-modulith.version>1.2.5</spring-modulith.version>
+    <spring-modulith.version>1.4.14</spring-modulith.version>
     <!-- 1.21.4+ : compatible avec Docker Engine 29 (API minimale relevée) -->
     <testcontainers.version>1.21.4</testcontainers.version>
   </properties>
@@ -60,6 +60,17 @@
       <plugin><groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId></plugin>
       <!-- tests d'intégration (*IT) exécutés par mvn verify ; exécutions définies par le parent Spring Boot -->
       <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-failsafe-plugin</artifactId></plugin>
+      <!-- Analyse OWASP des dépendances : lancée à la demande (mvn dependency-check:check), non bloquante. -->
+      <plugin>
+        <groupId>org.owasp</groupId>
+        <artifactId>dependency-check-maven</artifactId>
+        <version>12.2.2</version>
+        <configuration>
+          <failOnError>false</failOnError>
+          <failBuildOnCVSS>11</failBuildOnCVSS>
+          <formats><format>HTML</format><format>JSON</format></formats>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 </project>

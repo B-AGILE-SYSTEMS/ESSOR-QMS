@@ -155,6 +155,8 @@ class RecordsIT extends AbstractIntegrationTest {
         assertThat(last.path("transition").asText()).isEqualTo("cloturer");
         assertThat(last.path("comment").asText()).isEqualTo("ok cloturer");
         assertThat(last.path("author").asText()).isEqualTo("Nom r.qualite");
+        JsonNode fiche = call(get("/api/records/" + id), QUALITE, null, 200);
+        assertThat(fiche.path("createdByName").asText()).startsWith("Nom r.");
         assertThat(last.path("diff").path("status").path("to").asText()).isEqualTo("CLOTUREE");
 
         // notifications du responsable : assignation (NC + action) et transitions

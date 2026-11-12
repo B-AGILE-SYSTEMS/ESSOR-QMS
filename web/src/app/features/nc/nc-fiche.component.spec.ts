@@ -8,7 +8,7 @@ import { NcFicheComponent } from './nc-fiche.component';
 const REC: QmsRecord = {
   id: 'r1', reference: 'NC-2026-0001', type: 'NC', status: 'ANALYSE', statusLabel: 'Analyse', title: 'Fuite',
   description: '', severity: 'majeure', siteId: 's1', siteName: 'Kénitra', ownerId: 'u1', ownerName: 'K. Tazi',
-  dueDate: null, data: {}, createdAt: '2026-11-12T08:00:00Z', createdBy: 'Y. Amrani', children: [],
+  dueDate: null, data: {}, createdAt: '2026-11-12T08:00:00Z', createdBy: 'u-9', createdByName: 'Y. Amrani', children: [],
   availableTransitions: [
     { code: 'valider_analyse', label: "Valider l'analyse", missing: ['data.causeRacine'] },
     { code: 'renvoyer_analyse', label: 'Renvoyer', missing: [] },
@@ -39,6 +39,13 @@ describe('NcFicheComponent', () => {
 
   const button = (label: string) =>
     Array.from(el().querySelectorAll<HTMLButtonElement>('.nextbar button')).find((b) => b.textContent!.includes(label))!;
+
+  it('affiche le nom du déclarant et non son identifiant', () => {
+    (el().querySelector('#tab-description') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    const dd = Array.from(el().querySelectorAll('dt')).find((d) => d.textContent === 'Déclarée par')?.nextElementSibling;
+    expect(dd?.textContent).toBe('Y. Amrani');
+  });
 
   it("ouvre l'onglet Analyse et désactive la transition incomplète en listant ce qui manque", () => {
     expect(el().querySelector('[role=tab][aria-selected=true]')!.textContent).toContain('Analyse');
