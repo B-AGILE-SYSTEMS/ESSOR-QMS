@@ -15,6 +15,7 @@ import 'package:essor_mobile/core/providers.dart';
 import 'package:essor_mobile/core/sync/sync_database.dart';
 import 'package:essor_mobile/features/home/sync_indicator.dart';
 
+import '../fake_server.dart';
 import '../fakes.dart';
 
 Future<ProviderContainer> pumpApp(
@@ -33,10 +34,7 @@ Future<ProviderContainer> pumpApp(
       apiClientFactoryProvider.overrideWith(
         (ref) => (server) {
           final dio = Dio()
-            ..httpClientAdapter = FakeAdapter(
-              respond ??
-                  (o) => (200, o.path.endsWith('/me') ? meJson : brandingJson),
-            );
+            ..httpClientAdapter = FakeAdapter(respond ?? FakeServer().respond);
           return ApiClient(server, ref.read(authServiceProvider), dio: dio);
         },
       ),
@@ -106,16 +104,14 @@ void main() {
     );
   });
 
-  testWidgets('action simulée : mise en file et indicateur mis à jour', (
-    tester,
-  ) async {
+  testWidgets('accueil : « Signaler » ouvre l\'étape 1', (tester) async {
     await pumpApp(tester, store: loggedInStore());
 
     await tester.tap(find.byKey(const Key('reportButton')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Hors ligne · 1 en attente'), findsOneWidget);
-    expect(find.textContaining('1 envoi(s) en attente'), findsOneWidget);
+    expect(find.text('Quel type de problème ?'), findsOneWidget);
+    expect(find.text('Étape 1 sur 3'), findsOneWidget);
   });
 
   testWidgets('déconnexion : retour à l\'écran de connexion', (tester) async {
