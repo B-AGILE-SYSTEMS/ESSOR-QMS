@@ -52,14 +52,35 @@
       }
     ]
   },
-  "clientScopes": [
+  "clients": [
     {
-      "name": "essor",
-      "description": "Rôles realm et tenant ESSOR dans les jetons ID, d'accès et userinfo",
+      "clientId": "essor-bff",
+      "name": "ESSOR QMS - web (BFF)",
+      "enabled": true,
       "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${ESSOR_OIDC_CLIENT_SECRET}",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "${ESSOR_PUBLIC_URL}/login/oauth2/code/keycloak"
+      ],
+      "webOrigins": [
+        "${ESSOR_PUBLIC_URL}"
+      ],
       "attributes": {
-        "include.in.token.scope": "false"
+        "post.logout.redirect.uris": "${ESSOR_PUBLIC_URL}/",
+        "pkce.code.challenge.method": "S256"
       },
+      "defaultClientScopes": [
+        "web-origins",
+        "profile",
+        "email",
+        "roles"
+      ],
       "protocolMappers": [
         {
           "name": "realm-roles",
@@ -88,38 +109,6 @@
           }
         }
       ]
-    }
-  ],
-  "clients": [
-    {
-      "clientId": "essor-bff",
-      "name": "ESSOR QMS - web (BFF)",
-      "enabled": true,
-      "protocol": "openid-connect",
-      "publicClient": false,
-      "clientAuthenticatorType": "client-secret",
-      "secret": "${ESSOR_OIDC_CLIENT_SECRET}",
-      "standardFlowEnabled": true,
-      "directAccessGrantsEnabled": false,
-      "implicitFlowEnabled": false,
-      "serviceAccountsEnabled": false,
-      "redirectUris": [
-        "${ESSOR_PUBLIC_URL}/login/oauth2/code/keycloak"
-      ],
-      "webOrigins": [
-        "${ESSOR_PUBLIC_URL}"
-      ],
-      "attributes": {
-        "post.logout.redirect.uris": "${ESSOR_PUBLIC_URL}/",
-        "pkce.code.challenge.method": "S256"
-      },
-      "defaultClientScopes": [
-        "web-origins",
-        "profile",
-        "email",
-        "roles",
-        "essor"
-      ]
     },
     {
       "clientId": "essor-mobile",
@@ -139,17 +128,44 @@
       ],
       "attributes": {
         "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "com.essor.qms:/logout"
+        "post.logout.redirect.uris": "ma.bagile.essor:/logout"
       },
       "defaultClientScopes": [
         "web-origins",
         "profile",
         "email",
-        "roles",
-        "essor"
+        "roles"
       ],
       "optionalClientScopes": [
         "offline_access"
+      ],
+      "protocolMappers": [
+        {
+          "name": "realm-roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "config": {
+            "claim.name": "realm_access.roles",
+            "multivalued": "true",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "tenant",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "tenant",
+            "claim.name": "tenant",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
       ]
     }
   ],

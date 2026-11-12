@@ -68,11 +68,17 @@ class SecurityConfig {
 
     @Bean
     @Order(2)
-    SecurityFilterChain bffChain(HttpSecurity http, LogoutSuccessHandler logoutSuccessHandler) throws Exception {
+    SecurityFilterChain bffChain(HttpSecurity http, LogoutSuccessHandler logoutSuccessHandler,
+            org.springframework.security.oauth2.client.registration.ClientRegistrationRepository registrations) throws Exception {
+        var resolver = new org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver(
+                registrations, "/oauth2/authorization");
+        resolver.setAuthorizationRequestCustomizer(
+                org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestCustomizers.withPkce());
         http.authorizeHttpRequests(a -> a.requestMatchers(PUBLIC).permitAll()
                         .requestMatchers("/oauth2/**", "/login/**").permitAll()
                         .anyRequest().authenticated())
-                .oauth2Login(o -> o.userInfoEndpoint(u -> u.userAuthoritiesMapper(oidcAuthoritiesMapper())))
+                .oauth2Login(o -> o.authorizationEndpoint(a -> a.authorizationRequestResolver(resolver))
+                        .userInfoEndpoint(u -> u.userAuthoritiesMapper(oidcAuthoritiesMapper())))
                 .exceptionHandling(e -> e.defaultAuthenticationEntryPointFor(
                         new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED), new AntPathRequestMatcher("/api/**")))
                 .csrf(c -> c.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())

@@ -36,6 +36,8 @@ Les désactiver ou changer leurs mots de passe avant toute mise en production (c
 
 Sur une machine connectée : `docker compose --profile web build && docker compose pull`, puis
 `docker save essor-qms/backend:local essor-qms/web:local postgres:16-alpine quay.io/keycloak/keycloak:26.0.7 nginx:1.27-alpine -o essor-images.tar`.
+
+Les builds Docker téléchargent leurs dépendances (Maven, npm) : en réseau fermé, construisez les images sur une machine connectée puis transférez-les avec `docker save` / `docker load`.
 Sur le serveur : `docker load -i essor-images.tar` puis `docker compose --profile web up -d` (sans `--build`).
 
 ## Base de données et isolation des tenants
