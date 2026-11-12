@@ -36,7 +36,7 @@ import org.testcontainers.utility.MountableFile;
 @ActiveProfiles({"test", "demo"})
 class KeycloakLoginIT extends AbstractIntegrationTest {
 
-    static final String IMAGE = System.getProperty("essor.keycloak.image", "quay.io/keycloak/keycloak:26.0.7");
+    static final String IMAGE = System.getProperty("essor.keycloak.image", "quay.io/keycloak/keycloak:26.8.2");
     static final String SECRET = "test-secret";
     static final int APP_PORT = freePort();
     static final String APP = "http://localhost:" + APP_PORT;

@@ -49,7 +49,7 @@
               <dt>Référence</dt><dd class="mono">{{ r.reference }}</dd>
               <dt>Site</dt><dd>{{ r.siteName ?? '—' }}</dd>
               <dt>Déclarée le</dt><dd class="mono">{{ dateTime(r.createdAt) }}</dd>
-              <dt>Déclarée par</dt><dd>{{ r.createdBy }}</dd>
+              <dt>Déclarée par</dt><dd>{{ r.createdByName ?? '—' }}</dd>
               <dt>Responsable</dt><dd>{{ newOwner()?.displayName ?? r.ownerName ?? 'non désigné' }}</dd>
             </dl>
             @if (!locked()) {

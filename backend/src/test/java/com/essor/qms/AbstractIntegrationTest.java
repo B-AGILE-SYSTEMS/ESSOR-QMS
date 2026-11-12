@@ -13,7 +13,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 /**
  * Base des tests d'intégration sur un vrai PostgreSQL 16.
  * <ul>
- *   <li>par défaut : Testcontainers ({@code postgres:16-alpine}) ;</li>
+ *   <li>par défaut : Testcontainers ({@code postgres:16.15-alpine}) ;</li>
  *   <li>si {@code ESSOR_TEST_DB_URL} est défini : base PostgreSQL 16 locale (profil de repli quand
  *       Docker n'est pas disponible), avec {@code ESSOR_TEST_DB_OWNER} / {@code ESSOR_TEST_DB_OWNER_PASSWORD}.
  *       La base est remise à zéro au démarrage.</li>
@@ -38,7 +38,7 @@ public abstract class AbstractIntegrationTest {
             OWNER_PASSWORD = env("ESSOR_TEST_DB_OWNER_PASSWORD", "owner");
             resetLocalDatabase();
         } else {
-            PostgreSQLContainer<?> pg = new PostgreSQLContainer<>("postgres:16-alpine")
+            PostgreSQLContainer<?> pg = new PostgreSQLContainer<>("postgres:16.15-alpine")
                     .withDatabaseName("essor").withUsername("essor_owner").withPassword("owner");
             pg.start();
             URL = pg.getJdbcUrl();
