@@ -14,12 +14,11 @@ interface Crumb {
 }
 
 @Component({
-  selector: 'eq-shell',
-  standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, PaletteComponent, NotificationsPanelComponent],
-  templateUrl: './shell.component.html',
-  styleUrl: './shell.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'eq-shell',
+    imports: [RouterOutlet, RouterLink, RouterLinkActive, PaletteComponent, NotificationsPanelComponent],
+    templateUrl: './shell.component.html',
+    styleUrl: './shell.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ShellComponent {
   protected readonly auth = inject(AuthService);

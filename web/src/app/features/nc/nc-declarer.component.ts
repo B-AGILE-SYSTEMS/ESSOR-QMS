@@ -11,10 +11,9 @@ export const NC_CATEGORIES = ['Produit', 'Processus', 'Sécurité', 'Environneme
 
 /** Déclaration d'une NC : `POST /api/records` puis ouverture de la fiche. */
 @Component({
-  selector: 'eq-nc-declarer',
-  standalone: true,
-  imports: [ReactiveFormsModule],
-  template: `
+    selector: 'eq-nc-declarer',
+    imports: [ReactiveFormsModule],
+    template: `
     <div class="ph"><div><span class="ref">Nouvelle non-conformité</span><h2>Déclarer une non-conformité</h2></div></div>
     @if (error(); as msg) { <p class="err" role="alert">{{ msg }}</p> }
     <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
@@ -59,8 +58,8 @@ export const NC_CATEGORIES = ['Produit', 'Processus', 'Sécurité', 'Environneme
       </div>
     </form>
   `,
-  styles: `.field .chips { margin-top: 2px; }`,
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    styles: `.field .chips { margin-top: 2px; }`,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class NcDeclarerComponent {
   protected readonly auth = inject(AuthService);

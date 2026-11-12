@@ -26,12 +26,11 @@ const LOCKED = new Set(['CLOTUREE', 'REJETEE', 'CLOS', 'CLASSE_SANS_SUITE']);
 
 /** Fiche générique (NC, incident…) : barre d'étapes, onglets, transitions issues de `availableTransitions`. */
 @Component({
-  selector: 'eq-nc-fiche',
-  standalone: true,
-  imports: [FormsModule, NcAnalyseComponent, NcActionsComponent, UserPickerComponent, AttachmentsComponent],
-  templateUrl: './nc-fiche.component.html',
-  styleUrl: './nc-fiche.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'eq-nc-fiche',
+    imports: [FormsModule, NcAnalyseComponent, NcActionsComponent, UserPickerComponent, AttachmentsComponent],
+    templateUrl: './nc-fiche.component.html',
+    styleUrl: './nc-fiche.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class NcFicheComponent {
   private readonly records = inject(RecordsService);

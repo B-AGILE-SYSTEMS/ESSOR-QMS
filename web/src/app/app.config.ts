@@ -1,5 +1,14 @@
-import { provideHttpClient, withInterceptors, withXsrfConfiguration } from '@angular/common/http';
-import { APP_INITIALIZER, ApplicationConfig, inject, provideZoneChangeDetection } from '@angular/core';
+import {
+  provideHttpClient,
+  withInterceptors,
+  withXsrfConfiguration,
+} from '@angular/common/http';
+import {
+  ApplicationConfig,
+  inject,
+  provideZoneChangeDetection,
+  provideAppInitializer,
+} from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { routes } from './app.routes';
 import { AuthService } from './core/auth.service';
@@ -29,9 +38,15 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(
-      withXsrfConfiguration({ cookieName: 'XSRF-TOKEN', headerName: 'X-XSRF-TOKEN' }),
+      withXsrfConfiguration({
+        cookieName: 'XSRF-TOKEN',
+        headerName: 'X-XSRF-TOKEN',
+      }),
       withInterceptors([unauthorizedInterceptor]),
     ),
-    { provide: APP_INITIALIZER, multi: true, useFactory: bootstrapSession },
+    provideAppInitializer(() => {
+      const initializerFn = bootstrapSession();
+      return initializerFn();
+    }),
   ],
 };
