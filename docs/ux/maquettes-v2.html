@@ -1,0 +1,551 @@
+<title>Maquettes ESSOR QMS</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --pg-bg:#e9ebee;--pg-fg:#14181d;--pg-mut:#4a5360;--pg-line:#c3c8cf;--pg-panel:#f7f8f9;
+  --sans:"Archivo","Segoe UI",Roboto,Arial,sans-serif;--mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--pg-bg:#0d1014;--pg-fg:#e8ebef;--pg-mut:#9aa3ae;--pg-line:#2b323b;--pg-panel:#151a20;}}
+:root[data-theme="dark"]{--pg-bg:#0d1014;--pg-fg:#e8ebef;--pg-mut:#9aa3ae;--pg-line:#2b323b;--pg-panel:#151a20;}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--pg-bg);color:var(--pg-fg);font:15px/1.5 var(--sans);overflow-x:hidden}
+.gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button,input,select,textarea{font:inherit;color:inherit}
+.num,.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* ===== Control bar (presentation) ===== */
+.ctl{position:sticky;top:0;z-index:50;background:var(--pg-panel);border-bottom:1px solid var(--pg-line)}
+.ctl-in{display:flex;flex-wrap:wrap;gap:10px 20px;align-items:center;padding-top:10px;padding-bottom:10px;max-width:1480px;margin:0 auto}
+.ctl h1{font-size:15px;margin:0;font-weight:800;letter-spacing:.02em;text-transform:uppercase}
+.ctl h1 span{color:var(--pg-mut);font-weight:500;text-transform:none;letter-spacing:0}
+.ctl .grp{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ctl label.l{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--pg-mut);font-weight:600}
+.seg{display:inline-flex;border:1px solid var(--pg-line)}
+.seg button{background:none;border:0;padding:6px 10px;cursor:pointer;font-size:13px;min-height:34px}
+.seg button[aria-pressed="true"]{background:var(--pg-fg);color:var(--pg-bg)}
+.sw{width:28px;height:28px;border:2px solid transparent;cursor:pointer;padding:0}
+.sw[aria-pressed="true"]{outline:2px solid var(--pg-fg);outline-offset:2px}
+.pgbtn{border:1px solid var(--pg-line);background:none;padding:6px 10px;cursor:pointer;font-size:13px;min-height:34px}
+.ctl .msg{font-size:12px;color:var(--pg-mut)}
+.views{max-width:1480px;margin:0 auto;padding-top:14px;padding-bottom:40px}
+.vtabs{display:flex;gap:0;border-bottom:1px solid var(--pg-line);margin-bottom:14px;flex-wrap:wrap}
+.vtabs a{padding:10px 14px;text-decoration:none;color:var(--pg-mut);font-weight:600;font-size:14px;border-bottom:3px solid transparent}
+.vtabs a.on{color:var(--pg-fg);border-color:var(--pg-fg)}
+
+/* ===== App skins ===== */
+.app{--acc:#c2410c;--acc-ink:#fff;
+  --bg:#eef0f2;--surf:#ffffff;--surf2:#f5f6f7;--ink:#12161b;--ink2:#47505c;--line:#d5d9de;--line2:#aab1ba;
+  --ok:#1f7a3a;--warn:#9a5b00;--crit:#b3261e;--info:#1f5fa8;--rail:#161b21;--rail-ink:#c9d0d8;--rail-hi:#ffffff;
+  font-family:var(--sans);color:var(--ink);background:var(--bg)}
+.app[data-skin="sombre"]{--bg:#0f1317;--surf:#171c22;--surf2:#1d232a;--ink:#e9edf1;--ink2:#a2acb7;--line:#2a323b;--line2:#3d4752;
+  --ok:#4cc277;--warn:#f0a433;--crit:#ff6b5f;--info:#6aa8ff;--rail:#0a0d10;--rail-ink:#9aa4af;--rail-hi:#fff}
+.app[data-skin="haute"]{--bg:#ffffff;--surf:#ffffff;--surf2:#ffffff;--ink:#000;--ink2:#1a1a1a;--line:#000;--line2:#000;
+  --ok:#005c1f;--warn:#6b3d00;--crit:#8f0000;--info:#00337a;--rail:#000;--rail-ink:#fff;--rail-hi:#ffde00}
+.app[data-skin="haute"] *{border-width:2px}
+
+/* ===== Web shell ===== */
+.shell{display:grid;grid-template-columns:232px minmax(0,1fr);min-height:760px;border:1px solid var(--line2)}
+.rail{background:var(--rail);color:var(--rail-ink);display:flex;flex-direction:column}
+.brand{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.08);min-height:64px}
+.logo-box{width:36px;height:36px;display:grid;place-items:center;background:var(--acc);color:var(--acc-ink);font-weight:800;font-size:14px;flex:none;overflow:hidden}
+.logo-box img{width:100%;height:100%;object-fit:contain;background:#fff}
+.brand b{color:var(--rail-hi);font-size:14px;display:block;line-height:1.2}
+.brand small{font-size:12px}
+.rail nav{padding:10px 0;flex:1}
+.fam{font-size:11px;text-transform:uppercase;letter-spacing:.12em;padding:14px 16px 4px;opacity:.7;font-weight:700}
+.rail a{display:flex;align-items:center;gap:10px;padding:9px 16px;color:var(--rail-ink);text-decoration:none;font-size:14px;border-left:3px solid transparent}
+.rail a:hover{color:var(--rail-hi)}
+.rail a.on{color:var(--rail-hi);border-left-color:var(--acc);background:rgba(255,255,255,.06)}
+.rail a .cnt{margin-left:auto;font-family:var(--mono);font-size:12px;background:var(--acc);color:var(--acc-ink);padding:0 6px}
+.site{padding:12px 16px;border-top:1px solid rgba(255,255,255,.08);font-size:13px}
+.site select{width:100%;background:transparent;border:1px solid rgba(255,255,255,.25);color:var(--rail-hi);padding:6px;margin-top:4px}
+.site option{color:#000}
+.main{min-width:0;display:flex;flex-direction:column}
+.top{display:flex;gap:12px;align-items:center;padding:10px 20px;background:var(--surf);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.cmd{flex:1;min-width:200px;display:flex;align-items:center;gap:8px;border:1px solid var(--line2);padding:8px 10px;background:var(--surf2);cursor:text;color:var(--ink2);font-size:14px}
+.cmd kbd{margin-left:auto;font-family:var(--mono);font-size:12px;border:1px solid var(--line2);padding:0 5px}
+.btn{display:inline-flex;align-items:center;gap:8px;justify-content:center;border:1px solid var(--line2);background:var(--surf);color:var(--ink);padding:9px 14px;font-weight:600;font-size:14px;cursor:pointer;min-height:40px;text-decoration:none}
+.btn.pri{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}
+.btn.ghost{border-color:transparent;background:none}
+.who{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink2)}
+.av{width:32px;height:32px;display:grid;place-items:center;background:var(--ink);color:var(--surf);font-weight:700;font-size:12px}
+.crumb{font-size:13px;color:var(--ink2);padding:14px 24px 0;display:flex;gap:6px;flex-wrap:wrap}
+.crumb a{color:var(--ink2)}
+.crumb b{color:var(--ink)}
+.page{padding:8px 24px 32px;min-width:0}
+.ph{display:flex;align-items:flex-end;gap:16px;justify-content:space-between;flex-wrap:wrap;margin:6px 0 18px}
+.ph h2{font-size:26px;line-height:1.2;margin:0;font-weight:800;letter-spacing:-.01em}
+.ph .ref{font-family:var(--mono);font-size:13px;color:var(--ink2);display:block;margin-bottom:4px}
+.screen{display:none}.screen.on{display:block}
+
+/* status: shape + text */
+.st{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;white-space:nowrap}
+.st i{width:11px;height:11px;display:inline-block;flex:none}
+.st.crit{color:var(--crit)}.st.crit i{background:var(--crit);clip-path:polygon(50% 0,100% 100%,0 100%)}
+.st.warn{color:var(--warn)}.st.warn i{background:var(--warn);transform:rotate(45deg);width:9px;height:9px}
+.st.ok{color:var(--ok)}.st.ok i{background:var(--ok);border-radius:50%}
+.st.info{color:var(--info)}.st.info i{border:2px solid var(--info)}
+
+/* panels: flat, hairline, no shadow */
+.grid{display:grid;gap:0;border:1px solid var(--line);background:var(--surf)}
+.kpis{grid-template-columns:repeat(4,1fr)}
+.kpi{padding:16px 18px;border-right:1px solid var(--line)}
+.kpi:last-child{border-right:0}
+.kpi .k{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink2);font-weight:700}
+.kpi .v{font-family:var(--mono);font-size:30px;font-weight:600;line-height:1.1;margin-top:6px}
+.kpi .d{font-size:13px;color:var(--ink2)}
+.kpi.dom{background:var(--ink);color:var(--surf)}
+.kpi.dom .k,.kpi.dom .d{color:inherit;opacity:.8}
+.sec{margin-top:22px}
+.sec h3{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 8px;color:var(--ink2);display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.box{background:var(--surf);border:1px solid var(--line)}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink2);font-weight:700;padding:10px 12px;border-bottom:2px solid var(--ink);white-space:nowrap}
+td{padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+td.r,th.r{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+tr.go{cursor:pointer}tr.go:hover td{background:var(--surf2)}
+.two{display:grid;grid-template-columns:1.6fr 1fr;gap:20px}
+.pad{padding:16px 18px}
+.kv{display:grid;grid-template-columns:150px 1fr;gap:8px 14px;font-size:14px}
+.kv dt{color:var(--ink2)}.kv dd{margin:0;font-weight:600}
+
+/* workflow stepper */
+.flow{display:flex;border:1px solid var(--line);background:var(--surf);margin-bottom:18px;overflow-x:auto}
+.flow a{flex:1;min-width:120px;padding:10px 14px;text-decoration:none;color:var(--ink2);border-right:1px solid var(--line);font-size:13px;position:relative}
+.flow a:last-child{border-right:0}
+.flow a b{display:block;font-size:14px;color:var(--ink)}
+.flow a .n{font-family:var(--mono);font-size:12px}
+.flow a.done{color:var(--ok)}
+.flow a.done .n::after{content:" ✓ fait"}
+.flow a.cur{background:var(--ink);color:var(--surf)}
+.flow a.cur b{color:var(--surf)}
+.flow a.cur::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:var(--acc)}
+.nextbar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;border:1px solid var(--line);border-top:3px solid var(--acc);background:var(--surf);padding:14px 18px;margin-top:20px}
+.nextbar p{margin:0;font-size:14px;color:var(--ink2)}
+.nextbar p b{color:var(--ink)}
+.field{display:block;margin-bottom:14px}
+.field>span{display:block;font-size:13px;font-weight:700;margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;border:1px solid var(--line2);background:var(--surf);padding:9px 10px;font-size:14px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1px solid var(--line2);background:var(--surf);padding:7px 12px;font-size:14px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--surf);border-color:var(--ink)}
+.why{counter-reset:w}
+.why li{list-style:none;border-left:3px solid var(--line2);padding:6px 0 6px 14px;margin-bottom:6px;position:relative}
+.why li::before{counter-increment:w;content:"Pourquoi " counter(w);display:block;font-size:12px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.06em}
+.why li.root{border-color:var(--acc)}
+.why li.root::after{content:"Cause racine";font-size:12px;font-weight:700;color:var(--acc)}
+.isk{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--line)}
+.isk div{padding:10px 12px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);font-size:14px}
+.isk b{display:block;font-size:12px;text-transform:uppercase;color:var(--ink2);letter-spacing:.06em}
+.note{font-size:13px;color:var(--ink2)}
+.meter{height:8px;background:var(--line);margin-top:6px}.meter i{display:block;height:100%;background:var(--ink)}
+
+/* palette */
+.pal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:80;align-items:flex-start;justify-content:center;padding:80px 16px}
+.pal.on{display:flex}
+.pal .in{width:min(620px,100%);background:var(--surf);color:var(--ink);border:1px solid var(--line2)}
+.pal input{width:100%;border:0;border-bottom:2px solid var(--ink);padding:14px 16px;font-size:16px;background:var(--surf);outline:0}
+.pal ul{list-style:none;margin:0;padding:6px 0;max-height:340px;overflow:auto}
+.pal li button{width:100%;text-align:left;background:none;border:0;padding:10px 16px;display:flex;gap:10px;cursor:pointer;font-size:14px}
+.pal li button:hover,.pal li button:focus{background:var(--surf2);outline:0}
+.pal li small{margin-left:auto;color:var(--ink2);font-family:var(--mono)}
+.pal .grp{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink2);padding:8px 16px 2px;font-weight:700}
+
+/* PDF preview */
+.pdf{background:#fff;color:#111;border:1px solid #bbb;padding:22px;font-family:var(--sans);max-width:560px}
+.pdf .hd{display:flex;align-items:center;gap:14px;border-bottom:3px solid var(--acc);padding-bottom:12px}
+.pdf .lg{width:56px;height:56px;display:grid;place-items:center;background:var(--acc);color:#fff;font-weight:800;overflow:hidden}
+.pdf .lg img{width:100%;height:100%;object-fit:contain;background:#fff}
+.pdf h4{margin:0;font-size:16px}.pdf p{margin:4px 0;font-size:12px;color:#444}
+.pdf .meta{margin-left:auto;text-align:right;font-family:var(--mono);font-size:11px;color:#444}
+
+/* ===== Mobile ===== */
+.phones{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:22px}
+.ph-cap{font-size:13px;color:var(--pg-mut);margin:0 0 6px;font-weight:600}
+.phone{max-width:380px;width:100%;border:10px solid #111;border-radius:30px;overflow:hidden;background:#111}
+.mob{height:740px;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);font-size:17px;position:relative}
+.mob .sbar{display:flex;justify-content:space-between;align-items:center;padding:8px 16px;background:var(--rail);color:var(--rail-hi);font-size:13px;font-family:var(--mono)}
+.sync{display:inline-flex;align-items:center;gap:6px;font-weight:600}
+.sync i{width:10px;height:10px;display:inline-block}
+.sync.off i{background:#ffb020;clip-path:polygon(50% 0,100% 100%,0 100%)}
+.sync.on i{background:#3ddc6b;border-radius:50%}
+.mhead{padding:14px 16px;background:var(--surf);border-bottom:2px solid var(--ink);display:flex;align-items:center;gap:12px}
+.mhead h3{margin:0;font-size:20px;font-weight:800;line-height:1.2}
+.mhead small{display:block;font-size:14px;color:var(--ink2)}
+.mbody{flex:1;overflow:auto;padding:16px}
+.mfoot{padding:12px 16px 18px;background:var(--surf);border-top:1px solid var(--line2);display:grid;gap:10px}
+.tap{min-height:64px;width:100%;border:2px solid var(--ink);background:var(--surf);color:var(--ink);font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;padding:0 16px;text-decoration:none}
+.tap.pri{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
+.tap.big{min-height:84px;font-size:20px}
+.tap:active{transform:scale(.98)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.row2 .tap{white-space:nowrap;font-size:16px;padding:0 8px}
+.opt{min-height:64px;border:2px solid var(--line2);background:var(--surf);color:var(--ink);font-size:17px;font-weight:600;text-align:left;padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:12px;width:100%;margin-bottom:10px}
+.opt[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--surf)}
+.opt .ico{font-size:24px;width:30px;text-align:center}
+.tile{display:block;border:2px solid var(--ink);background:var(--surf);padding:14px;margin-bottom:10px;text-decoration:none;color:var(--ink)}
+.tile .t{font-weight:700;font-size:18px}
+.tile .s{font-size:15px;color:var(--ink2)}
+.steps{display:flex;gap:6px;margin-bottom:14px}
+.steps i{flex:1;height:8px;background:var(--line)}
+.steps i.on{background:var(--acc)}
+.big-q{font-size:21px;font-weight:700;line-height:1.35;margin:4px 0 14px}
+.ans{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.ans button{min-height:84px;border:3px solid var(--ink);background:var(--surf);color:var(--ink);font-weight:800;font-size:17px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.ans button span{font-size:26px;line-height:1}
+.ans button[aria-pressed="true"].c{background:var(--ok);border-color:var(--ok);color:#fff}
+.ans button[aria-pressed="true"].nc{background:var(--crit);border-color:var(--crit);color:#fff}
+.ans button[aria-pressed="true"].na{background:var(--ink);color:var(--surf)}
+.photo{height:150px;border:2px dashed var(--ink2);display:grid;place-items:center;color:var(--ink2);font-weight:600;background:repeating-linear-gradient(45deg,var(--surf),var(--surf) 10px,var(--surf2) 10px,var(--surf2) 20px)}
+.photo.has{border-style:solid;border-color:var(--ok);color:var(--ok)}
+.viewfinder{height:280px;background:#0b0e11;position:relative;display:grid;place-items:center}
+.viewfinder .fr{width:180px;height:180px;border:4px solid var(--acc);position:relative}
+.viewfinder .fr::after{content:"";position:absolute;left:0;right:0;top:50%;height:2px;background:var(--acc);animation:scan 1.6s ease-in-out infinite alternate}
+@keyframes scan{from{top:8%}to{top:92%}}
+@media (prefers-reduced-motion:reduce){.viewfinder .fr::after{animation:none}}
+.viewfinder p{position:absolute;bottom:10px;left:0;right:0;text-align:center;color:#fff;font-size:15px;margin:0}
+.flash{position:absolute;inset:0;background:var(--ok);color:#fff;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;z-index:5;font-size:22px;font-weight:800;text-align:center;padding:20px}
+.flash.on{display:flex;animation:pop .35s ease-out}
+.flash .chk{width:96px;height:96px;border:6px solid #fff;border-radius:50%;display:grid;place-items:center;font-size:54px}
+@keyframes pop{from{transform:scale(.9);opacity:.3}to{transform:none;opacity:1}}
+.queue{border:2px solid var(--warn);padding:10px 12px;font-size:15px;margin-bottom:12px;display:flex;gap:10px;align-items:center;background:var(--surf)}
+.queue b{color:var(--warn);white-space:nowrap}
+.inst{border:2px solid var(--ink);background:var(--surf)}
+.inst div{display:flex;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--line);font-size:16px;gap:10px}
+.inst div:last-child{border-bottom:0}
+.inst span{color:var(--ink2)}
+
+/* toast */
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#111;color:#fff;padding:12px 18px;border-left:5px solid var(--acc,#c2410c);font-size:14px;z-index:90;display:none;max-width:calc(100% - 32px)}
+.toast.on{display:block}
+
+/* ===== Responsive ===== */
+@media (max-width:1100px){.two{grid-template-columns:1fr}}
+@media (max-width:860px){
+  .shell{grid-template-columns:minmax(0,1fr)}.rail{min-width:0}.cmd{min-width:0;flex-basis:100%}
+  .rail nav{display:flex;overflow-x:auto;padding:0}
+  .rail .fam,.site{display:none}
+  .rail a{white-space:nowrap;border-left:0;border-bottom:3px solid transparent;padding:12px}
+  .rail a.on{border-bottom-color:var(--acc)}
+  .kpis{grid-template-columns:1fr 1fr}
+  .kpi:nth-child(2){border-right:0}.kpi:nth-child(-n+2){border-bottom:1px solid var(--line)}
+  .isk{grid-template-columns:1fr}
+  .kv{grid-template-columns:1fr}
+  .page{padding:8px 14px 24px}.crumb{padding:12px 14px 0}.top{padding:10px 14px}
+  .who span{display:none}
+  .ph h2{font-size:22px}
+}
+</style>
+
+<header class="ctl">
+ <div class="ctl-in gut">
+  <h1>ESSOR QMS <span>· maquettes v2 — salle de contrôle</span></h1>
+  <div class="grp"><label class="l" id="lt">Thème</label>
+   <div class="seg" role="group" aria-labelledby="lt" id="skinSeg">
+    <button data-skin="clair" aria-pressed="true">Clair</button><button data-skin="sombre" aria-pressed="false">Sombre</button><button data-skin="haute" aria-pressed="false">Haute lisibilité</button>
+   </div></div>
+  <div class="grp"><label class="l">Couleur</label><span id="accSw"></span></div>
+  <div class="grp"><label class="l" for="logoIn">Logo</label>
+   <label class="pgbtn" style="display:inline-flex;align-items:center">Importer…<input id="logoIn" type="file" accept="image/png,image/svg+xml,image/jpeg" hidden></label>
+   <button class="pgbtn" id="logoReset">Retirer</button><span class="msg" id="logoMsg">PNG, SVG, JPEG · ≤ 512 Ko</span></div>
+ </div>
+</header>
+
+<main class="views gut">
+ <nav class="vtabs"><a href="#mes-actions" id="tabWeb">Application web (bureau)</a><a href="#mobile" id="tabMob">Application mobile (terrain)</a></nav>
+
+ <div id="app" class="app" data-skin="clair">
+ <!-- ================= WEB ================= -->
+ <section id="webView">
+ <div class="shell">
+  <aside class="rail">
+   <div class="brand"><div class="logo-box lg-slot">AL</div><div><b>Atlas Logistique &amp; Industrie</b><small>ESSOR QMS</small></div></div>
+   <nav>
+    <div class="fam">Mon travail</div>
+    <a href="#mes-actions" data-nav="mes-actions">Mes actions <span class="cnt">7</span></a>
+    <div class="fam">Terrain</div>
+    <a href="#nc-liste" data-nav="nc">Non-conformités</a>
+    <a href="#mes-actions" data-nav="x">Audits &amp; inspections</a>
+    <div class="fam">Pilotage</div>
+    <a href="#mes-actions" data-nav="x">Indicateurs</a>
+    <a href="#mes-actions" data-nav="x">Risques &amp; conformité</a>
+    <div class="fam">Ressources</div>
+    <a href="#mes-actions" data-nav="x">Équipements</a>
+    <a href="#mes-actions" data-nav="x">Documents</a>
+    <div class="fam">Administration</div>
+    <a href="#apparence" data-nav="apparence">Paramétrage</a>
+   </nav>
+   <div class="site">Site actif<select aria-label="Site"><option>Tous les sites</option><option>Kénitra</option><option>Casablanca</option><option>Entrepôt Nord</option></select></div>
+  </aside>
+  <div class="main">
+   <div class="top">
+    <div class="cmd" id="openPal" role="button" tabindex="0">⌕ Rechercher une NC, un équipement, une action… ou taper une commande<kbd>Ctrl K</kbd></div>
+    <a class="btn pri" href="#nc-declarer">＋ Déclarer une NC</a>
+    <div class="who"><div class="av">SB</div><span>Salma Bennani · Resp. QHSE</span></div>
+   </div>
+   <div class="crumb" id="crumb"></div>
+
+   <div class="page">
+   <!-- Mes actions -->
+   <div class="screen" id="s-mes-actions">
+    <div class="ph"><div><span class="ref">Jeudi 12 novembre 2026 · Tous les sites</span><h2>Mes actions</h2></div>
+     <div class="chips"><button class="chip" aria-pressed="true">À faire (7)</button><button class="chip" aria-pressed="false">En retard (2)</button><button class="chip" aria-pressed="false">À valider (3)</button></div></div>
+    <div class="grid kpis">
+     <div class="kpi dom"><div class="k">Actions en retard</div><div class="v">2</div><div class="d">dont 1 sécurité — à traiter aujourd'hui</div></div>
+     <div class="kpi"><div class="k">NC ouvertes</div><div class="v">14</div><div class="d">5 à qualifier</div></div>
+     <div class="kpi"><div class="k">Audits du mois</div><div class="v">6/9</div><div class="d">réalisés</div></div>
+     <div class="kpi"><div class="k">Coût NC (mois)</div><div class="v">48 300</div><div class="d">MAD</div></div>
+    </div>
+    <div class="sec"><h3>À faire maintenant <span class="note">trié par échéance</span></h3>
+     <div class="box tw"><table>
+      <thead><tr><th>Échéance</th><th>Action</th><th>Origine</th><th>Site</th><th>Statut</th></tr></thead>
+      <tbody>
+       <tr class="go" data-href="#nc-qualifier"><td class="mono">Aujourd'hui</td><td><b>Qualifier NC-2026-0418</b><br><span class="note">Écart de cote Ø 12,05 mm, lot 2611-B</span></td><td class="mono">NC-2026-0418</td><td>Kénitra</td><td><span class="st crit"><i></i>Bloquant</span></td></tr>
+       <tr class="go" data-href="#nc-actions"><td class="mono">10/11</td><td><b>Remplacer garde-corps quai 4</b></td><td class="mono">NC-2026-0402</td><td>Entrepôt Nord</td><td><span class="st crit"><i></i>En retard 2 j</span></td></tr>
+       <tr class="go" data-href="#nc-analyser"><td class="mono">14/11</td><td><b>Analyse 5 pourquoi — fuite hydraulique</b></td><td class="mono">NC-2026-0411</td><td>Casablanca</td><td><span class="st warn"><i></i>En cours</span></td></tr>
+       <tr class="go" data-href="#nc-cloturer"><td class="mono">18/11</td><td><b>Vérifier efficacité — étiquetage FIFO</b></td><td class="mono">NC-2026-0377</td><td>Entrepôt Nord</td><td><span class="st info"><i></i>À vérifier</span></td></tr>
+       <tr><td class="mono">21/11</td><td><b>Audit interne ISO 9001 §8.5 — réception</b></td><td class="mono">AUD-2026-031</td><td>Kénitra</td><td><span class="st ok"><i></i>Planifié</span></td></tr>
+      </tbody></table></div></div>
+   </div>
+
+   <!-- NC liste -->
+   <div class="screen" id="s-nc-liste">
+    <div class="ph"><div><span class="ref">Terrain</span><h2>Non-conformités</h2></div><a class="btn pri" href="#nc-declarer">＋ Déclarer</a></div>
+    <div class="box tw"><table><thead><tr><th>Réf.</th><th>Objet</th><th>Site</th><th>Étape</th><th class="r">Coût MAD</th></tr></thead><tbody>
+     <tr class="go" data-href="#nc-qualifier"><td class="mono">NC-2026-0418</td><td>Écart de cote Ø 12,05 mm</td><td>Kénitra</td><td><span class="st crit"><i></i>À qualifier</span></td><td class="r">—</td></tr>
+     <tr class="go" data-href="#nc-analyser"><td class="mono">NC-2026-0411</td><td>Fuite hydraulique chariot CH-07</td><td>Casablanca</td><td><span class="st warn"><i></i>Analyse</span></td><td class="r">6 200</td></tr>
+     <tr class="go" data-href="#nc-actions"><td class="mono">NC-2026-0402</td><td>Garde-corps quai 4 déformé</td><td>Entrepôt Nord</td><td><span class="st warn"><i></i>Actions</span></td><td class="r">12 750</td></tr>
+     <tr class="go" data-href="#nc-cloturer"><td class="mono">NC-2026-0377</td><td>Rotation FIFO non respectée</td><td>Entrepôt Nord</td><td><span class="st info"><i></i>Vérification</span></td><td class="r">29 350</td></tr>
+    </tbody></table></div>
+   </div>
+
+   <!-- Workflow screens share stepper -->
+   <div class="screen" id="s-nc-declarer">
+    <div class="ph"><div><span class="ref">Nouvelle non-conformité · brouillon</span><h2>Déclarer une non-conformité</h2></div></div>
+    <div class="flow" data-step="1"></div>
+    <div class="two"><div class="box pad">
+     <label class="field"><span>Que s'est-il passé ?</span><input value="Écart de cote Ø 12,05 mm sur lot 2611-B (tolérance Ø 12,00 ± 0,03 mm)"></label>
+     <label class="field"><span>Type</span></label>
+     <div class="chips" style="margin:-8px 0 14px"><button class="chip" aria-pressed="true">Produit</button><button class="chip" aria-pressed="false">Processus</button><button class="chip" aria-pressed="false">Sécurité</button><button class="chip" aria-pressed="false">Environnement</button><button class="chip" aria-pressed="false">Fournisseur</button></div>
+     <label class="field"><span>Site et zone</span><select><option>Kénitra — Atelier usinage, ligne 2</option><option>Casablanca</option><option>Entrepôt Nord</option></select></label>
+     <label class="field"><span>Constaté le</span><input class="mono" value="12/11/2026 08:42"></label>
+    </div><div class="box pad"><h3 style="margin:0 0 8px;font-size:15px">Pièces jointes</h3><div class="photo has" style="height:110px">✓ 2 photos · 1 relevé pied à coulisse</div><p class="note">Seuls 2 champs sont obligatoires. La qualification est faite à l'étape suivante par le responsable QHSE.</p></div></div>
+    <div class="nextbar"><p>Étape suivante : <b>Qualifier</b> — gravité, référentiel et responsable.</p><a class="btn pri" href="#nc-qualifier">Enregistrer et qualifier →</a></div>
+   </div>
+
+   <div class="screen" id="s-nc-qualifier">
+    <div class="ph"><div><span class="ref">NC-2026-0418 · Kénitra · déclarée par Youssef Amrani</span><h2>Écart de cote Ø 12,05 mm sur lot 2611-B</h2></div><span class="st crit"><i></i>Bloquant — lot isolé</span></div>
+    <div class="flow" data-step="2"></div>
+    <div class="two"><div class="box pad">
+     <label class="field"><span>Gravité</span></label>
+     <div class="chips" style="margin:-8px 0 14px"><button class="chip" aria-pressed="false">Mineure</button><button class="chip" aria-pressed="true">Majeure</button><button class="chip" aria-pressed="false">Critique</button></div>
+     <label class="field"><span>Référentiel</span><select><option>ISO 9001:2015 §8.7 — Maîtrise des éléments de sortie non conformes</option><option>ISO 45001 §10.2</option></select></label>
+     <label class="field"><span>Décision immédiate</span><select><option>Isoler et trier 100 % (1 240 pièces)</option><option>Retouche</option><option>Dérogation client</option><option>Rebut</option></select></label>
+     <label class="field"><span>Pilote</span><select><option>Karim Tazi — Chef d'atelier usinage</option></select></label>
+    </div><div class="box pad"><dl class="kv"><dt>Lot</dt><dd class="mono">2611-B</dd><dt>Quantité</dt><dd class="mono">1 240 pcs</dd><dt>Mesuré</dt><dd class="mono">Ø 12,05 mm</dd><dt>Tolérance</dt><dd class="mono">Ø 12,00 ± 0,03 mm</dd><dt>Instrument</dt><dd class="mono">PAC-0142 (étalonné 03/2026)</dd><dt>Coût estimé</dt><dd class="mono">8 400 MAD</dd></dl></div></div>
+    <div class="nextbar"><p>Étape suivante : <b>Analyser</b> la cause racine. Le pilote sera notifié.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn" href="#nc-declarer">← Retour</a><a class="btn pri" href="#nc-analyser">Valider la qualification →</a></div></div>
+   </div>
+
+   <div class="screen" id="s-nc-analyser">
+    <div class="ph"><div><span class="ref">NC-2026-0418 · pilote Karim Tazi</span><h2>Analyse des causes</h2></div><div class="chips"><button class="chip" aria-pressed="true">5 pourquoi</button><button class="chip" aria-pressed="false">Ishikawa</button></div></div>
+    <div class="flow" data-step="3"></div>
+    <div class="two"><div class="box pad"><ol class="why" style="padding:0;margin:0">
+     <li>La cote Ø est hors tolérance de +0,05 mm.</li><li>L'outil de finition était usé au-delà de sa durée de vie.</li><li>Le compteur de pièces de l'outil n'a pas déclenché l'alerte.</li><li>Le seuil a été remis à zéro lors du changement de série.</li><li class="root">La procédure de changement de série (PR-USI-07) ne prévoit pas la vérification du compteur outil.</li></ol></div>
+     <div><div class="isk"><div><b>Méthode</b>PR-USI-07 incomplète</div><div><b>Machine</b>Tour CN T-03</div><div><b>Matière</b>RAS</div><div><b>Main-d'œuvre</b>Nouvel opérateur poste B</div><div><b>Milieu</b>RAS</div><div><b>Mesure</b>Contrôle 1/50 pièces</div></div></div></div>
+    <div class="nextbar"><p>Cause racine identifiée. Étape suivante : <b>planifier les actions</b>.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn" href="#nc-qualifier">← Retour</a><a class="btn pri" href="#nc-actions">Valider l'analyse →</a></div></div>
+   </div>
+
+   <div class="screen" id="s-nc-actions">
+    <div class="ph"><div><span class="ref">NC-2026-0418</span><h2>Plan d'actions</h2></div><button class="btn" id="addAct">＋ Ajouter une action</button></div>
+    <div class="flow" data-step="4"></div>
+    <div class="box tw"><table><thead><tr><th>Type</th><th>Action</th><th>Responsable</th><th>Échéance</th><th class="r">Budget MAD</th><th>Statut</th></tr></thead><tbody id="actBody">
+     <tr><td>Curative</td><td>Tri 100 % du lot 2611-B</td><td>K. Tazi</td><td class="mono">13/11/2026</td><td class="r">2 400</td><td><span class="st ok"><i></i>Faite</span></td></tr>
+     <tr><td>Corrective</td><td>Ajouter « contrôle compteur outil » à PR-USI-07</td><td>S. Bennani</td><td class="mono">20/11/2026</td><td class="r">0</td><td><span class="st warn"><i></i>En cours</span></td></tr>
+     <tr><td>Corrective</td><td>Former les opérateurs poste B (2 h)</td><td>N. El Idrissi</td><td class="mono">27/11/2026</td><td class="r">3 500</td><td><span class="st info"><i></i>Planifiée</span></td></tr>
+     <tr><td>Préventive</td><td>Alerte compteur bloquante sur tours T-01 à T-04</td><td>Maintenance</td><td class="mono">15/12/2026</td><td class="r">2 500</td><td><span class="st info"><i></i>Planifiée</span></td></tr>
+    </tbody><tfoot><tr><td colspan="4"><b>Total</b></td><td class="r"><b>8 400</b></td><td></td></tr></tfoot></table></div>
+    <div class="nextbar"><p>Clôture possible quand toutes les actions sont faites <b>et</b> l'efficacité vérifiée.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn" href="#nc-analyser">← Retour</a><a class="btn pri" href="#nc-cloturer">Passer à la vérification →</a></div></div>
+   </div>
+
+   <div class="screen" id="s-nc-cloturer">
+    <div class="ph"><div><span class="ref">NC-2026-0418</span><h2>Vérifier l'efficacité et clôturer</h2></div></div>
+    <div class="flow" data-step="5"></div>
+    <div class="two"><div class="box pad">
+     <label class="field"><span>Critère d'efficacité</span><input value="0 pièce hors tolérance sur 3 séries consécutives (contrôle 1/10)"></label>
+     <label class="field"><span>Résultat constaté</span></label>
+     <div class="chips" style="margin:-8px 0 14px"><button class="chip" aria-pressed="true">✓ Efficace</button><button class="chip" aria-pressed="false">✕ Non efficace — rouvrir</button></div>
+     <label class="field"><span>Commentaire</span><textarea rows="3">Séries 2614, 2615, 2617 : 0 écart sur 372 pièces contrôlées. Moyenne Ø 12,004 mm.</textarea></label>
+    </div><div class="box pad"><dl class="kv"><dt>Actions</dt><dd>4/4 faites</dd><dt>Délai total</dt><dd class="mono">26 jours</dd><dt>Coût final</dt><dd class="mono">8 400 MAD</dd><dt>Signataire</dt><dd>Salma Bennani</dd></dl><div class="meter"><i style="width:100%"></i></div></div></div>
+    <div class="nextbar"><p>La clôture est <b>signée et horodatée</b> ; le rapport PDF est généré.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn" href="#nc-actions">← Retour</a><button class="btn pri" id="closeNc">Clôturer la NC ✓</button></div></div>
+   </div>
+
+   <!-- Apparence -->
+   <div class="screen" id="s-apparence">
+    <div class="ph"><div><span class="ref">Paramétrage · Entreprise</span><h2>Apparence de l'application</h2></div></div>
+    <div class="two"><div class="box pad">
+     <label class="field"><span>Thème par défaut</span></label><div class="chips" id="skinChips" style="margin:-8px 0 16px"></div>
+     <label class="field"><span>Couleur principale</span></label><div class="chips" id="accChips" style="margin:-8px 0 16px"></div>
+     <label class="field"><span>Logo de l'entreprise (PNG, SVG, JPEG · ≤ 512 Ko)</span></label>
+     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><div class="logo-box lg-slot" style="width:64px;height:64px;font-size:20px">AL</div><label class="btn">Choisir un fichier…<input type="file" id="logoIn2" accept="image/png,image/svg+xml,image/jpeg" hidden></label><span class="note" id="logoMsg2">Utilisé dans l'en-tête web, le mobile et les rapports PDF.</span></div>
+    </div><div><p class="note" style="margin:0 0 6px">Aperçu d'en-tête de rapport PDF</p>
+     <div class="pdf"><div class="hd"><div class="lg lg-slot">AL</div><div><h4>Rapport de non-conformité</h4><p>Atlas Logistique &amp; Industrie · Site de Kénitra</p></div><div class="meta">NC-2026-0418<br>Édité le 12/11/2026<br>Page 1/3</div></div><p style="margin-top:12px">Référentiel : ISO 9001:2015 §8.7 · Gravité : Majeure · Coût : 8 400 MAD</p></div></div></div>
+   </div>
+   </div>
+  </div>
+ </div>
+ </section>
+
+ <!-- ================= MOBILE ================= -->
+ <section id="mobView" hidden>
+  <div class="phones">
+   <div><p class="ph-cap">1 · Accueil terrain</p><div class="phone"><div class="mob">
+    <div class="sbar"><span>09:41</span><span class="sync off"><i></i>Hors ligne · 2 en attente</span></div>
+    <div class="mhead"><div class="logo-box lg-slot">AL</div><div><h3>Bonjour Youssef</h3><small>Kénitra · Atelier usinage</small></div></div>
+    <div class="mbody">
+     <div class="queue"><b>⟳ 2</b> envois en attente — synchro auto dès le retour du réseau</div>
+     <a class="tile" href="#mobile" data-go="m-audit"><div class="t">Audit 5S — ligne 2</div><div class="s">12 questions · à faire aujourd'hui</div></a>
+     <a class="tile" href="#mobile"><div class="t">Action : contrôle compteur outil</div><div class="s">Échéance 20/11 · PR-USI-07</div></a>
+    </div>
+    <div class="mfoot"><button class="tap pri big" data-go="m-signaler">⚠ Signaler un problème</button><button class="tap" data-go="m-scan">▣ Scanner un instrument</button></div>
+   </div></div></div>
+
+   <div><p class="ph-cap">2 · Signalement en 3 étapes</p><div class="phone"><div class="mob" id="sig">
+    <div class="sbar"><span>09:42</span><span class="sync off"><i></i>Hors ligne</span></div>
+    <div class="mhead"><button class="tap" style="width:56px;min-height:56px;padding:0" id="sigBack" aria-label="Retour">←</button><div><h3 id="sigT">Quel type de problème ?</h3><small id="sigS">Étape 1 sur 3</small></div></div>
+    <div class="mbody"><div class="steps"><i class="on"></i><i></i><i></i></div>
+     <div data-p="1"><button class="opt" aria-pressed="false"><span class="ico">⚙</span>Produit / qualité</button><button class="opt" aria-pressed="false"><span class="ico">⛑</span>Sécurité</button><button class="opt" aria-pressed="false"><span class="ico">♻</span>Environnement</button><button class="opt" aria-pressed="false"><span class="ico">⛟</span>Équipement en panne</button></div>
+     <div data-p="2" hidden><div class="photo" id="ph">📷 Toucher pour prendre une photo</div><div class="row2" style="margin-top:10px"><button class="tap">🎙 Dicter</button><button class="tap">▣ Scanner l'équipement</button></div><p class="note" style="font-size:15px">Zone détectée : <b>Atelier usinage, ligne 2</b></p></div>
+     <div data-p="3" hidden><p style="font-size:17px;margin-top:0">Est-ce dangereux maintenant ?</p><button class="opt" aria-pressed="false"><span class="ico">▲</span>Oui — arrêt immédiat</button><button class="opt" aria-pressed="false"><span class="ico">◆</span>Non, mais à traiter vite</button><button class="opt" aria-pressed="false"><span class="ico">●</span>Non, pour information</button></div>
+    </div>
+    <div class="mfoot"><button class="tap pri big" id="sigNext">Continuer →</button></div>
+    <div class="flash" id="sigOk"><div class="chk">✓</div>Signalement enregistré<small style="font-size:16px;font-weight:500">Sera envoyé dès le retour du réseau</small><button class="tap" style="margin-top:14px;max-width:260px" id="sigReset">Terminé</button></div>
+   </div></div></div>
+
+   <div><p class="ph-cap">3 · Audit question par question</p><div class="phone"><div class="mob" id="aud">
+    <div class="sbar"><span>10:05</span><span class="sync on"><i></i>Synchronisé</span></div>
+    <div class="mhead"><div><h3>Audit 5S — ligne 2</h3><small id="audN">Question 4 sur 12</small></div></div>
+    <div class="mbody"><div class="steps" id="audBar"></div>
+     <p class="note" style="font-size:14px;margin:0">ISO 9001 §7.1.4 · Environnement de travail</p>
+     <p class="big-q" id="audQ">Les allées de circulation sont-elles dégagées et le marquage au sol visible ?</p>
+     <div class="ans"><button class="c" aria-pressed="false"><span>✓</span>Conforme</button><button class="nc" aria-pressed="false"><span>✕</span>Non conf.</button><button class="na" aria-pressed="false"><span>–</span>N/A</button></div>
+     <p class="note" style="font-size:15px;margin-top:14px">« Non conforme » ouvre la photo et crée une NC liée.</p>
+    </div>
+    <div class="mfoot"><div class="row2"><button class="tap" id="audPrev">← Précédente</button><button class="tap pri" id="audNext">Suivante →</button></div></div>
+   </div></div></div>
+
+   <div><p class="ph-cap">4 · Scan d'un instrument</p><div class="phone"><div class="mob" id="scn">
+    <div class="sbar"><span>10:12</span><span class="sync on"><i></i>Synchronisé</span></div>
+    <div class="mhead"><div><h3>Scanner un instrument</h3><small>Visez le QR code de l'étiquette</small></div></div>
+    <div class="viewfinder"><div class="fr"></div><p>Recherche du QR code…</p></div>
+    <div class="mbody" id="scnRes" hidden><div class="inst"><div><span>Instrument</span><b>Pied à coulisse 150 mm</b></div><div><span>Réf.</span><b class="mono">PAC-0142</b></div><div><span>Étalonnage</span><b class="st ok"><i></i>Valide · 03/2026</b></div><div><span>Prochain</span><b class="mono">03/2027</b></div><div><span>Incertitude</span><b class="mono">± 0,02 mm</b></div></div></div>
+    <div class="mfoot"><button class="tap pri big" id="scnGo">▣ Simuler le scan</button></div>
+   </div></div></div>
+  </div>
+ </section>
+ </div>
+</main>
+
+<div class="pal" id="pal" role="dialog" aria-label="Commande rapide"><div class="in">
+ <input id="palIn" placeholder="Rechercher ou taper une commande…" autocomplete="off">
+ <ul id="palList"></ul></div></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+var app=document.getElementById('app');
+function store(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
+function toast(t){var el=document.getElementById('toast');el.textContent=t;el.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(function(){el.classList.remove('on')},2600)}
+function buzz(){try{navigator.vibrate&&navigator.vibrate(40)}catch(e){}}
+
+/* theme */
+var skins=[['clair','Clair'],['sombre','Sombre'],['haute','Haute lisibilité']];
+var accs=[['#c2410c','Orange sécurité'],['#0b6e99','Bleu acier'],['#2f7d32','Vert process'],['#b42318','Rouge signal'],['#5b6670','Graphite']];
+function setSkin(s){app.dataset.skin=s;store('eq-skin',s);
+ document.documentElement.setAttribute('data-theme',s==='sombre'?'dark':'light');
+ document.querySelectorAll('[data-skin-btn],#skinSeg button').forEach(function(b){b.setAttribute('aria-pressed',String((b.dataset.skin||b.dataset.skinBtn)===s))})}
+function setAcc(c){app.style.setProperty('--acc',c);document.documentElement.style.setProperty('--acc',c);store('eq-acc',c);
+ document.querySelectorAll('[data-acc]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.acc===c))})}
+document.querySelectorAll('#skinSeg button').forEach(function(b){b.onclick=function(){setSkin(b.dataset.skin)}});
+var sc=document.getElementById('skinChips');skins.forEach(function(s){var b=document.createElement('button');b.className='chip';b.dataset.skinBtn=s[0];b.textContent=s[1];b.onclick=function(){setSkin(s[0])};sc.appendChild(b)});
+var as=document.getElementById('accSw'),ac=document.getElementById('accChips');
+accs.forEach(function(a){var b=document.createElement('button');b.className='sw';b.style.background=a[0];b.dataset.acc=a[0];b.title=a[1];b.setAttribute('aria-label',a[1]);b.onclick=function(){setAcc(a[0])};as.appendChild(b);
+ var c=document.createElement('button');c.className='chip';c.dataset.acc=a[0];c.innerHTML='<span style="display:inline-block;width:12px;height:12px;background:'+a[0]+';margin-right:6px"></span>'+a[1];c.onclick=function(){setAcc(a[0])};ac.appendChild(c)});
+
+/* logo */
+function paintLogo(d){document.querySelectorAll('.lg-slot').forEach(function(el){el.innerHTML=d?'<img alt="Logo" src="'+d+'">':'AL'})}
+function readLogo(f,msg){if(!f)return;var ok=['image/png','image/svg+xml','image/jpeg'];
+ if(ok.indexOf(f.type)<0){msg.textContent='Format refusé : PNG, SVG ou JPEG.';return}
+ if(f.size>512*1024){msg.textContent='Fichier trop lourd ('+Math.round(f.size/1024)+' Ko > 512 Ko).';return}
+ var r=new FileReader();r.onload=function(){paintLogo(r.result);store('eq-logo',r.result);msg.textContent='Logo appliqué : '+f.name;toast('Logo mis à jour partout')};r.readAsDataURL(f)}
+document.getElementById('logoIn').onchange=function(e){readLogo(e.target.files[0],document.getElementById('logoMsg'))};
+document.getElementById('logoIn2').onchange=function(e){readLogo(e.target.files[0],document.getElementById('logoMsg2'))};
+document.getElementById('logoReset').onclick=function(){paintLogo(null);try{localStorage.removeItem('eq-logo')}catch(e){}};
+
+setSkin(store('eq-skin')||'clair');setAcc(store('eq-acc')||'#c2410c');var lg=store('eq-logo');if(lg)paintLogo(lg);
+
+/* workflow stepper */
+var steps=[['nc-declarer','Déclarer'],['nc-qualifier','Qualifier'],['nc-analyser','Analyser'],['nc-actions','Planifier'],['nc-cloturer','Clôturer']];
+document.querySelectorAll('.flow').forEach(function(f){var cur=+f.dataset.step;f.innerHTML=steps.map(function(s,i){var c=i+1<cur?'done':(i+1===cur?'cur':'');return '<a class="'+c+'" href="#'+s[0]+'"><span class="n">'+(i+1)+'/5</span><b>'+s[1]+'</b></a>'}).join('')});
+
+/* routing */
+var crumbs={'mes-actions':['Mes actions'],'nc-liste':['Terrain','Non-conformités'],'nc-declarer':['Terrain','Non-conformités','Déclarer'],
+ 'nc-qualifier':['Terrain','Non-conformités','NC-2026-0418','Qualifier'],'nc-analyser':['Terrain','Non-conformités','NC-2026-0418','Analyser'],
+ 'nc-actions':['Terrain','Non-conformités','NC-2026-0418','Plan d\'actions'],'nc-cloturer':['Terrain','Non-conformités','NC-2026-0418','Clôturer'],'apparence':['Paramétrage','Apparence']};
+function route(){var h=(location.hash||'#mes-actions').slice(1);var mob=h==='mobile';
+ document.getElementById('webView').hidden=mob;document.getElementById('mobView').hidden=!mob;
+ document.getElementById('tabWeb').classList.toggle('on',!mob);document.getElementById('tabMob').classList.toggle('on',mob);
+ if(mob)return;if(!crumbs[h])h='mes-actions';
+ document.querySelectorAll('.screen').forEach(function(s){s.classList.toggle('on',s.id==='s-'+h)});
+ var fam=h.indexOf('nc-')===0?'nc':h;
+ document.querySelectorAll('.rail a').forEach(function(a){a.classList.toggle('on',a.dataset.nav===fam)});
+ var c=crumbs[h];document.getElementById('crumb').innerHTML='<a href="#mes-actions">Accueil</a>'+c.map(function(x,i){return ' › '+(i===c.length-1?'<b>'+x+'</b>':(x==='Non-conformités'?'<a href="#nc-liste">'+x+'</a>':x))}).join('')}
+window.addEventListener('hashchange',route);route();
+document.querySelectorAll('tr.go').forEach(function(r){r.onclick=function(){location.hash=r.dataset.href}});
+document.querySelectorAll('.chips').forEach(function(g){if(g.id)return;g.addEventListener('click',function(e){var b=e.target.closest('.chip');if(!b)return;g.querySelectorAll('.chip').forEach(function(x){x.setAttribute('aria-pressed',String(x===b))})})});
+document.getElementById('closeNc').onclick=function(){toast('NC-2026-0418 clôturée · rapport PDF généré');setTimeout(function(){location.hash='mes-actions'},900)};
+document.getElementById('addAct').onclick=function(){var tr=document.createElement('tr');tr.innerHTML='<td>Préventive</td><td><input style="width:100%;padding:6px;border:1px solid var(--line2);background:var(--surf)" placeholder="Décrire l\'action…"></td><td>—</td><td class="mono">—</td><td class="r">0</td><td><span class="st info"><i></i>Brouillon</span></td>';document.getElementById('actBody').appendChild(tr);tr.querySelector('input').focus()};
+
+/* palette */
+var cmds=[['Actions','Déclarer une non-conformité','#nc-declarer','N'],['Actions','Lancer un audit','#mobile',''],['Aller à','Mes actions','#mes-actions',''],['Aller à','Non-conformités','#nc-liste',''],['Aller à','Paramétrage › Apparence','#apparence',''],
+ ['Résultats','NC-2026-0418 · Écart de cote Ø 12,05 mm','#nc-qualifier',''],['Résultats','NC-2026-0411 · Fuite hydraulique CH-07','#nc-analyser',''],['Résultats','PAC-0142 · Pied à coulisse 150 mm','#mobile','']];
+var pal=document.getElementById('pal'),pin=document.getElementById('palIn'),pl=document.getElementById('palList');
+function drawPal(q){q=(q||'').toLowerCase();var g='',h='';cmds.filter(function(c){return c[1].toLowerCase().indexOf(q)>=0}).forEach(function(c){if(c[0]!==g){g=c[0];h+='<li class="grp">'+g+'</li>'}h+='<li><button data-h="'+c[2]+'">'+c[1]+(c[3]?'<small>'+c[3]+'</small>':'')+'</button></li>'});pl.innerHTML=h||'<li class="grp">Aucun résultat</li>'}
+function openPal(){pal.classList.add('on');pin.value='';drawPal('');pin.focus()}
+document.getElementById('openPal').onclick=openPal;
+document.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();openPal()}if(e.key==='Escape')pal.classList.remove('on')});
+pin.oninput=function(){drawPal(pin.value)};
+pal.onclick=function(e){var b=e.target.closest('button');if(b){location.hash=b.dataset.h;pal.classList.remove('on')}else if(e.target===pal)pal.classList.remove('on')};
+
+/* mobile: tiles */
+document.querySelectorAll('[data-go]').forEach(function(b){b.addEventListener('click',function(e){e.preventDefault();var t=document.getElementById({'m-signaler':'sig','m-audit':'aud','m-scan':'scn'}[b.dataset.go]);t.scrollIntoView({behavior:'smooth',block:'center'});t.parentNode.style.outline='4px solid var(--acc)';setTimeout(function(){t.parentNode.style.outline=''},1200)})});
+document.querySelectorAll('.mob .mbody').forEach(function(m){m.addEventListener('click',function(e){var o=e.target.closest('.opt');if(!o)return;o.parentNode.querySelectorAll('.opt').forEach(function(x){x.setAttribute('aria-pressed',String(x===o))});buzz()})});
+
+/* signaler */
+var sp=1,tt=['Quel type de problème ?','Montrez le problème','Quelle urgence ?'];
+function sigDraw(){document.querySelectorAll('#sig [data-p]').forEach(function(p){p.hidden=+p.dataset.p!==sp});
+ document.querySelectorAll('#sig .steps i').forEach(function(i,k){i.classList.toggle('on',k<sp)});
+ document.getElementById('sigT').textContent=tt[sp-1];document.getElementById('sigS').textContent='Étape '+sp+' sur 3';
+ document.getElementById('sigNext').textContent=sp===3?'✓ Envoyer le signalement':'Continuer →'}
+document.getElementById('ph').onclick=function(){this.classList.add('has');this.textContent='✓ Photo ajoutée (1)';buzz()};
+document.getElementById('sigNext').onclick=function(){buzz();if(sp<3){sp++;sigDraw()}else document.getElementById('sigOk').classList.add('on')};
+document.getElementById('sigBack').onclick=function(){if(sp>1){sp--;sigDraw()}};
+document.getElementById('sigReset').onclick=function(){document.getElementById('sigOk').classList.remove('on');sp=1;sigDraw()};
+
+/* audit */
+var qs=['Les postes sont-ils exempts d\'objets inutiles ?','Chaque outil a-t-il un emplacement identifié ?','Le poste est-il propre en fin de poste ?','Les allées de circulation sont-elles dégagées et le marquage au sol visible ?','Les extincteurs sont-ils accessibles et vérifiés (étiquette < 12 mois) ?','Les fiches de poste affichées sont-elles à l\'indice en vigueur ?'];
+var qi=3,ans={};
+function audDraw(){document.getElementById('audN').textContent='Question '+(qi+1)+' sur 12';document.getElementById('audQ').textContent=qs[qi%qs.length];
+ document.getElementById('audBar').innerHTML=Array.from({length:12},function(_,k){return '<i class="'+(k<=qi?'on':'')+'"></i>'}).join('');
+ document.querySelectorAll('#aud .ans button').forEach(function(b){b.setAttribute('aria-pressed',String(ans[qi]===b.className))})}
+document.querySelectorAll('#aud .ans button').forEach(function(b){b.onclick=function(){ans[qi]=b.className;buzz();audDraw();if(b.className!=='nc')setTimeout(function(){if(qi<11){qi++;audDraw()}},350);else toast('Non-conformité : photo demandée, NC liée créée')}});
+document.getElementById('audNext').onclick=function(){if(qi<11){qi++;audDraw()}};
+document.getElementById('audPrev').onclick=function(){if(qi>0){qi--;audDraw()}};
+audDraw();
+
+/* scan */
+document.getElementById('scnGo').onclick=function(){buzz();document.querySelector('#scn .viewfinder').hidden=true;document.getElementById('scnRes').hidden=false;this.textContent='Enregistrer une mesure avec PAC-0142';toast('QR lu · PAC-0142')};
+})();
+</script>
