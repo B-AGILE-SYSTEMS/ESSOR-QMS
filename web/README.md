@@ -68,4 +68,19 @@ En déploiement : `docker compose --profile web up -d` depuis `deploy/` ; le Ngi
 - `e2e/` : parcours NC complet, paramétrage, incidents et pièces jointes (contrôle de signature, Idempotency-Key, `sync/changes`), M3
   (import ISO 45001 avec simulation et erreur, audit jusqu'au rapport PDF, cycle d'un document jusqu'à l'accusé de lecture), API simulée
   en mémoire (`page.route`, `mock-api.ts` + `mock-api-m3.ts`), écran 1440 px.
+- M3b (contrat `docs/pilotage/cartes/M3B-contrat.md`, `core/m3b.models.ts`, `core/m3b.service.ts`) — contrôles des flux et traçabilité :
+  - `features/lots` (Ressources → Lots & traçabilité) : liste (`GET /api/lots?q=&status=`), réception (`POST /api/lots`), fiche lot (statut et historique,
+    `POST …/status {status, reason}` — DEROGATION réservée à QUALITY_MANAGER, motif exigé —, contrôles du lot, généalogie descendante/ascendante
+    `GET …/trace?direction=&depth=`). `rappel.component` : `GET …/recall`, export `…/recall.pdf`, blocage du stock restant après confirmation dans la page
+    = `POST …/status QUARANTAINE` pour le lot source et chaque lot impacté non encore bloqué (le serveur émet le webhook).
+  - `features/controles` (Terrain → Contrôles) : à faire / en cours / historique, saisie guidée par le plan (verdict selon tolérances, `PUT …/results`
+    avec `Idempotency-Key`, décision proposée selon Ac/Re, `POST …/decision`), carte de contrôle SVG X̄/R (`GET /api/inspections/spc`).
+  - `features/parametrage` : Plans de contrôle (éditeur de caractéristiques), Données de base & connecteurs (import `?dryRun=true` puis réel, webhook).
+  - Formats du back-end livré : blocage `POST /api/lots/{id}/recall/block {reason}` → `{blocked}` ; rappel `{source, lotsImpactes[remaining], …}` ;
+    `GET|PUT /api/connectors/webhook {url, secret, enabled}` (secret jamais renvoyé, `secretSet`) et `…/webhook/deliveries` ; inspections
+    `?status=&lotId=&point=`, `sampling{lotSize, nqa, codeLetter, planLetter, sampleSize, ac, re}`, statuts A_FAIRE|EN_COURS|TERMINEE, `proposedDecision` ;
+    motif obligatoire pour QUARANTAINE|DEROGATION|REFUSE|DETRUIT, commentaire obligatoire pour toute décision ≠ LIBERE ; plan `target{type, id, famille}`,
+    PUT = nouvelle version, 409 `plan_outdated` ; SPC `{subgroupSize, points, limits{xbar, range}, sigma, cp, cpk, alerts}`.
+  - Hypothèses restantes : `GET /api/inspections/{id}`, `GET /api/master-data/{articles|partners}`, champs des points SPC `{index, mean, range}`.
+  - E2E : `e2e/m3b-lots-controles.spec.ts` sur `e2e/mock-api-m3b.ts`.
 - Design system : variables CSS dans `src/styles.scss`. Polices Archivo et IBM Plex Mono embarquées via `@fontsource` (aucun CDN).
