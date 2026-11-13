@@ -23,6 +23,7 @@ export const NAV_FAMILIES: NavFamily[] = [
       { label: 'Non-conformités', path: '/non-conformites' },
       { label: 'Incidents & sécurité', path: '/incidents' },
       { label: 'Audits & inspections', path: '/audits' },
+      { label: 'Contrôles', path: '/controles' },
     ],
   },
   {
@@ -37,12 +38,15 @@ export const NAV_FAMILIES: NavFamily[] = [
     items: [
       { label: 'Équipements', path: '/equipements' },
       { label: 'Documents', path: '/documents' },
+      { label: 'Lots & traçabilité', path: '/lots' },
     ],
   },
   {
     label: 'Administration',
     items: [
       { label: 'Référentiels', path: '/parametrage/referentiels', role: ['ADMIN', 'QUALITY_MANAGER'] },
+      { label: 'Plans de contrôle', path: '/parametrage/plans-controle', role: ['ADMIN', 'QUALITY_MANAGER'] },
+      { label: 'Données de base & connecteurs', path: '/parametrage/donnees-base', role: 'ADMIN' },
       { label: 'Workflows', path: '/parametrage/workflows', role: 'ADMIN' },
       { label: 'Règles de notification', path: '/parametrage/notifications', role: 'ADMIN' },
       { label: 'Apparence', path: '/parametrage/apparence', role: 'ADMIN' },

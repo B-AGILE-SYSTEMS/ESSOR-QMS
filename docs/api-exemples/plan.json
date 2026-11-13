@@ -1,0 +1,42 @@
+{
+  "id" : "fef75444-5676-4004-bd15-e6d8c946bbfe",
+  "code" : "PC-3dd90618",
+  "version" : 1,
+  "label" : "Plan RECEPTION",
+  "point" : "RECEPTION",
+  "target" : {
+    "type" : "article",
+    "id" : "12e85777-22e7-47a3-bb4b-5c02e39f91af",
+    "famille" : null
+  },
+  "characteristics" : [ {
+    "code" : "DIAM",
+    "libelle" : "Diamètre",
+    "type" : "mesure",
+    "nominal" : 10.0,
+    "tolMin" : 9.0,
+    "tolMax" : 11.0,
+    "unite" : "mm",
+    "instrumentRequis" : "pied à coulisse",
+    "criticite" : "critique"
+  }, {
+    "code" : "ASPECT",
+    "libelle" : "Aspect",
+    "type" : "attribut",
+    "nominal" : null,
+    "tolMin" : null,
+    "tolMax" : null,
+    "unite" : null,
+    "instrumentRequis" : null,
+    "criticite" : "mineure"
+  } ],
+  "sampling" : {
+    "mode" : "iso2859",
+    "taille" : null,
+    "nqa" : "2.5",
+    "niveau" : "II"
+  },
+  "frequency" : null,
+  "active" : true,
+  "createdAt" : "2026-11-13T14:26:43.150100Z"
+}

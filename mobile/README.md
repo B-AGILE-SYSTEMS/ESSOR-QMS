@@ -40,10 +40,23 @@ Il suit l'écran 1 de la maquette mobile : barre d'état hors ligne / synchro to
 - **Accusé de lecture** : `document.ack` → `POST /api/documents/{id}/versions/{v}/ack`, différé tant que le réseau manque ; l'état « Lu » est immédiat.
 - **Hypothèses hors contrat** (à confirmer côté back) : lecture de la grille `GET /api/audits/{id}/checklist` ; fichier d'une version `GET /api/documents/{id}/versions/{v}/file` ; version en vigueur exposée dans `currentVersion {id, number, fileName}` de la liste.
 
+## M3b — contrôle de lot hors ligne (`lib/core/m3b/`, `lib/features/controls/`)
+- **Scan** (bouton « Contrôler un lot ») : GS1-128 (`lib/core/m3b/gs1.dart` : FNC1 = GS ou notation `(AI)`, préfixe `]C1` ; AI 00 SSCC avec clé de contrôle, 01 GTIN, 10 lot, 17 DLC avec JJ=00 = fin de mois) ou QR `essor://lot/<id>` ; saisie manuelle possible. Le lot est cherché dans le cache (numéro ESSOR ou n° lot fournisseur), sinon `GET /api/lots?q=` / `GET /api/lots/{id}` si le réseau est là.
+- **Cache** à chaque cycle : `GET /api/control-plans` et `GET /api/lots?status=EN_ATTENTE`. Plans proposés : ceux dont la cible (`target {type, id, famille}`) correspond à l'article, la famille ou le fournisseur du lot (tous, à défaut).
+- **Contrôle guidé** : une caractéristique par écran ; mesure → autant de valeurs que `sampling.sampleSize` (ou `taille` en mode fixe, 1 sinon, ajout possible), verdict automatique selon tolérances (bornes incluses) ; attribut / document → conforme ou non ; instrument obligatoire si `instrumentRequis`.
+- **Décision proposée** : critique non conforme → REFUSE, autre écart → QUARANTAINE, sinon LIBERE. DEROGATION n'est offerte qu'au rôle QUALITY_MANAGER. Motif obligatoire pour toute décision autre que LIBERE.
+- **File M2** : `inspection.create` → `POST /api/inspections` (id serveur mémorisé), `inspection.results` → `PUT /api/inspections/{id}/results`, `inspection.photo`, `inspection.decision` → `POST /api/inspections/{id}/decision`, chacune avec sa `Idempotency-Key`. Le statut du lot est mis à jour localement tout de suite.
+- **Hypothèses hors contrat** : `tolMin`/`tolMax` sont des limites absolues (lues comme écarts au nominal si `tolMax` < nominal) ; photos envoyées à `POST /api/inspections/{id}/attachments` (non décrit par le contrat : un refus passe « à revoir » sans bloquer la file).
+- **Limites** : la liste serveur `GET /api/inspections` (contrôles A_FAIRE) et `proposedDecision` ne sont pas encore lues ; la taille ISO 2859 n'est connue hors ligne que si le plan la porte.
+
 ## Captures
 `SCREENSHOT_DIR=<dossier> FLUTTER_ROOT=<sdk> flutter test test/widget/m3_flow_test.dart` écrit `mes-audits.png`, `audit-question-hors-ligne.png` et `documents-hors-ligne.png`.
 
 `SCREENSHOT_DIR=<dossier> FLUTTER_ROOT=<sdk> flutter test test/widget/m2_flow_test.dart` écrit `accueil.png`, `signalement-etape3-hors-ligne.png` et `mes-taches.png`.
+
+`test/widget/m3b_flow_test.dart` écrit `controle-mesure-hors-ligne.png` et `controle-decision-hors-ligne.png`.
+
+Les tests de bout en bout attendent un état (file vide, texte affiché) et non une durée (`settleUntil`, `settleSynced`, `tapPhoto` dans `test/widget/m2_flow_test.dart`).
 
 ## Commandes
 ```bash

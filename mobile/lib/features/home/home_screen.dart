@@ -220,6 +220,12 @@ class _Footer extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return BottomActions(
       children: [
+        OutlinedButton.icon(
+          key: const Key('controlButton'),
+          onPressed: () => context.go('/controle'),
+          icon: const Icon(Icons.inventory_2, size: 26),
+          label: const Text('Contrôler un lot'),
+        ),
         FilledButton.icon(
           key: const Key('reportButton'),
           style: FilledButton.styleFrom(

@@ -67,6 +67,8 @@ spring:
           issuer-uri: ${ESSOR_OIDC_PUBLIC_URL:http://localhost/auth/realms/essor}
 
 essor:
+  # Clé de chiffrement des secrets stockés en base (obligatoire, contrôlée au démarrage).
+  secret-key: ${ESSOR_SECRET_KEY:}
   storage:
     dir: ${ESSOR_STORAGE_DIR:./data/files}
   tenancy:

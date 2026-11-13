@@ -36,23 +36,7 @@ class ApiOperationUploader implements OperationUploader {
           );
         case OpKind.attachment:
           final id = await _recordId(p);
-          final path = p['path'] as String;
-          if (!File(path).existsSync()) {
-            throw const ConflictSyncException(
-              'Photo introuvable sur le téléphone.',
-            );
-          }
-          await _dio.post<Object?>(
-            '/records/$id/attachments',
-            data: FormData.fromMap({
-              'file': await MultipartFile.fromFile(
-                path,
-                filename: path.split(Platform.pathSeparator).last,
-                contentType: DioMediaType('image', 'jpeg'),
-              ),
-            }),
-            options: options,
-          );
+          await _sendPhoto('/records/$id/attachments', p, options);
         case OpKind.auditAnswer:
           await _dio.put<Object?>(
             '/audits/${p['auditId']}/answers/${p['questionId']}',
@@ -68,12 +52,72 @@ class ApiOperationUploader implements OperationUploader {
             '/documents/${p['documentId']}/versions/${p['version']}/ack',
             options: options,
           );
+        case OpKind.inspectionCreate:
+          final r = await _dio.post<Map<String, dynamic>>(
+            '/inspections',
+            data: {
+              'lotId': p['lotId'],
+              'controlPlanId': p['controlPlanId'],
+              'point': p['point'],
+            },
+            options: options,
+          );
+          await _db.saveMapping(p['clientId'] as String, '${r.data?['id']}');
+        case OpKind.inspectionResults:
+          final id = await _inspectionId(p);
+          await _dio.put<Object?>(
+            '/inspections/$id/results',
+            data: p['results'],
+            options: options,
+          );
+        case OpKind.inspectionPhoto:
+          final id = await _inspectionId(p);
+          await _sendPhoto('/inspections/$id/attachments', p, options);
+        case OpKind.inspectionDecision:
+          final id = await _inspectionId(p);
+          await _dio.post<Object?>(
+            '/inspections/$id/decision',
+            data: {'decision': p['decision'], 'comment': p['comment']},
+            options: options,
+          );
         default:
           throw ConflictSyncException('Opération inconnue : ${op.kind}');
       }
     } on DioException catch (e) {
       throw classify(e);
     }
+  }
+
+  Future<void> _sendPhoto(
+    String url,
+    Map<String, dynamic> p,
+    Options options,
+  ) async {
+    final path = p['path'] as String;
+    if (!File(path).existsSync()) {
+      throw const ConflictSyncException('Photo introuvable sur le téléphone.');
+    }
+    await _dio.post<Object?>(
+      url,
+      data: FormData.fromMap({
+        'file': await MultipartFile.fromFile(
+          path,
+          filename: path.split(Platform.pathSeparator).last,
+          contentType: DioMediaType('image', 'jpeg'),
+        ),
+      }),
+      options: options,
+    );
+  }
+
+  Future<String> _inspectionId(Map<String, dynamic> p) async {
+    final id = await _db.serverIdFor(p['inspectionClientId'] as String);
+    if (id == null) {
+      throw const ConflictSyncException(
+        'Le contrôle lié n\'a pas été créé sur le serveur.',
+      );
+    }
+    return id;
   }
 
   Future<String> _recordId(Map<String, dynamic> p) async {
@@ -104,6 +148,7 @@ Exception classify(DioException e) {
       status >= 400 &&
       status < 500 &&
       status != 401 &&
+      status != 404 && // ressource pas encore visible : on retente
       status != 408 &&
       status != 429) {
     final body = e.response?.data;

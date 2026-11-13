@@ -1,0 +1,114 @@
+{
+  "id" : "6d435f8d-a869-4f9c-8d40-6b9ee2df9675",
+  "lot" : {
+    "id" : "ac3f7785-4116-444e-9b72-332ed3042929",
+    "article" : {
+      "id" : "12e85777-22e7-47a3-bb4b-5c02e39f91af",
+      "code" : "ART-3b2352e1",
+      "label" : "Article ART-3b2352e1",
+      "unit" : "kg",
+      "family" : "FAM-T"
+    },
+    "numero" : "L-135898f4",
+    "supplier" : {
+      "id" : "7478a059-a7c9-414d-8aab-d1d7b8177572",
+      "code" : "FOU-4d75ba2f",
+      "name" : "Nom FOU-4d75ba2f"
+    },
+    "supplierLot" : "F-L-135898f4",
+    "quantity" : 1000.0,
+    "unit" : "kg",
+    "dlc" : null,
+    "site" : {
+      "id" : "00000000-0000-0000-0000-0000000051a2",
+      "code" : "ENTREPOT-TNG",
+      "name" : "Entrepôt de Tanger"
+    },
+    "qualityStatus" : "EN_ATTENTE",
+    "createdAt" : "2026-11-13T14:26:43.137479Z",
+    "updatedAt" : "2026-11-13T14:26:43.137479Z"
+  },
+  "controlPlan" : {
+    "id" : "fef75444-5676-4004-bd15-e6d8c946bbfe",
+    "code" : "PC-3dd90618",
+    "version" : 1,
+    "label" : "Plan RECEPTION",
+    "point" : "RECEPTION",
+    "target" : {
+      "type" : "article",
+      "id" : "12e85777-22e7-47a3-bb4b-5c02e39f91af",
+      "famille" : null
+    },
+    "characteristics" : [ {
+      "code" : "DIAM",
+      "libelle" : "Diamètre",
+      "type" : "mesure",
+      "nominal" : 10.0,
+      "tolMin" : 9.0,
+      "tolMax" : 11.0,
+      "unite" : "mm",
+      "instrumentRequis" : "pied à coulisse",
+      "criticite" : "critique"
+    }, {
+      "code" : "ASPECT",
+      "libelle" : "Aspect",
+      "type" : "attribut",
+      "nominal" : null,
+      "tolMin" : null,
+      "tolMax" : null,
+      "unite" : null,
+      "instrumentRequis" : null,
+      "criticite" : "mineure"
+    } ],
+    "sampling" : {
+      "mode" : "iso2859",
+      "taille" : null,
+      "nqa" : "2.5",
+      "niveau" : "II"
+    },
+    "frequency" : null,
+    "active" : true,
+    "createdAt" : "2026-11-13T14:26:43.150100Z"
+  },
+  "point" : "RECEPTION",
+  "sampling" : {
+    "ac" : 5,
+    "re" : 6,
+    "nqa" : "2.5",
+    "mode" : "iso2859",
+    "niveau" : "II",
+    "lotSize" : 1000,
+    "codeLetter" : "J",
+    "planLetter" : "J",
+    "sampleSize" : 80
+  },
+  "sampleSize" : 80,
+  "status" : "EN_COURS",
+  "results" : [ {
+    "characteristic" : "ASPECT",
+    "values" : [ ],
+    "ok" : true,
+    "instrument" : null,
+    "planVersion" : 1,
+    "siteId" : "00000000-0000-0000-0000-0000000051a2",
+    "author" : "Nom tb.terrain",
+    "at" : "2026-11-13T14:26:43.172564Z"
+  }, {
+    "characteristic" : "DIAM",
+    "values" : [ 10.1, 11.5 ],
+    "ok" : false,
+    "instrument" : "PAC-01",
+    "planVersion" : 1,
+    "siteId" : "00000000-0000-0000-0000-0000000051a2",
+    "author" : "Nom tb.terrain",
+    "at" : "2026-11-13T14:26:43.172564Z"
+  } ],
+  "proposedDecision" : "REFUSE",
+  "decision" : null,
+  "comment" : null,
+  "ncId" : null,
+  "createdBy" : "Nom tb.terrain",
+  "createdAt" : "2026-11-13T14:26:43.159278Z",
+  "decidedBy" : null,
+  "decidedAt" : null
+}

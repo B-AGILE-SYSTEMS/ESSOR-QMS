@@ -65,6 +65,85 @@ class FakeServer {
     },
   ];
 
+  // --- M3b ---
+  final inspections = <Map<String, dynamic>>[];
+  final results = <String, Object?>{};
+  final decisions = <String, Map<String, dynamic>>{};
+  List<Map<String, Object?>> lots = [
+    {
+      'id': 'lot-1',
+      'numero': 'L2611-B',
+      'article': {
+        'id': 'art-1',
+        'code': 'AX-12',
+        'designation': 'Axe Ø 12',
+        'famille': 'USINE',
+      },
+      'supplier': {'id': 'p-1', 'code': 'F-ACIER'},
+      'supplierLot': 'ACX4471',
+      'quantity': 1240,
+      'unit': 'pcs',
+      'qualityStatus': 'EN_ATTENTE',
+    },
+  ];
+  List<Map<String, Object?>> plans = [
+    {
+      'id': 'cp-1',
+      'name': 'Réception axes',
+      'point': 'RECEPTION',
+      'version': 2,
+      'target': {'type': 'article', 'id': 'art-1'},
+      'sampling': {'mode': 'fixe', 'taille': 2},
+      'characteristics': [
+        {
+          'code': 'DIAM',
+          'libelle': 'Diamètre Ø',
+          'type': 'mesure',
+          'nominal': 12.0,
+          'tolMin': 11.97,
+          'tolMax': 12.03,
+          'unite': 'mm',
+          'instrumentRequis': 'micromètre',
+          'criticite': 'critique',
+        },
+        {
+          'code': 'ASP',
+          'libelle': 'Aspect visuel',
+          'type': 'attribut',
+          'criticite': 'mineure',
+        },
+      ],
+    },
+    {
+      'id': 'cp-9',
+      'name': 'Autre article',
+      'point': 'RECEPTION',
+      'target': {'type': 'article', 'id': 'art-9'},
+      'characteristics': <Object>[],
+    },
+  ];
+
+  (int, Object?)? _m3b(RequestOptions o) {
+    final p = o.path;
+    if (p == '/lots') return (200, lots);
+    if (p == '/control-plans') return (200, plans);
+    if (p == '/inspections' && o.method == 'POST') {
+      keys.add(o.headers['Idempotency-Key'] as String);
+      inspections.add(Map<String, dynamic>.from(o.data as Map));
+      return (201, {'id': 'insp-${inspections.length}', 'sampleSize': 2});
+    }
+    final r = RegExp(r'^/inspections/([^/]+)/(results|decision)$')
+        .firstMatch(p);
+    if (r == null) return null;
+    keys.add(o.headers['Idempotency-Key'] as String);
+    if (r.group(2) == 'results') {
+      results[r.group(1)!] = o.data;
+    } else {
+      decisions[r.group(1)!] = Map<String, dynamic>.from(o.data as Map);
+    }
+    return (200, {'id': r.group(1)});
+  }
+
   bool _m3Write() {
     final cut = cutAfterWrites;
     if (cut != null && _m3Writes >= cut) {
@@ -105,7 +184,7 @@ class FakeServer {
         reason: 'hors ligne',
       );
     }
-    final m3 = _m3(o);
+    final m3 = _m3(o) ?? _m3b(o);
     if (m3 != null) return m3;
     final key = o.headers['Idempotency-Key'];
     if (key is String) keys.add(key);

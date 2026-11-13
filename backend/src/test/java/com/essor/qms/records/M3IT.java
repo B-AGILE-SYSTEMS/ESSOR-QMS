@@ -262,6 +262,7 @@ class M3IT extends AbstractIntegrationTest {
         call(put("/api/audits/" + id + "/answers/" + q4), AUDITEUR, "{\"result\":\"observation\"}", 200);
         call(post("/api/records/" + id + "/transitions/rediger_rapport"), AUDITEUR, "{}", 200);
         JsonNode detail = call(get("/api/audits/" + id), QUALITE, null, 200);
+        com.essor.qms.ApiExamples.write("audit", detail);
         assertThat(detail.path("ncs").size()).isEqualTo(2);
         assertThat(detail.path("summary").path("conformityRate").asDouble()).isEqualTo(50.0);
         call(put("/api/audits/" + id + "/answers/" + q4), AUDITEUR, "{\"result\":\"conforme\"}", 409);
@@ -367,6 +368,7 @@ class M3IT extends AbstractIntegrationTest {
             assertThat(diffused.path("inForce").asBoolean()).isTrue();
         }
         JsonNode view = call(get("/api/documents/" + id), TERRAIN, null, 200);
+        com.essor.qms.ApiExamples.write("document", view);
         assertThat(view.path("versions").findValuesAsText("status")).containsExactly("DIFFUSE", "PERIME");
         assertThat(count("select count(*) from document_version where document_id = '" + id
                 + "' and status = 'DIFFUSE'")).isEqualTo(1);

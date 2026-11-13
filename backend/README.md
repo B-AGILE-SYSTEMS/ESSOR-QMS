@@ -11,6 +11,7 @@ Java 21, Spring Boot 3.3, Spring Modulith, PostgreSQL 16 (Flyway, RLS), Keycloak
 | `identity` | sécurité (BFF + Bearer JWT), rôles Keycloak, provisionnement à la volée, `/api/me`, `/api/users` |
 | `records`  | moteur générique de fiches : types, workflow JSON, fiches (NC, actions), historique, « Mes actions », tableau de bord, tâche planifiée des échéances ; publie `RecordEvents` |
 | `notifications` | notifications in-app, SSE, e-mail SMTP, règles événement × canal ; écoute `RecordEvents` |
+| `traceability` | M3b : articles, partenaires, lots et statut qualité, généalogie, rappel, plans de contrôle, contrôles, ISO 2859-1, SPC, webhook sortant ; crée les NC via `records.NonConformities` |
 
 `identity` dépend de `tenancy`, `notifications` de `records` (événements) ; `shared` est partagé. `ModularityTest` vérifie ces frontières.
 
@@ -111,6 +112,38 @@ Notifications `DOCUMENT_DIFFUSED` (destinataires : rôles ou sites) et `REVIEW_D
 à J-30 au plus, une fois par date, tâche quotidienne M1). Fichiers : `<essor.storage.dir>/documents/<tenant>/<id>`.
 Démo (profil `demo`) : ISO 9001:2015 et ISO 45001:2018 (titres, résumés maison), un audit planifié, PR-QHSE-07.
 RLS FORCE sur `standard`, `requirement`, `record_requirement`, `audit_question`, `document_version`, `document_ack`.
+
+## API (M3b) — voir `docs/pilotage/cartes/M3B-contrat.md`
+
+| Méthode | Chemin | Accès |
+|---|---|---|
+| GET / POST | `/api/master-data/articles` `{code,label,family,unit,tracking:"lot|serie",dlc}` ; `/api/master-data/partners?type=` `{code,name,type:"fournisseur|client"}` | lecture : authentifié ; écriture : ADMIN, QUALITY_MANAGER |
+| POST | `/api/master-data/{articles|partners}/import?dryRun=` (multipart `file`, xlsx ou csv `;`) → `{created,updated,errors:[{line,message}],applied,dryRun}` ; colonnes `code;designation;famille;unite;suivi;dlc` / `code;nom;type` | ADMIN, QUALITY_MANAGER |
+| POST / GET | `/api/lots` `{articleId,numero,supplierId,supplierLot,quantity,unit,dlc,siteId}` → `Lot` ; `?q=&status=&articleId=` | sauf READER |
+| GET | `/api/lots/{id}` → `{lot, history:[{at,from,to,reason,author,ncId,inspectionId}], inspections:[...]}` | authentifié |
+| POST | `/api/lots/{id}/status` `{status,reason,ncId?}` (motif obligatoire pour QUARANTAINE, DEROGATION, REFUSE, DETRUIT ; DEROGATION : QUALITY_MANAGER ; DETRUIT final → 409 `lot_final`) | sauf READER |
+| POST | `/api/lots/{id}/links` `{kind,targetLotId?,partnerId?,quantity,reference}` → 201 (`shipped_to` : client ; boucle → 409 `genealogy_cycle`) | sauf READER |
+| GET | `/api/lots/{id}/trace?direction=up|down&depth=` (10 par défaut, 50 max) → `{lot, children:[{link, node}]}` (`node` nul pour `shipped_to`) | authentifié |
+| GET | `/api/lots/{id}/recall` → `{source, lotsImpactes:[{id,numero,article,qualityStatus,quantity,remaining,unit,supplier,supplierLot}], clients:[{partner,quantite,references}], quantites:{enStock,enCours,expedie}}` ; `/recall.pdf` | authentifié |
+| POST | `/api/lots/{id}/recall/block` `{reason}` → `{blocked:[Lot]}` : QUARANTAINE des lots impactés au restant > 0 | ADMIN, QUALITY_MANAGER |
+| GET / POST / PUT | `/api/control-plans?point=&all=` ; PUT `/{id}` crée la version suivante (409 `plan_outdated` si non active) | écriture : ADMIN, QUALITY_MANAGER |
+| POST | `/api/inspections` `{lotId,controlPlanId,point}` → `Inspection` (`sampling:{mode,lotSize,nqa,codeLetter,planLetter,sampleSize,ac,re}`) | sauf READER |
+| GET | `/api/inspections?status=A_FAIRE|EN_COURS|TERMINEE&lotId=&point=` ; `/api/inspections/{id}` (`proposedDecision`) | authentifié |
+| PUT | `/api/inspections/{id}/results` `[{characteristic,values,ok?,instrument?}]` (Idempotency-Key ; `ok` calculé sur tolérances pour une mesure) | sauf READER |
+| POST | `/api/inspections/{id}/decision` `{decision,comment}` (commentaire obligatoire sauf LIBERE ; NC si REFUSE / DEROGATION) | sauf READER ; DEROGATION : QUALITY_MANAGER |
+| GET | `/api/inspections/spc?controlPlanId=&characteristic=&limit=50` → `{subgroupSize,points:[{mean,range,values,...}],limits:{xbar,range},sigma,cp,cpk,alerts:[{type,index,message}]}` | authentifié |
+| GET / PUT | `/api/connectors/webhook` `{url,secret,enabled}` (secret jamais relu : `secretSet`) ; GET `/deliveries` (journal) | ADMIN (journal : + QUALITY_MANAGER) |
+
+Proposition de décision : REFUSE si une caractéristique critique est non conforme, LIBERE si tout est saisi et
+conforme, QUARANTAINE sinon. NC créée : `data.{origine:"controle",lotId,lotNumero,articleCode,inspectionId,decision,
+supplierId,supplierCode,supplierLot}`. Rappel : restant = quantité − liens sortants ; `enStock` = restant des lots
+LIBERE/QUARANTAINE/DEROGATION, `enCours` = restant des lots EN_ATTENTE, `expedie` = somme des `shipped_to`.
+Webhook : `POST` JSON `{event:"lot.status_changed",lotId,numero,article,status,reason,at}` après validation de la
+transaction, en tâche de fond, 3 essais (attente `essor.webhook.backoff-ms` × n°, 2 s par défaut), en-têtes
+`X-Essor-Signature: sha256=<hex HMAC-SHA256 du corps>`, `X-Essor-Event`, `X-Essor-Delivery` ; journal
+`webhook_delivery` (PENDING, SENT, FAILED). ISO 2859-1 : niveau II, simple, normal, NQA 0,65 à 6,5 (`Iso2859`).
+Démo (profil `demo`) : 6 articles, 3 fournisseurs, 4 clients, 3 plans, lot LF-2026-0311 → OF-2026-0142 →
+PF-2026-0142 (10 sous-groupes en-cours) → 2 clients. RLS FORCE sur les 10 tables M3b.
 
 ## Multi-tenant et RLS
 
