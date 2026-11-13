@@ -81,7 +81,7 @@ class DocumentController {
                 .filename(d.fileName(), java.nio.charset.StandardCharsets.UTF_8).build();
         return ResponseEntity.ok().contentType(MediaType.parseMediaType(d.contentType()))
                 .header(HttpHeaders.CONTENT_DISPOSITION, cd.toString())
-                .header("X-Content-Type-Options", "nosniff").body(d.content());
+                .body(d.content());
     }
 
     @PostMapping("/{id}/versions/{v}/ack")

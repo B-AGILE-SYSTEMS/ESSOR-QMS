@@ -1,3 +1,4 @@
+import { AuditsService } from '../../core/m3.service';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
@@ -44,6 +45,7 @@ const LOCKED = new Set(['CLOTUREE', 'REJETEE', 'CLOS', 'CLASSE_SANS_SUITE', 'CLO
 })
 export class NcFicheComponent {
   private readonly records = inject(RecordsService);
+  private readonly audits = inject(AuditsService);
   readonly id = input.required<string>();
   /** Libellés du type (route `data.view`). */
   readonly view = input<RecordTypeView>(NC_VIEW);
@@ -57,6 +59,8 @@ export class NcFicheComponent {
   protected readonly info = signal<string | null>(null);
   protected readonly loadError = signal<string | null>(null);
   protected comment = '';
+  /** « Rédiger le rapport » avec des questions sans réponse : confirmation dans la page. */
+  protected readonly confirmReport = signal<{ transition: AvailableTransition; unanswered: number } | null>(null);
 
   protected readonly steps = computed(() => buildSteps(this.workflow(), this.record()?.status ?? ''));
   protected readonly locked = computed(() => {
@@ -128,9 +132,17 @@ export class NcFicheComponent {
     return t.missing.map(fieldLabel).join(', ');
   }
 
-  async transition(t: AvailableTransition): Promise<void> {
+  async transition(t: AvailableTransition, confirmed = false): Promise<void> {
     const rec = this.record();
     if (!rec || t.missing.length) return;
+    if (!confirmed && rec.type === 'AUDIT' && t.code === 'rediger_rapport') {
+      const unanswered = (await this.audits.checklist(rec.id)).filter((q) => !q.result).length;
+      if (unanswered > 0) {
+        this.confirmReport.set({ transition: t, unanswered });
+        return;
+      }
+    }
+    this.confirmReport.set(null);
     await this.run(async () => {
       this.setRecord(await this.records.transition(rec.id, t.code, this.comment.trim()));
       this.comment = '';

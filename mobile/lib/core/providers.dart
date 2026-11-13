@@ -139,7 +139,6 @@ Future<void> runSyncCycle(Ref ref) async {
   final tasks = ref.read(tasksRepositoryProvider);
   final audits = ref.read(auditsRepositoryProvider);
   final docs = ref.read(documentsRepositoryProvider);
-  final now = ref.read(clockProvider)();
   final docsDir = ref.read(documentsDirProvider.future);
   await sync.syncNow();
   if (api == null) return;
@@ -152,7 +151,7 @@ Future<void> runSyncCycle(Ref ref) async {
   // M3 : blocs indépendants, le cache est conservé en cas d'échec.
   final m3 = M3Api(api.dio);
   try {
-    await audits.refresh(m3, year: now.year);
+    await audits.refresh(m3);
   } on DioException {
     // Grilles en cache conservées.
   }

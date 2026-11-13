@@ -58,7 +58,6 @@ class AttachmentController {
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(d.contentType()))
                 .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
-                .header("X-Content-Type-Options", "nosniff")
                 .header("Content-Security-Policy", "sandbox; default-src 'none'")
                 .header(HttpHeaders.CACHE_CONTROL, "private, max-age=3600")
                 .body(d.content());

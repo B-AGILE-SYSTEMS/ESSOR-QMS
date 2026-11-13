@@ -325,7 +325,7 @@ class RecordService {
                 .orElseThrow(() -> new ApiException(HttpStatus.CONFLICT, "transition_impossible",
                         "Transition « " + code + " » impossible depuis le statut « " + wf.label(row.status()) + " »",
                         Map.of("status", row.status())));
-        if (!hasRole(store.currentRoles(), t)) {
+        if (!hasRole(rolesFor(row), t)) {
             throw new ApiException(HttpStatus.FORBIDDEN, "forbidden",
                     "Transition « " + t.label() + " » réservée aux rôles : " + String.join(", ", t.roles()),
                     Map.of("roles", t.roles()));
@@ -410,6 +410,18 @@ class RecordService {
         }
     }
 
+    /** Rôles effectifs sur une fiche : un auditeur désigné d'un audit ({@code data.auditeurs}) agit comme AUDITOR. */
+    Set<String> rolesFor(Row r) {
+        Set<String> roles = store.currentRoles();
+        if (AuditService.AUDIT_TYPE.equals(r.typeCode()) && !roles.contains("AUDITOR")
+                && AuditService.isDesignatedAuditor(store.data(r))) {
+            Set<String> withAuditor = new java.util.HashSet<>(roles);
+            withAuditor.add("AUDITOR");
+            return Set.copyOf(withAuditor);
+        }
+        return roles;
+    }
+
     static boolean hasRole(Set<String> roles, Workflow.Transition t) {
         return t.roles() != null && t.roles().stream().anyMatch(roles::contains);
     }
@@ -457,7 +469,7 @@ class RecordService {
     private RecordView view(Row r) {
         Map<String, RecordType> all = types.all();
         RecordType type = all.get(r.typeCode());
-        Set<String> roles = store.currentRoles();
+        Set<String> roles = rolesFor(r);
         List<AvailableTransition> available = type.workflow().from(r.status()).stream()
                 .filter(t -> hasRole(roles, t))
                 .map(t -> new AvailableTransition(t.code(), t.label(), missing(r, type, t)))

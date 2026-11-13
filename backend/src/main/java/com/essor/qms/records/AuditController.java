@@ -95,7 +95,7 @@ class AuditController {
         byte[] content = pdf.render(id);
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_PDF)
                 .header(HttpHeaders.CONTENT_DISPOSITION,
-                        ContentDisposition.inline().filename("rapport-audit-" + id + ".pdf").build().toString())
+                        ContentDisposition.inline().filename(pdf.fileName(id)).build().toString())
                 .body(content);
     }
 }

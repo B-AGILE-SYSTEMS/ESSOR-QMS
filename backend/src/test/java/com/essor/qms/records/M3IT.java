@@ -43,6 +43,9 @@ class M3IT extends AbstractIntegrationTest {
     static final RequestPostProcessor AUDITEUR = RecordsIT.user("sub-3-auditeur", "t3.auditeur", "DEMO", "AUDITOR");
     static final RequestPostProcessor ADMIN = RecordsIT.user("sub-3-admin", "t3.admin", "DEMO", "ADMIN");
     static final RequestPostProcessor TERRAIN = RecordsIT.user("sub-3-terrain", "t3.terrain", "DEMO", "FIELD_USER");
+    static final RequestPostProcessor AUTRE_TERRAIN =
+            RecordsIT.user("sub-3-terrain2", "t3.terrain2", "DEMO", "FIELD_USER");
+    static final RequestPostProcessor ADMIN_LECTEUR = RecordsIT.user("sub-3-lecteur", "t3.lecteur", "DEMO", "READER");
     static final byte[] PDF = "%PDF-1.4\n% test\n".getBytes(StandardCharsets.US_ASCII);
 
     @Autowired
@@ -284,6 +287,53 @@ class M3IT extends AbstractIntegrationTest {
                 audit.path("reference").asText(), nc.path("reference").asText());
 
         call(post("/api/records/" + id + "/transitions/cloturer"), QUALITE, "{}", 200);
+    }
+
+    @Test
+    void auditeurDesigneSansRoleAuditorExecuteLAuditApresDemarrage() throws Exception {
+        String std = importNorme("DES45001");
+        String terrainId = userId(TERRAIN);
+        JsonNode audit = call(post("/api/records"), QUALITE, """
+                {"type":"AUDIT","siteId":"%s","title":"Audit désigné",
+                 "data":{"auditeurs":["%s"],"datePrevue":"%d-03-10"}}""".formatted(siteId(QUALITE), terrainId,
+                LocalDate.now().getYear()), 201);
+        String id = audit.path("id").asText();
+        JsonNode questions = call(post("/api/audits/" + id + "/checklist/generate"), QUALITE,
+                "{\"standardIds\":[\"" + std + "\"]}", 200);
+        String q1 = questions.get(0).path("id").asText();
+
+        // [3] liste mobile : l'auditeur désigné voit l'audit
+        JsonNode mine = call(get("/api/audits").param("auditor", "me").param("status", "PLANIFIE,EN_COURS"),
+                TERRAIN, null, 200);
+        assertThat(mine.findValuesAsText("id")).contains(id);
+        // [4] réponse refusée tant que l'audit n'est pas démarré
+        JsonNode early = call(put("/api/audits/" + id + "/answers/" + q1), TERRAIN, "{\"result\":\"conforme\"}", 409);
+        assertThat(early.toString()).contains("démarré");
+        // [1] un utilisateur ni AUDITOR ni désigné reste refusé
+        call(post("/api/records/" + id + "/transitions/demarrer"), ADMIN_LECTEUR, "{}", 403);
+        // [1] transitions et réponses autorisées à l'auditeur désigné (rôle FIELD_USER seulement)
+        JsonNode started = call(post("/api/records/" + id + "/transitions/demarrer"), TERRAIN, "{}", 200);
+        assertThat(started.path("status").asText()).isEqualTo("EN_COURS");
+        call(put("/api/audits/" + id + "/answers/" + q1), TERRAIN, "{\"result\":\"conforme\"}", 200);
+        call(put("/api/audits/" + id + "/answers/" + q1), AUTRE_TERRAIN, "{\"result\":\"conforme\"}", 403);
+        // rapport possible avec des questions sans réponse : comptées « non évaluées »
+        call(post("/api/records/" + id + "/transitions/rediger_rapport"), TERRAIN, "{}", 200);
+        JsonNode detail = call(get("/api/audits/" + id), QUALITE, null, 200);
+        assertThat(detail.path("summary").path("notAssessed").asInt()).isEqualTo(questions.size() - 1);
+        assertThat(detail.path("summary").path("conformityRate").asDouble()).isEqualTo(100.0);
+
+        // [6] PDF : nom de l'auditeur (pas son UUID), fichier rapport-<référence>.pdf
+        MvcResult pdf = perform(get("/api/audits/" + id + "/report.pdf"), QUALITE, null, 200);
+        assertThat(pdf.getResponse().getHeader("Content-Disposition"))
+                .contains("rapport-" + audit.path("reference").asText() + ".pdf");
+        PdfReader reader = new PdfReader(pdf.getResponse().getContentAsByteArray());
+        StringBuilder text = new StringBuilder();
+        PdfTextExtractor extractor = new PdfTextExtractor(reader);
+        for (int p = 1; p <= reader.getNumberOfPages(); p++) {
+            text.append(extractor.getTextFromPage(p));
+        }
+        reader.close();
+        assertThat(text.toString()).contains("Nom t3.terrain", "Non évaluée").doesNotContain(terrainId);
     }
 
     // ---------------------------------------------------------------- documents

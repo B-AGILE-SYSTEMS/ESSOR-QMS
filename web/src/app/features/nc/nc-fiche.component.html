@@ -108,6 +108,13 @@
       <label class="cmt-in"><span class="note">Commentaire (joint à la transition)</span>
         <textarea rows="2" name="comment" [(ngModel)]="comment"></textarea>
       </label>
+      @if (confirmReport(); as c) {
+        <div class="confirm box pad" role="alertdialog" aria-labelledby="confirm-report-msg">
+          <p id="confirm-report-msg">{{ c.unanswered }} question(s) sans réponse : elles seront comptées « non évaluées » dans le rapport et exclues du taux de conformité. Rédiger le rapport quand même ?</p>
+          <button type="button" class="btn pri" [disabled]="busy()" (click)="transition(c.transition, true)">Confirmer et rédiger le rapport</button>
+          <button type="button" class="btn ghost" (click)="confirmReport.set(null)">Annuler</button>
+        </div>
+      }
       <div class="trs">
         @for (t of r.availableTransitions; track t.code) {
           <div class="tr">

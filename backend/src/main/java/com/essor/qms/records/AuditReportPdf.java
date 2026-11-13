@@ -43,6 +43,12 @@ class AuditReportPdf {
         this.tx = tx;
     }
 
+    /** Nom du fichier : {@code rapport-<référence>.pdf}. */
+    String fileName(UUID auditId) {
+        String reference = tx.execute(s -> audits.loadAudit(auditId, false).reference());
+        return "rapport-" + reference.replaceAll("[^A-Za-z0-9_-]", "_") + ".pdf";
+    }
+
     byte[] render(UUID auditId) {
         AuditDetail a = tx.execute(s -> audits.detail(auditId));
         BrandingService.Branding brand = branding.get();
@@ -83,7 +89,7 @@ class AuditReportPdf {
         row(t, "Statut", a.statusLabel());
         row(t, "Date prévue", str(d.get("datePrevue")));
         row(t, "Périmètre", str(d.get("perimetre")));
-        row(t, "Auditeurs", str(d.get("auditeurs")));
+        row(t, "Auditeur(s)", String.join(", ", a.auditorNames()));
         row(t, "Audités", str(d.get("audites")));
         t.setSpacingBefore(8);
         doc.add(t);
@@ -94,6 +100,7 @@ class AuditReportPdf {
         PdfPTable t = table(2, new float[] {2, 1});
         row(t, "Taux de conformité", s.conformityRate() == null ? "—" : s.conformityRate() + " %");
         row(t, "Questions répondues", s.answered() + " / " + s.questions());
+        row(t, "Non évaluées (hors taux)", String.valueOf(s.notAssessed()));
         row(t, "Conformes", String.valueOf(s.conforme()));
         row(t, "Écarts majeurs", String.valueOf(s.ecartMajeur()));
         row(t, "Écarts mineurs", String.valueOf(s.ecartMineur()));
@@ -119,7 +126,7 @@ class AuditReportPdf {
         headerRow(t, color, "Question", "Résultat", "Commentaire et preuve");
         for (Question q : questions) {
             String comment = nz(q.comment()) + (q.evidence() == null ? "" : "\nPreuve : " + q.evidence());
-            cells(t, q.text(), q.result() == null ? "Non répondu" : RESULT_LABELS.get(q.result()), comment);
+            cells(t, q.text(), q.result() == null ? "Non évaluée" : RESULT_LABELS.get(q.result()), comment);
         }
         doc.add(t);
     }

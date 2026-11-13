@@ -71,7 +71,7 @@ export const routes: Routes = [
       },
       {
         path: 'parametrage/referentiels',
-        canMatch: [roleGuard('ADMIN')],
+        canMatch: [roleGuard('ADMIN', 'QUALITY_MANAGER')],
         loadComponent: () => import('./features/referentiels/referentiels.component').then((m) => m.ReferentielsComponent),
         data: { crumbs: ['Administration', 'Paramétrage', 'Référentiels'] },
       },

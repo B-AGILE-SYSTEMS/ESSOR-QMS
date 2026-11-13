@@ -29,6 +29,7 @@ class AuditService {
     static final Set<String> RESULTS = Set.of("conforme", "ecart_mineur", "ecart_majeur", "observation", "na");
     static final Set<String> EDITABLE = Set.of("PLANIFIE", "EN_COURS");
     static final String REPORT_STATE = "RAPPORT";
+    static final String RUNNING_STATE = "EN_COURS";
     private static final Set<String> AUDIT_ROLES = Set.of("AUDITOR", "QUALITY_MANAGER", "ADMIN");
     private static final int MAX_QUESTIONS = 2000;
 
@@ -50,13 +51,14 @@ class AuditService {
                        Double conformityRate) {
     }
 
+    /** {@code notAssessed} : questions sans réponse, exclues du taux de conformité. */
     record Summary(int questions, int answered, int conforme, int ecartMineur, int ecartMajeur, int observation,
-                   int na, Double conformityRate, List<ChapterRate> chapters) {
+                   int na, Double conformityRate, List<ChapterRate> chapters, int notAssessed) {
     }
 
     record AuditDetail(UUID id, String reference, String title, String status, String statusLabel, UUID siteId,
                        String siteName, Map<String, Object> data, List<Question> questions, List<NcRef> ncs,
-                       Summary summary) {
+                       Summary summary, List<String> auditorNames) {
     }
 
     record ProgramItem(UUID id, String reference, String title, String status, String statusLabel, UUID siteId,
@@ -116,9 +118,35 @@ class AuditService {
     AuditDetail detail(UUID auditId) {
         Row a = loadAudit(auditId, false);
         List<QRow> rows = questionRows(auditId);
+        Map<String, Object> data = store.data(a);
         return new AuditDetail(a.id(), a.reference(), a.title(), a.status(),
-                types.get(AUDIT_TYPE).workflow().label(a.status()), a.siteId(), a.siteName(), store.data(a),
-                rows.stream().map(AuditService::question).toList(), ncs(auditId), summary(rows));
+                types.get(AUDIT_TYPE).workflow().label(a.status()), a.siteId(), a.siteName(), data,
+                rows.stream().map(AuditService::question).toList(), ncs(auditId), summary(rows),
+                auditorNames(data.get("auditeurs")));
+    }
+
+    /** Noms des auditeurs : identifiants d'utilisateur résolus, libellés libres conservés tels quels. */
+    List<String> auditorNames(Object auditeurs) {
+        if (!(auditeurs instanceof List<?> list)) {
+            return List.of();
+        }
+        List<String> names = new ArrayList<>();
+        for (Object v : list) {
+            String s = String.valueOf(v);
+            UUID id = parseUuid(s);
+            names.add(id == null ? s : store.jdbc().sql(
+                            "select coalesce(display_name, username) from app_user where id = :id")
+                    .param("id", id).query(String.class).optional().orElse("Utilisateur inconnu"));
+        }
+        return names;
+    }
+
+    private static UUID parseUuid(String s) {
+        try {
+            return UUID.fromString(s);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     List<Question> questions(UUID auditId) {
@@ -258,9 +286,14 @@ class AuditService {
 
     /** Réponse à une question ; {@code closed=true} sur un écart crée aussitôt la NC liée. */
     Question answer(UUID auditId, UUID questionId, AnswerRequest body) {
-        requireAuditor();
         Row a = loadAudit(auditId, true);
-        requireEditable(a);
+        requireAuditor(a);
+        if (!RUNNING_STATE.equals(a.status())) {
+            throw new ApiException(HttpStatus.CONFLICT, "audit_not_started",
+                    "Audit au statut « " + types.get(AUDIT_TYPE).workflow().label(a.status())
+                            + " » : les réponses ne sont acceptées qu'une fois l'audit démarré (statut « En cours »)",
+                    Map.of("status", a.status()));
+        }
         Question q = question(auditId, questionId);
         if (body == null || body.result() == null || !RESULTS.contains(body.result())) {
             throw ApiException.badRequest("result : conforme, ecart_mineur, ecart_majeur, observation ou na");
@@ -368,7 +401,8 @@ class AuditService {
         int assessed = counts[0] + counts[1] + counts[2] + counts[3];
         int answered = assessed + counts[4];
         return new Summary(rows.size(), answered, counts[0], counts[1], counts[2], counts[3], counts[4],
-                assessed == 0 ? null : round(100.0 * (counts[0] + counts[3]) / assessed), rates);
+                assessed == 0 ? null : round(100.0 * (counts[0] + counts[3]) / assessed), rates,
+                rows.size() - answered);
     }
 
     List<QRow> questionRows(UUID auditId) {
@@ -417,10 +451,23 @@ class AuditService {
     }
 
     private void requireAuditor() {
-        if (store.currentRoles().stream().noneMatch(AUDIT_ROLES::contains)) {
+        requireAuditor(null);
+    }
+
+    /** Rôle AUDITOR, QUALITY_MANAGER ou ADMIN, ou auditeur désigné de l'audit ({@code data.auditeurs}). */
+    private void requireAuditor(Row auditRow) {
+        if (store.currentRoles().stream().noneMatch(AUDIT_ROLES::contains)
+                && (auditRow == null || !isDesignatedAuditor(store.data(auditRow)))) {
             throw new ApiException(HttpStatus.FORBIDDEN, "forbidden",
-                    "Réservé aux rôles AUDITOR, QUALITY_MANAGER et ADMIN");
+                    "Réservé aux rôles AUDITOR, QUALITY_MANAGER et ADMIN et aux auditeurs désignés");
         }
+    }
+
+    /** L'utilisateur courant figure dans {@code data.auditeurs} (identifiants d'utilisateur). */
+    static boolean isDesignatedAuditor(Map<String, Object> data) {
+        UUID me = com.essor.qms.shared.ExecutionContext.userId();
+        return me != null && data != null && data.get("auditeurs") instanceof List<?> l
+                && l.stream().anyMatch(v -> me.toString().equals(String.valueOf(v)));
     }
 
     static boolean isDeviation(String result) {

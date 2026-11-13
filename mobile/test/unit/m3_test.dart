@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:essor_mobile/core/m3/audits_repository.dart';
 import 'package:essor_mobile/core/m3/documents_repository.dart';
 import 'package:essor_mobile/core/m3/m3_api.dart';
 import 'package:essor_mobile/core/m3/models.dart';
@@ -59,6 +60,63 @@ void main() {
     },
   );
 
+  test('fichier et accusé : numéro de version, pas l\'UUID', () {
+    final d = DocumentItem.fromJson({
+      'id': 'doc-1',
+      'code': 'PR-QHSE-07',
+      'title': 'T',
+      'currentVersion': {
+        'id': '7f1c2a90-0000-4000-8000-000000000001',
+        'number': 2,
+        'fileName': 'PR.pdf',
+      },
+    });
+    expect(d.version, '2');
+  });
+
+  test('date prévue lue dans datePrevue (format de l\'API)', () {
+    final a = AuditSummary.fromJson({
+      'id': 'a',
+      'reference': 'AUD-1',
+      'title': 'T',
+      'status': 'PLANIFIE',
+      'datePrevue': '2026-12-01',
+    });
+    expect(a.plannedDate, '2026-12-01');
+  });
+
+  test(
+    'mes audits : GET /audits?auditor=me&status=PLANIFIE,EN_COURS',
+    () async {
+      await M3Api(dio).audits();
+      expect(server.lastAuditQuery, {
+        'auditor': 'me',
+        'status': 'PLANIFIE,EN_COURS',
+      });
+    },
+  );
+
+  test(
+    'première réponse d\'un audit PLANIFIE : demarrer envoyé avant la réponse',
+    () async {
+      final queue = OperationQueue(db);
+      final repo = AuditsRepository(db, queue);
+      await repo.refresh(M3Api(dio));
+      await repo.answer(auditId: 'aud-1', questionId: 'q1', result: 'conforme');
+      await repo.answer(auditId: 'aud-1', questionId: 'q2', result: 'na');
+      adapter.requests.clear();
+      final up = ApiOperationUploader(dio, db);
+      for (final op in await db.pending()) {
+        await up.upload(op);
+      }
+      expect(adapter.requests.map((r) => '${r.method} ${r.path}'), [
+        'POST /records/aud-1/transitions/demarrer',
+        'PUT /audits/aud-1/answers/q1',
+        'PUT /audits/aud-1/answers/q2',
+      ]);
+    },
+  );
+
   test(
     'nouvelle version diffusée : re-téléchargée, accusé à refaire',
     () async {
@@ -77,7 +135,7 @@ void main() {
       ];
       await repo.refresh(api, dir);
       final second = (await repo.current()).single;
-      expect(second.version, 'v4');
+      expect(second.version, '4');
       expect(second.versionLabel, 'v4');
       expect(second.acked, isFalse);
       expect(File(first.localPath!).existsSync(), isFalse);

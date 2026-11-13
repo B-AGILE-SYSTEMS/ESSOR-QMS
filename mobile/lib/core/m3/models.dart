@@ -40,6 +40,15 @@ class AuditSummary {
   final String? siteName;
   final String? plannedDate;
 
+  AuditSummary withStatus(String next) => AuditSummary(
+    id: id,
+    reference: reference,
+    title: title,
+    status: next,
+    siteName: siteName,
+    plannedDate: plannedDate,
+  );
+
   /// Seuls ces statuts s'exécutent sur le terrain.
   bool get executable => status == 'PLANIFIE' || status == 'EN_COURS';
 
@@ -49,7 +58,10 @@ class AuditSummary {
     title: j['title'] as String? ?? '',
     status: j['status'] as String? ?? '',
     siteName: j['siteName'] as String? ?? _name(j['site']),
-    plannedDate: j['plannedDate'] as String? ?? j['dueDate'] as String?,
+    plannedDate:
+        j['datePrevue'] as String? ??
+        j['plannedDate'] as String? ??
+        j['dueDate'] as String?,
   );
 
   Map<String, Object?> toJson() => {
@@ -152,7 +164,7 @@ class DocumentItem {
       code: j['code'] as String? ?? '',
       title: j['title'] as String? ?? '',
       type: j['type'] as String?,
-      version: '${v['id'] ?? v['number'] ?? j['version'] ?? ''}',
+      version: '${v['number'] ?? j['version'] ?? v['id'] ?? ''}',
       versionLabel:
           v['label'] as String? ??
           j['versionLabel'] as String? ??

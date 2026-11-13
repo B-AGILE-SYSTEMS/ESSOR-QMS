@@ -8,7 +8,9 @@ DECLARE
     s9001   uuid := '00000000-0000-0000-0000-000000009001';
     s45001  uuid := '00000000-0000-0000-0000-000000045001';
     depot   uuid := '00000000-0000-0000-0000-0000000051a2';
+    nord    uuid;
     u_qualite uuid;
+    u_terrain uuid;
     y       int := extract(year FROM current_date);
     n_aud   int;
     n_doc   int;
@@ -107,18 +109,34 @@ BEGIN
     FROM demo_req d JOIN requirement p ON p.tenant_id = t AND p.standard_id = d.std AND p.code = d.parent
     WHERE r.tenant_id = t AND r.standard_id = d.std AND r.code = d.code;
 
-    -- Audit planifié et procédure (une seule fois)
+    -- Site de l'audit de démo : Entrepôt Nord (créé si absent), rattaché à tous les utilisateurs du tenant.
+    INSERT INTO site (tenant_id, code, name)
+    SELECT t, 'NORD', 'Entrepôt Nord'
+    WHERE NOT EXISTS (SELECT 1 FROM site WHERE tenant_id = t AND code = 'NORD');
+    SELECT id INTO nord FROM site WHERE tenant_id = t AND code = 'NORD';
+    INSERT INTO user_site (tenant_id, user_id, site_id)
+    SELECT t, u.id, nord FROM app_user u WHERE u.tenant_id = t
+    ON CONFLICT DO NOTHING;
+    -- Auditeur désigné : l'utilisateur "terrain" (compte préparé "pending:terrain", même id après sa connexion).
+    SELECT id INTO u_qualite FROM app_user WHERE tenant_id = t AND username = 'qualite' LIMIT 1;
+    SELECT id INTO u_terrain FROM app_user WHERE tenant_id = t AND username = 'terrain' LIMIT 1;
+
+    -- Audit planifié et procédure (une seule fois ; l'audit existant est réaligné sur le site et l'auditeur)
     IF EXISTS (SELECT 1 FROM record WHERE id = '00000000-0000-0000-0000-0000000a0d01') THEN
+        UPDATE record SET site_id = nord, title = 'Audit interne ISO 45001 — Entrepôt Nord',
+               data = data || jsonb_build_object('auditeurs',
+                   CASE WHEN u_terrain IS NULL THEN '[]'::jsonb ELSE jsonb_build_array(u_terrain::text) END)
+        WHERE id = '00000000-0000-0000-0000-0000000a0d01' AND status = 'PLANIFIE'
+          AND (site_id IS DISTINCT FROM nord OR NOT (data->'auditeurs' ? coalesce(u_terrain::text, '')));
         RETURN;
     END IF;
-    SELECT id INTO u_qualite FROM app_user WHERE tenant_id = t AND username = 'qualite' LIMIT 1;
     SELECT coalesce(max(last_value), 0) INTO n_aud FROM record_sequence WHERE tenant_id = t AND prefix = 'AUD' AND year = y;
     SELECT coalesce(max(last_value), 0) INTO n_doc FROM record_sequence WHERE tenant_id = t AND prefix = 'DOC' AND year = y;
     INSERT INTO record (id, tenant_id, type_code, reference, status, title, site_id, owner_id, data, created_by) VALUES
      ('00000000-0000-0000-0000-0000000a0d01', t, 'AUDIT', 'AUD-' || y || '-' || lpad((n_aud + 1)::text, 4, '0'),
-      'PLANIFIE', 'Audit interne ISO 45001 — Entrepôt', depot, u_qualite,
+      'PLANIFIE', 'Audit interne ISO 45001 — Entrepôt Nord', nord, u_qualite,
       jsonb_build_object('standardIds', jsonb_build_array(s45001::text), 'perimetre', 'Réception, stockage, expédition',
-                         'auditeurs', jsonb_build_array('Qualité Démo'), 'audites', 'Chef d''entrepôt, caristes',
+                         'auditeurs', CASE WHEN u_terrain IS NULL THEN '[]'::jsonb ELSE jsonb_build_array(u_terrain::text) END, 'audites', 'Chef d''entrepôt, caristes',
                          'datePrevue', to_char(current_date + 14, 'YYYY-MM-DD')), u_qualite),
      ('00000000-0000-0000-0000-0000000d0c01', t, 'DOCUMENT', 'DOC-' || y || '-' || lpad((n_doc + 1)::text, 4, '0'),
       'REDACTION', 'Circulation des chariots élévateurs', depot, u_qualite,

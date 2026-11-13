@@ -45,7 +45,7 @@ export function byMonth(list: AuditSummary[]): AuditSummary[][] {
           @for (s of auth.me()?.sites ?? []; track s.id) { <option [value]="s.id">{{ s.name }}</option> }</select></label>
         <label class="field"><span>Date prévue</span><input type="date" name="date" [(ngModel)]="draft.plannedDate" required /></label>
         <label class="field"><span>Périmètre</span><input name="perimetre" [(ngModel)]="draft.perimetre" /></label>
-        <div class="field"><span>Auditeur(s) : {{ auditorNames() || '—' }}</span><eq-user-picker (picked)="addAuditor($event)" /></div>
+        <div class="field"><span>Auditeur(s) : {{ auditorNames() || '—' }}</span><eq-user-picker label="Auditeur(s)" (picked)="addAuditor($event)" /></div>
         <label class="field"><span>Audités</span><input name="audites" [(ngModel)]="draft.audites" /></label>
         <fieldset class="field stds"><legend>Référentiel(s)</legend>
           @for (s of standards(); track s.id) {

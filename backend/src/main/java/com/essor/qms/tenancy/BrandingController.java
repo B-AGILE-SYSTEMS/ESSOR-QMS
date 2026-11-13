@@ -65,7 +65,6 @@ class BrandingController {
                 .map(l -> ResponseEntity.ok()
                         .contentType(MediaType.parseMediaType(l.contentType()))
                         .cacheControl(CacheControl.noCache())
-                        .header("X-Content-Type-Options", "nosniff")
                         // un SVG ouvert directement ne peut exécuter aucun script
                         .header("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox")
                         .body(l.content()))

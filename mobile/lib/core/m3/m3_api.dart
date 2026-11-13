@@ -7,11 +7,11 @@ class M3Api {
   const M3Api(this._dio);
   final Dio _dio;
 
-  /// `GET /api/audits?year=` (programme annuel).
-  Future<List<AuditSummary>> audits(int year) async {
+  /// « Mes audits » : `GET /api/audits?auditor=me&status=PLANIFIE,EN_COURS`.
+  Future<List<AuditSummary>> audits() async {
     final r = await _dio.get<List<dynamic>>(
       '/audits',
-      queryParameters: {'year': year},
+      queryParameters: {'auditor': 'me', 'status': 'PLANIFIE,EN_COURS'},
     );
     return [
       for (final j in r.data ?? const [])

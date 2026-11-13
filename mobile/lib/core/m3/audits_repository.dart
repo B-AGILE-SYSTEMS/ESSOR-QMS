@@ -43,9 +43,9 @@ class AuditsRepository {
       _answers(await _db.getCache(answersKey(auditId)));
 
   /// Recharge les audits à exécuter (PLANIFIE, EN_COURS) et leurs grilles.
-  Future<void> refresh(M3Api api, {required int year}) async {
+  Future<void> refresh(M3Api api) async {
     final list = [
-      for (final a in await api.audits(year))
+      for (final a in await api.audits())
         if (a.executable) a,
     ];
     for (final a in list) {
@@ -70,6 +70,7 @@ class AuditsRepository {
     String? comment,
     List<String> photoPaths = const [],
   }) => _db.transaction(() async {
+    await _startIfPlanned(auditId);
     final current = await answers(auditId);
     final before = current[questionId]?.photos ?? 0;
     final text = (comment ?? '').trim();
@@ -96,6 +97,25 @@ class AuditsRepository {
       jsonEncode({for (final e in next.entries) e.key: e.value.toJson()}),
     );
   });
+
+  /// Première réponse d'un audit PLANIFIE : `demarrer` est mis en file avant
+  /// la réponse (le serveur n'accepte les réponses qu'en EN_COURS).
+  Future<void> _startIfPlanned(String auditId) async {
+    final list = decodeList(
+      await _db.getCache(auditsCacheKey),
+      AuditSummary.fromJson,
+    );
+    final audit = list.where((a) => a.id == auditId).firstOrNull;
+    if (audit == null || audit.status != 'PLANIFIE') return;
+    await _queue.transition(recordId: auditId, code: 'demarrer');
+    await _db.putCache(
+      auditsCacheKey,
+      jsonEncode([
+        for (final a in list)
+          (a.id == auditId ? a.withStatus('EN_COURS') : a).toJson(),
+      ]),
+    );
+  }
 
   static Map<String, AuditAnswer> _answers(String? raw) {
     if (raw == null) return const {};

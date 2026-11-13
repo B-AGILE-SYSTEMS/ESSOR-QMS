@@ -328,7 +328,8 @@ class DocumentService {
         }
         audit.record("TRANSITION", "record", documentId.toString(), store.write(details));
         if (diffusing) {
-            events.publishEvent(new DocumentDiffused(documentId, doc.reference(), doc.title(), number,
+            String docCode = data.get("code") instanceof String c && !c.isBlank() ? c : doc.reference();
+            events.publishEvent(new DocumentDiffused(documentId, docCode, doc.title(), number,
                     recipientIds(data), ExecutionContext.userId()));
         }
         return version(documentId, number);

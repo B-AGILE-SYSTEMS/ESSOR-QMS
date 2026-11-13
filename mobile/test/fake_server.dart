@@ -15,7 +15,7 @@ class FakeServer {
   final acks = <String>[];
   final opened = <String>[];
   var downloads = 0;
-  String? lastAuditYear;
+  Map<String, dynamic>? lastAuditQuery;
 
   /// Nombre d'écritures M3 acceptées avant une coupure réseau (null = ∞).
   int? cutAfterWrites;
@@ -155,7 +155,7 @@ class FakeServer {
       return (201, null);
     }
     if (p == '/audits') {
-      lastAuditYear = '${o.queryParameters['year']}';
+      lastAuditQuery = Map.of(o.queryParameters);
       return (200, audits);
     }
     if (RegExp(r'^/audits/[^/]+/checklist$').hasMatch(p)) {

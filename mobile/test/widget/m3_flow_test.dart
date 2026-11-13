@@ -28,7 +28,10 @@ void main() {
     tester,
   ) async {
     final h = await pumpM2(tester, online: true);
-    expect(h.server.lastAuditYear, '2026');
+    expect(h.server.lastAuditQuery, {
+      'auditor': 'me',
+      'status': 'PLANIFIE,EN_COURS',
+    });
     await goOffline(h, tester);
     await tap(tester, 'auditsButton');
     expect(find.text('Mes audits'), findsOneWidget);
@@ -68,7 +71,7 @@ void main() {
     await tap(tester, 'auditNext'); // Terminer
     expect(find.text('Mes audits'), findsOneWidget);
     expect(find.textContaining('3 répondues'), findsOneWidget);
-    expect(find.text('Hors ligne · 4 en attente'), findsOneWidget);
+    expect(find.text('Hors ligne · 5 en attente'), findsOneWidget);
     expect(h.server.answers, isEmpty);
 
     await goOnline(h, tester);
@@ -79,7 +82,8 @@ void main() {
       'evidence': null,
     });
     expect(h.server.attachments, ['/records/aud-1/attachments']);
-    expect(h.server.keys.toSet(), hasLength(4));
+    expect(h.server.transitions, ['/records/aud-1/transitions/demarrer']);
+    expect(h.server.keys.toSet(), hasLength(5));
     expect(find.text('Synchronisé'), findsOneWidget);
   });
 
@@ -107,7 +111,8 @@ void main() {
     expect(h.server.answers.keys, ['q1', 'q2']);
     expect(h.server.answers['q2']?['result'], 'observation');
     final keys = h.server.keys;
-    expect(keys.toSet(), hasLength(2), reason: 'une clé par réponse');
+    expect(h.server.transitions, ['/records/aud-1/transitions/demarrer']);
+    expect(keys.toSet(), hasLength(3), reason: 'une clé par opération');
   });
 
   testWidgets('document lu hors ligne, accusé de lecture différé', (
@@ -129,7 +134,7 @@ void main() {
     expect(h.server.acks, isEmpty);
 
     await goOnline(h, tester);
-    expect(h.server.acks, ['doc-1/v3']);
+    expect(h.server.acks, ['doc-1/3']);
     // Le serveur n'a pas encore l'accusé dans sa liste : il reste acquis.
     expect(find.text('Disponible hors ligne · Lu ✓'), findsOneWidget);
     expect(h.server.downloads, 1, reason: 'pas de re-téléchargement');
