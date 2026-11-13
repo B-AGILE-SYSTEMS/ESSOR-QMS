@@ -59,6 +59,6 @@ class CalibrationAlerts implements DailyTask, DashboardKpis {
                 .single();
         long overdue = jdbc.sql("select count(*) from instrument where status = 'en_service' and next_due < :t")
                 .param("t", today).query(Long.class).single();
-        return Map.of("calibrationsDueSoon", soon, "instrumentsOverdue", overdue);
+        return Map.of("calibrationsDue15", soon, "calibrationsOverdue", overdue);
     }
 }

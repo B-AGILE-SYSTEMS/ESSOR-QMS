@@ -167,8 +167,8 @@ class MetrologyIT extends M4Support {
         assertThat(err.path("details").path("overdue").asBoolean()).isTrue();
 
         JsonNode dash = call(get("/api/dashboard/summary"), QUALITE, null, 200);
-        assertThat(dash.path("calibrationsDueSoon").asLong()).isPositive();
-        assertThat(dash.path("instrumentsOverdue").asLong()).isPositive();
+        assertThat(dash.path("calibrationsDue15").asLong()).isPositive();
+        assertThat(dash.path("calibrationsOverdue").asLong()).isPositive();
     }
 
     @Test

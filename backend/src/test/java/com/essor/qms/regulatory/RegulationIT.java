@@ -79,7 +79,7 @@ class RegulationIT extends M4Support {
         assertThat(s.path("rate").isNumber()).isTrue();
         ApiExamples.write("conformite-reglementaire", comp);
         assertThat(rate(site)).isLessThanOrEqualTo(Math.max(before, 100.0));
-        assertThat(call(get("/api/dashboard/summary"), QUALITE, null, 200).path("regulatoryComplianceRate").isNumber())
+        assertThat(call(get("/api/dashboard/summary"), QUALITE, null, 200).path("regulatoryCompliance").isNumber())
                 .isTrue();
         assertThat(RegulationService.rate(1, 1, 2)).isEqualTo(37.5);
 

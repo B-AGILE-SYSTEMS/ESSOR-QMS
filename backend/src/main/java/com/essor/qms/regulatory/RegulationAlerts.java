@@ -61,7 +61,7 @@ class RegulationAlerts implements DailyTask, DashboardKpis {
     @Override
     public Map<String, Object> kpis() {
         Map<String, Object> m = new HashMap<>();
-        m.put("regulatoryComplianceRate", service.compliance(null).get("rate"));
+        m.put("regulatoryCompliance", service.compliance(null).get("rate"));
         return m;
     }
 }

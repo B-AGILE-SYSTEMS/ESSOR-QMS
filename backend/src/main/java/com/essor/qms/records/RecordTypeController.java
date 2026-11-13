@@ -90,10 +90,10 @@ class RecordTypeController {
                 """).query(BigDecimal.class).single();
         Map<String, Object> extra = new java.util.HashMap<>();
         kpis.forEach(k -> extra.putAll(k.kpis()));
-        Object rate = extra.get("regulatoryComplianceRate");
+        Object rate = extra.get("regulatoryCompliance");
         return new DashboardSummary(ncOpen, toQualify, overdue, cost,
                 rate instanceof Number n ? n.doubleValue() : null,
-                extra.get("calibrationsDueSoon") instanceof Number n ? n.longValue() : 0,
-                extra.get("instrumentsOverdue") instanceof Number n ? n.longValue() : 0);
+                extra.get("calibrationsDue15") instanceof Number n ? n.longValue() : 0,
+                extra.get("calibrationsOverdue") instanceof Number n ? n.longValue() : 0);
     }
 }
