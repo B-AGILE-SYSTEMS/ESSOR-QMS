@@ -68,6 +68,8 @@ services:
       ESSOR_COOKIE_SECURE: ${ESSOR_COOKIE_SECURE:-false}
       ESSOR_DEFAULT_TENANT_CODE: ${ESSOR_DEFAULT_TENANT_CODE:-DEMO}
       ESSOR_STORAGE_DIR: /var/lib/essor/files
+      # Clé de chiffrement des secrets en base (secret HMAC du webhook), 32 caractères au moins.
+      ESSOR_SECRET_KEY: ${ESSOR_SECRET_KEY:?ESSOR_SECRET_KEY manquant}
       # "demo" : charge les données de démonstration (NC et actions) ; vide en production.
       SPRING_PROFILES_ACTIVE: ${ESSOR_PROFILES:-}
       # E-mail des notifications : désactivé si ESSOR_SMTP_HOST est vide.

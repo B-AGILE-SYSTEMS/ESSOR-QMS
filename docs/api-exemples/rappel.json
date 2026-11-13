@@ -1,0 +1,108 @@
+{
+  "source" : {
+    "id" : "dc88b0e6-0d23-4b97-8d3d-4e6f184a4337",
+    "article" : {
+      "id" : "31e48cdf-4852-4143-99fb-a2c73b9ddd52",
+      "code" : "MP-d06f56b9",
+      "label" : "Article MP-d06f56b9",
+      "unit" : "kg",
+      "family" : "FAM-T"
+    },
+    "numero" : "LF-614ad0a3",
+    "supplier" : {
+      "id" : "b63bc6d7-9716-40fc-b392-d3c54ec888a6",
+      "code" : "FOU-d0e644cd",
+      "name" : "Nom FOU-d0e644cd"
+    },
+    "supplierLot" : "F-LF-614ad0a3",
+    "quantity" : 100.0,
+    "unit" : "kg",
+    "dlc" : null,
+    "site" : {
+      "id" : "00000000-0000-0000-0000-0000000051a2",
+      "code" : "ENTREPOT-TNG",
+      "name" : "Entrepôt de Tanger"
+    },
+    "qualityStatus" : "EN_ATTENTE",
+    "createdAt" : "2026-11-13T14:26:42.748931Z",
+    "updatedAt" : "2026-11-13T14:26:42.748931Z"
+  },
+  "lotsImpactes" : [ {
+    "id" : "dc88b0e6-0d23-4b97-8d3d-4e6f184a4337",
+    "numero" : "LF-614ad0a3",
+    "article" : {
+      "id" : "31e48cdf-4852-4143-99fb-a2c73b9ddd52",
+      "code" : "MP-d06f56b9",
+      "label" : "Article MP-d06f56b9"
+    },
+    "qualityStatus" : "EN_ATTENTE",
+    "quantity" : 100.0,
+    "remaining" : 10.0,
+    "unit" : "kg",
+    "supplier" : {
+      "id" : "b63bc6d7-9716-40fc-b392-d3c54ec888a6",
+      "code" : "FOU-d0e644cd",
+      "name" : "Nom FOU-d0e644cd"
+    },
+    "supplierLot" : "F-LF-614ad0a3"
+  }, {
+    "id" : "814ac294-be6b-4c0a-a266-3423eedbad8a",
+    "numero" : "FINI-1a90452e",
+    "article" : {
+      "id" : "0b382ab0-a75f-4ec7-a3ae-d9aa5958c2a9",
+      "code" : "PF-b029efbe",
+      "label" : "Article PF-b029efbe"
+    },
+    "qualityStatus" : "EN_ATTENTE",
+    "quantity" : 60.0,
+    "remaining" : 20.0,
+    "unit" : "pcs",
+    "supplier" : null,
+    "supplierLot" : null
+  }, {
+    "id" : "71ba6b64-417e-4abd-a685-f06e05159cff",
+    "numero" : "SEMI-5ee14647",
+    "article" : {
+      "id" : "0b382ab0-a75f-4ec7-a3ae-d9aa5958c2a9",
+      "code" : "PF-b029efbe",
+      "label" : "Article PF-b029efbe"
+    },
+    "qualityStatus" : "EN_ATTENTE",
+    "quantity" : 80.0,
+    "remaining" : 20.0,
+    "unit" : "pcs",
+    "supplier" : null,
+    "supplierLot" : null
+  } ],
+  "clients" : [ {
+    "partner" : {
+      "id" : "11167e68-6c8c-421c-b03f-b43bd94d2203",
+      "code" : "CLI-7a965e9a",
+      "name" : "Nom CLI-7a965e9a"
+    },
+    "quantite" : 25.0,
+    "references" : [ "BL-1", "BL-3" ]
+  }, {
+    "partner" : {
+      "id" : "85bc1579-619e-4a88-a03e-ead00251a436",
+      "code" : "CLI-98f46a74",
+      "name" : "Nom CLI-98f46a74"
+    },
+    "quantite" : 15.0,
+    "references" : [ "BL-2 SSCC-0001" ]
+  } ],
+  "quantites" : {
+    "enStock" : [ ],
+    "enCours" : [ {
+      "unit" : "kg",
+      "qty" : 10.0
+    }, {
+      "unit" : "pcs",
+      "qty" : 40.0
+    } ],
+    "expedie" : [ {
+      "unit" : "pcs",
+      "qty" : 40.0
+    } ]
+  }
+}

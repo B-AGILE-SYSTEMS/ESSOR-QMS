@@ -3,6 +3,7 @@ package com.essor.qms.traceability;
 import com.essor.qms.shared.ApiException;
 import com.essor.qms.shared.AuditLog;
 import com.essor.qms.shared.ExecutionContext;
+import com.essor.qms.shared.SecretCipher;
 import jakarta.annotation.PreDestroy;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -22,7 +23,10 @@ import javax.crypto.spec.SecretKeySpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -34,6 +38,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 /**
  * Connecteur webhook sortant (un par tenant). Chaque événement est journalisé ({@code webhook_delivery}) dans la
  * transaction métier, puis envoyé après validation, en tâche de fond : 3 essais au plus (attente croissante),
+ * repris au démarrage puis toutes les minutes tant qu'il reste des essais ; secret chiffré en base (AES-GCM) ;
  * corps JSON signé HMAC-SHA256 ({@code X-Essor-Signature: sha256=<hex>}).
  */
 @Service
@@ -64,6 +69,7 @@ class WebhookService {
     private final ApplicationEventPublisher events;
     private final TraceSupport support;
     private final AuditLog audit;
+    private final SecretCipher cipher;
     private final long backoffMs;
     private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
     private final ExecutorService executor = Executors.newFixedThreadPool(2, r -> {
@@ -73,7 +79,8 @@ class WebhookService {
     });
 
     WebhookService(JdbcClient jdbc, TransactionTemplate tx, ApplicationEventPublisher events, TraceSupport support,
-                   AuditLog audit, @Value("${essor.webhook.backoff-ms:2000}") long backoffMs) {
+                   AuditLog audit, SecretCipher cipher, @Value("${essor.webhook.backoff-ms:2000}") long backoffMs) {
+        this.cipher = cipher;
         this.jdbc = jdbc;
         this.tx = tx;
         this.events = events;
@@ -115,12 +122,12 @@ class WebhookService {
             }
             jdbc.sql("insert into webhook_config (tenant_id, url, secret, enabled) "
                             + "values (app_current_tenant(), :url, :secret, :enabled)")
-                    .param("url", url).param("secret", secret).param("enabled", enabled).update();
+                    .param("url", url).param("secret", cipher.encrypt(secret)).param("enabled", enabled).update();
         } else {
             jdbc.sql("""
                     update webhook_config set url = :url, enabled = :enabled, updated_at = now(),
                       secret = case when :secret = '' then secret else :secret end""")
-                    .param("url", url).param("enabled", enabled).param("secret", secret == null ? "" : secret)
+                    .param("url", url).param("enabled", enabled).param("secret", secret == null || secret.isEmpty() ? "" : cipher.encrypt(secret))
                     .update();
         }
         audit.record("WEBHOOK_CONFIGURED", "webhook_config", null, "{\"enabled\":" + enabled + "}");
@@ -162,57 +169,108 @@ class WebhookService {
         executor.submit(() -> deliver(q));
     }
 
+    /** Envoi après validation : essais successifs avec attente croissante ; sinon repris par {@link #retryDue}. */
     void deliver(Queued q) {
-        Target target = ExecutionContext.callAs(null, q.tenantId(), () -> tx.execute(s -> jdbc.sql("""
-                        select d.url, c.secret, d.payload, d.event from webhook_delivery d
-                        join webhook_config c on c.tenant_id = d.tenant_id
-                        where d.id = :id and d.status = 'PENDING'""").param("id", q.deliveryId())
-                .query((rs, i) -> new Target(rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4)))
-                .optional().orElse(null)));
-        if (target == null) {
-            return;
-        }
         for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-            Integer code = null;
-            String error = null;
-            try {
-                HttpRequest req = HttpRequest.newBuilder(URI.create(target.url()))
-                        .timeout(Duration.ofSeconds(10))
-                        .header("Content-Type", "application/json")
-                        .header("X-Essor-Event", target.event())
-                        .header("X-Essor-Delivery", q.deliveryId().toString())
-                        .header(SIGNATURE_HEADER, "sha256=" + sign(target.secret(), target.payload()))
-                        .POST(HttpRequest.BodyPublishers.ofString(target.payload(), StandardCharsets.UTF_8))
-                        .build();
-                code = http.send(req, HttpResponse.BodyHandlers.discarding()).statusCode();
-                if (code < 200 || code >= 300) {
-                    error = "Réponse HTTP " + code;
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                error = "Envoi interrompu";
-            } catch (Exception e) {
-                error = e.getClass().getSimpleName();
-            }
-            boolean ok = error == null;
-            String status = ok ? "SENT" : (attempt == MAX_ATTEMPTS ? "FAILED" : "PENDING");
-            record(q, attempt, code, error, status);
-            if (ok || Thread.currentThread().isInterrupted()) {
+            Boolean done = attemptOnce(q, 1.0);
+            if (done == null || done || Thread.currentThread().isInterrupted()) {
                 return;
             }
-            if (attempt < MAX_ATTEMPTS && !sleep(backoffMs * attempt)) {
+            if (!sleep(backoffMs * attempt)) {
                 return;
             }
         }
-        LOG.warn("Webhook {} en échec après {} essais", q.deliveryId(), MAX_ATTEMPTS);
     }
 
-    private void record(Queued q, int attempt, Integer code, String error, String status) {
+    @EventListener(ApplicationReadyEvent.class)
+    void onStartup() {
+        executor.submit(this::retryDue);
+    }
+
+    @Scheduled(initialDelayString = "${essor.webhook.retry-ms:60000}",
+            fixedDelayString = "${essor.webhook.retry-ms:60000}")
+    void scheduledRetry() {
+        retryDue();
+    }
+
+    /** Renvoie les envois PENDING échus (jamais tentés ou en échec avec essais restants). @return nombre traité */
+    int retryDue() {
+        List<UUID> tenants = jdbc.sql("select id from tenant order by code").query(UUID.class).list();
+        int n = 0;
+        for (UUID tenant : tenants) {
+            List<UUID> due = ExecutionContext.callAs(null, tenant, () -> tx.execute(s -> jdbc.sql("""
+                    select id from webhook_delivery where status = 'PENDING' and attempts < :max
+                      and next_attempt_at <= now() order by created_at limit 100""")
+                    .param("max", MAX_ATTEMPTS).query(UUID.class).list()));
+            for (UUID id : due == null ? List.<UUID>of() : due) {
+                if (attemptOnce(new Queued(tenant, id), 0) != null) {
+                    n++;
+                }
+            }
+        }
+        return n;
+    }
+
+    private record Claimed(Target target, int attempts) {
+    }
+
+    /**
+     * Un essai : réserve l'envoi (bail de 5 min contre un envoi concurrent), poste, enregistre le résultat.
+     * @return true envoyé, false en échec, null rien à faire (déjà traité, réservé ailleurs ou pas encore échu)
+     */
+    private Boolean attemptOnce(Queued q, double toleranceSecs) {
+        Claimed claimed = ExecutionContext.callAs(null, q.tenantId(), () -> tx.execute(s -> jdbc.sql("""
+                        update webhook_delivery d set next_attempt_at = now() + interval '5 minutes'
+                        from webhook_config c
+                        where d.id = :id and c.tenant_id = d.tenant_id and d.status = 'PENDING'
+                          and d.attempts < :max and d.next_attempt_at <= now() + make_interval(secs => :tol)
+                        returning d.url, c.secret, d.payload, d.event, d.attempts""")
+                .param("id", q.deliveryId()).param("max", MAX_ATTEMPTS).param("tol", toleranceSecs)
+                .query((rs, i) -> new Claimed(new Target(rs.getString(1), cipher.decrypt(rs.getString(2)),
+                        rs.getString(3), rs.getString(4)), rs.getInt(5)))
+                .optional().orElse(null)));
+        if (claimed == null) {
+            return null;
+        }
+        Target target = claimed.target();
+        int attempt = claimed.attempts() + 1;
+        Integer code = null;
+        String error = null;
+        try {
+            HttpRequest req = HttpRequest.newBuilder(URI.create(target.url()))
+                    .timeout(Duration.ofSeconds(10))
+                    .header("Content-Type", "application/json")
+                    .header("X-Essor-Event", target.event())
+                    .header("X-Essor-Delivery", q.deliveryId().toString())
+                    .header(SIGNATURE_HEADER, "sha256=" + sign(target.secret(), target.payload()))
+                    .POST(HttpRequest.BodyPublishers.ofString(target.payload(), StandardCharsets.UTF_8))
+                    .build();
+            code = http.send(req, HttpResponse.BodyHandlers.discarding()).statusCode();
+            if (code < 200 || code >= 300) {
+                error = "Réponse HTTP " + code;
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            error = "Envoi interrompu";
+        } catch (Exception e) {
+            error = e.getClass().getSimpleName();
+        }
+        boolean ok = error == null;
+        String status = ok ? "SENT" : (attempt >= MAX_ATTEMPTS ? "FAILED" : "PENDING");
+        record(q, attempt, code, error, status, backoffMs * attempt);
+        if (!ok && attempt >= MAX_ATTEMPTS) {
+            LOG.warn("Webhook {} en échec après {} essais", q.deliveryId(), MAX_ATTEMPTS);
+        }
+        return ok;
+    }
+
+    private void record(Queued q, int attempt, Integer code, String error, String status, long delayMs) {
         ExecutionContext.callAs(null, q.tenantId(), () -> tx.execute(s -> jdbc.sql("""
                         update webhook_delivery set attempts = :a, last_code = :code, last_error = :err,
-                          status = :status, last_attempt_at = now() where id = :id""")
+                          status = :status, last_attempt_at = now(),
+                          next_attempt_at = now() + make_interval(secs => :delay) where id = :id""")
                 .param("a", attempt).param("code", code).param("err", error).param("status", status)
-                .param("id", q.deliveryId()).update()));
+                .param("delay", delayMs / 1000.0).param("id", q.deliveryId()).update()));
     }
 
     private static boolean sleep(long ms) {

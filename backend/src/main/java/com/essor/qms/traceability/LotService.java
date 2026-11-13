@@ -105,7 +105,10 @@ class LotService {
                 throw ApiException.badRequest("Fournisseur inconnu");
             }
         }
-        if (in.siteId() != null && !support.siteExists(in.siteId())) {
+        if (in.siteId() == null) {
+            throw ApiException.badRequest("Site obligatoire");
+        }
+        if (!support.siteExists(in.siteId())) {
             throw ApiException.badRequest("Site inconnu");
         }
         boolean dup = jdbc.sql("select count(*) from lot where article_id = :a and numero = :n")

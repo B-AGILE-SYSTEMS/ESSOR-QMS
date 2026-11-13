@@ -8,5 +8,6 @@ spring:
 essor:
   storage:
     dir: ${java.io.tmpdir}/essor-qms-test-files
+  secret-key: cle-de-test-essor-qms-0123456789-abcdef
   webhook:
     backoff-ms: 50

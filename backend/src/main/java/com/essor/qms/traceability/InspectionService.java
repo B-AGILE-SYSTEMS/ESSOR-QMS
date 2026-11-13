@@ -27,7 +27,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 class InspectionService {
 
-    static final Set<String> DECISIONS = Set.of("LIBERE", "QUARANTAINE", "DEROGATION", "REFUSE");
+    static final Set<String> DECISIONS = Set.of("LIBERE", "QUARANTAINE", "DEROGATION", "REFUSE", "DETRUIT");
+    /** Rôles autorisés à décider (un FIELD_USER saisit les résultats sans décider). */
+    static final String[] DECIDERS = {TraceSupport.QUALITY_MANAGER, "AUDITOR"};
     private static final int MAX_VALUES = 1000;
 
     record CreateInspection(UUID lotId, UUID controlPlanId, String point) {
@@ -189,7 +191,7 @@ class InspectionService {
                         rs.getTimestamp(8).toInstant())).list();
     }
 
-    /** Enregistre (ou remplace) les résultats des caractéristiques transmises. {@code ok} absent : calculé. */
+    /** Enregistre (ou remplace) les résultats. Mesures : {@code ok} toujours recalculé ; attributs : {@code ok} requis. */
     Inspection saveResults(UUID id, List<ResultInput> input) {
         support.requireWriter();
         Inspection insp = get(id);
@@ -212,11 +214,7 @@ class InspectionService {
             }
             Boolean ok = in.ok();
             if ("mesure".equals(c.type())) {
-                List<Double> numbers = numbers(c.code(), values);
-                if (ok == null) {
-                    ok = !numbers.isEmpty() && numbers.stream().allMatch(v -> (c.tolMin() == null || v >= c.tolMin())
-                            && (c.tolMax() == null || v <= c.tolMax()));
-                }
+                ok = conform(c, numbers(c.code(), values)); // verdict du client ignoré
             } else if (ok == null) {
                 throw ApiException.badRequest("Caractéristique " + c.code() + " : verdict ok obligatoire");
             }
@@ -240,11 +238,17 @@ class InspectionService {
         return get(id);
     }
 
+    /** Verdict d'une mesure : tolMin et tolMax sont des bornes ABSOLUES (pas des écarts au nominal). */
+    static boolean conform(Characteristic c, List<Double> numbers) {
+        return !numbers.isEmpty() && numbers.stream().allMatch(v -> (c.tolMin() == null || v >= c.tolMin())
+                && (c.tolMax() == null || v <= c.tolMax()));
+    }
+
     Inspection decide(UUID id, Decision in) {
-        support.requireWriter();
+        support.requireAny(DECIDERS);
         String decision = in.decision() == null ? "" : in.decision();
         if (!DECISIONS.contains(decision)) {
-            throw ApiException.badRequest("Décision : LIBERE, QUARANTAINE, DEROGATION ou REFUSE");
+            throw ApiException.badRequest("Décision : LIBERE, QUARANTAINE, DEROGATION, REFUSE ou DETRUIT");
         }
         if ("DEROGATION".equals(decision)) {
             support.requireAny(TraceSupport.QUALITY_MANAGER);

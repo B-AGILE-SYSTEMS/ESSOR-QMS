@@ -1,5 +1,6 @@
 package com.essor.qms.traceability;
 
+import com.essor.qms.records.AttachmentFiles;
 import com.essor.qms.shared.ApiException;
 import java.io.IOException;
 import java.util.List;
@@ -33,9 +34,12 @@ class TraceabilityController {
     private final ControlPlanService plans;
     private final InspectionService inspections;
     private final WebhookService webhooks;
+    private final InspectionAttachmentService attachments;
 
     TraceabilityController(MasterDataService masterData, LotService lots, RecallService recalls,
-                           ControlPlanService plans, InspectionService inspections, WebhookService webhooks) {
+                           ControlPlanService plans, InspectionService inspections, WebhookService webhooks,
+                           InspectionAttachmentService attachments) {
+        this.attachments = attachments;
         this.masterData = masterData;
         this.lots = lots;
         this.recalls = recalls;
@@ -196,6 +200,33 @@ class TraceabilityController {
     @PostMapping("/api/inspections/{id}/decision")
     InspectionService.Inspection decision(@PathVariable UUID id, @RequestBody InspectionService.Decision body) {
         return inspections.decide(id, body);
+    }
+
+    @PostMapping(path = "/api/inspections/{id}/attachments", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ResponseStatus(HttpStatus.CREATED)
+    InspectionAttachmentService.AttachmentView addAttachment(@PathVariable UUID id,
+                                                             @RequestParam("file") MultipartFile file)
+            throws IOException {
+        if (file.getSize() > AttachmentFiles.MAX_BYTES) {
+            throw AttachmentFiles.tooLarge();
+        }
+        return attachments.add(id, file.getOriginalFilename(), file.getContentType(), file.getBytes());
+    }
+
+    @GetMapping("/api/inspections/{id}/attachments")
+    List<InspectionAttachmentService.AttachmentView> attachments(@PathVariable UUID id) {
+        return attachments.list(id);
+    }
+
+    @GetMapping("/api/inspections/attachments/{attachmentId}")
+    ResponseEntity<byte[]> downloadAttachment(@PathVariable UUID attachmentId) {
+        InspectionAttachmentService.Download d = attachments.download(attachmentId);
+        return ResponseEntity.ok().contentType(MediaType.parseMediaType(d.contentType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.inline()
+                        .filename(d.fileName(), java.nio.charset.StandardCharsets.UTF_8).build().toString())
+                .header("Content-Security-Policy", "sandbox; default-src 'none'")
+                .header(HttpHeaders.CACHE_CONTROL, "private, max-age=3600")
+                .body(d.content());
     }
 
     // ---------------------------------------------------------------- connecteur webhook

@@ -1,0 +1,58 @@
+{
+  "document" : {
+    "id" : "22bcefba-6c79-4597-9a9b-af62c3ace2d6",
+    "reference" : "DOC-2026-0001",
+    "code" : "PR-QHSE-63142",
+    "title" : "Circulation des chariots",
+    "docType" : "procedure",
+    "processus" : "Logistique",
+    "status" : "DIFFUSE",
+    "statusLabel" : "Diffusé",
+    "currentVersion" : {
+      "id" : "f9d2610a-6dbf-4c5c-89d6-b7863b37efb2",
+      "number" : 2,
+      "fileName" : "proc-v2.pdf"
+    },
+    "latestVersion" : 2,
+    "reviewDate" : "2026-12-03",
+    "updatedAt" : "2026-11-13T14:26:14.534221Z"
+  },
+  "ownerId" : "341b2546-8a7b-4607-a10a-2be8541c55d2",
+  "ownerName" : "Nom t3.qualite",
+  "recipients" : {
+    "roles" : [ "FIELD_USER" ],
+    "siteIds" : [ ]
+  },
+  "verifierRoles" : [ "QUALITY_MANAGER" ],
+  "approverRoles" : [ "ADMIN" ],
+  "requirements" : [ ],
+  "versions" : [ {
+    "id" : "f9d2610a-6dbf-4c5c-89d6-b7863b37efb2",
+    "number" : 2,
+    "status" : "DIFFUSE",
+    "statusLabel" : "En vigueur",
+    "note" : "Version 2",
+    "fileName" : "proc-v2.pdf",
+    "contentType" : "application/pdf",
+    "size" : 16,
+    "createdAt" : "2026-11-13T14:26:14.392562Z",
+    "createdByName" : "Nom t3.qualite",
+    "diffusedAt" : "2026-11-13T14:26:14.534221Z",
+    "inForce" : true,
+    "availableTransitions" : [ ]
+  }, {
+    "id" : "7936830f-a758-4e07-ba35-0eafb111bbb8",
+    "number" : 1,
+    "status" : "PERIME",
+    "statusLabel" : "Périmée",
+    "note" : "Version 1",
+    "fileName" : "proc-v1.pdf",
+    "contentType" : "application/pdf",
+    "size" : 16,
+    "createdAt" : "2026-11-13T14:26:14.198918Z",
+    "createdByName" : "Nom t3.qualite",
+    "diffusedAt" : "2026-11-13T14:26:14.358725Z",
+    "inForce" : false,
+    "availableTransitions" : [ ]
+  } ]
+}

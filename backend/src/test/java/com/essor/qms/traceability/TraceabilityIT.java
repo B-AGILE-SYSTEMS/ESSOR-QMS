@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.essor.qms.AbstractIntegrationTest;
+import com.essor.qms.ApiExamples;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lowagie.text.pdf.PdfReader;
@@ -89,8 +90,12 @@ class TraceabilityIT extends AbstractIntegrationTest {
     }
 
     private JsonNode article(String code, boolean dlc) throws Exception {
+        return article(code, dlc, "kg");
+    }
+
+    private JsonNode article(String code, boolean dlc, String unit) throws Exception {
         return call(post("/api/master-data/articles"), QUALITE, Map.of("code", code, "label", "Article " + code,
-                "family", "FAM-T", "unit", "kg", "tracking", "lot", "dlc", dlc), 201);
+                "family", "FAM-T", "unit", unit, "tracking", "lot", "dlc", dlc), 201);
     }
 
     private JsonNode partner(String code, String type) throws Exception {
@@ -174,6 +179,9 @@ class TraceabilityIT extends AbstractIntegrationTest {
         JsonNode lot = lot(art, uniq("L"), sup, 1000, site);
         assertThat(lot.path("qualityStatus").asText()).isEqualTo("EN_ATTENTE");
         JsonNode plan = plan("RECEPTION", art, Map.of("mode", "iso2859", "nqa", 2.5, "niveau", "II"), null);
+        ApiExamples.write("plan", plan);
+        ApiExamples.write("article", art);
+        ApiExamples.write("partenaire", sup);
 
         JsonNode insp = call(post("/api/inspections"), TERRAIN, Map.of("lotId", lot.path("id").asText(),
                 "controlPlanId", plan.path("id").asText(), "point", "RECEPTION"), 201);
@@ -204,10 +212,14 @@ class TraceabilityIT extends AbstractIntegrationTest {
         assertThat(diam.path("author").asText()).isNotBlank();
         assertThat(r1.path("proposedDecision").asText()).isEqualTo("REFUSE");
 
-        call(post("/api/inspections/" + id + "/decision"), TERRAIN, Map.of("decision", "REFUSE"), 400);
+        ApiExamples.write("inspection", r1);
+        call(post("/api/inspections/" + id + "/decision"), QUALITE, Map.of("decision", "REFUSE"), 400);
         call(post("/api/inspections/" + id + "/decision"), LECTEUR, Map.of("decision", "REFUSE", "comment", "x"),
                 403);
-        JsonNode dec = call(post("/api/inspections/" + id + "/decision"), TERRAIN,
+        // Un FIELD_USER saisit les résultats mais ne décide pas.
+        call(post("/api/inspections/" + id + "/decision"), TERRAIN,
+                Map.of("decision", "REFUSE", "comment", "Diamètre hors tolérance"), 403);
+        JsonNode dec = call(post("/api/inspections/" + id + "/decision"), QUALITE,
                 Map.of("decision", "REFUSE", "comment", "Diamètre hors tolérance"), 200);
         assertThat(dec.path("status").asText()).isEqualTo("TERMINEE");
         String nc = dec.path("ncId").asText();
@@ -218,13 +230,14 @@ class TraceabilityIT extends AbstractIntegrationTest {
         assertThat(record.path("data").path("supplierId").asText()).isEqualTo(sup.path("id").asText());
 
         JsonNode detail = call(get("/api/lots/" + lot.path("id").asText()), TERRAIN, null, 200);
+        ApiExamples.write("lot", detail);
         assertThat(detail.path("lot").path("qualityStatus").asText()).isEqualTo("REFUSE");
         JsonNode last = detail.path("history").get(detail.path("history").size() - 1);
         assertThat(last.path("from").asText()).isEqualTo("EN_ATTENTE");
         assertThat(last.path("to").asText()).isEqualTo("REFUSE");
         assertThat(last.path("ncId").asText()).isEqualTo(nc);
         assertThat(detail.path("inspections").size()).isEqualTo(1);
-        call(post("/api/inspections/" + id + "/decision"), TERRAIN, Map.of("decision", "LIBERE"), 409);
+        call(post("/api/inspections/" + id + "/decision"), QUALITE, Map.of("decision", "LIBERE"), 409);
     }
 
     @Test
@@ -318,10 +331,16 @@ class TraceabilityIT extends AbstractIntegrationTest {
                     "http://127.0.0.1:" + server.getAddress().getPort() + "/wms", "secret", secret), 200);
             assertThat(cfg.path("secretSet").asBoolean()).isTrue();
             assertThat(cfg.has("secret")).isFalse();
+            try (Connection c = ownerConnection(); Statement st = c.createStatement()) {
+                var rs = st.executeQuery("select w.secret from webhook_config w join tenant t on t.id = w.tenant_id "
+                        + "where t.code = 'DEMO'");
+                rs.next();
+                assertThat(rs.getString(1)).startsWith("v1:").doesNotContain(secret);
+            }
 
             String site = siteId(TERRAIN);
             JsonNode mp = article(uniq("MP"), false);
-            JsonNode pf = article(uniq("PF"), false);
+            JsonNode pf = article(uniq("PF"), false, "pcs");
             JsonNode sup = partner(uniq("FOU"), "fournisseur");
             JsonNode c1 = partner(uniq("CLI"), "client");
             JsonNode c2 = partner(uniq("CLI"), "client");
@@ -361,6 +380,7 @@ class TraceabilityIT extends AbstractIntegrationTest {
             assertThat(upLf.path("lot").path("supplier").path("id").asText()).isEqualTo(sup.path("id").asText());
 
             JsonNode recall = call(get("/api/lots/" + lf.path("id").asText() + "/recall"), TERRAIN, null, 200);
+            ApiExamples.write("rappel", recall);
             assertThat(recall.path("lotsImpactes")).extracting(l -> l.path("id").asText())
                     .containsExactlyInAnyOrder(lf.path("id").asText(), semi.path("id").asText(),
                             fini.path("id").asText())
@@ -371,14 +391,16 @@ class TraceabilityIT extends AbstractIntegrationTest {
             assertThat(cl1.path("quantite").asDouble()).isEqualTo(25.0);
             assertThat(cl1.path("references")).extracting(JsonNode::asText).containsExactly("BL-1", "BL-3");
             // restants : lf 100-90 = 10 ; semi 80-60 = 20 ; fini 60-40 = 20 ; tous EN_ATTENTE -> en cours
-            assertThat(recall.path("quantites").path("expedie").asDouble()).isEqualTo(40.0);
-            assertThat(recall.path("quantites").path("enCours").asDouble()).isEqualTo(50.0);
-            assertThat(recall.path("quantites").path("enStock").asDouble()).isZero();
+            // lf en kg (10) ; semi et fini en pcs (20 + 20) : jamais additionnés entre unités.
+            assertThat(qty(recall, "expedie")).isEqualTo(Map.of("pcs", 40.0));
+            assertThat(qty(recall, "enCours")).isEqualTo(Map.of("kg", 10.0, "pcs", 40.0));
+            assertThat(recall.path("quantites").path("enStock").size()).isZero();
 
             byte[] pdf = perform(get("/api/lots/" + lf.path("id").asText() + "/recall.pdf"), TERRAIN, null, 200)
                     .getResponse().getContentAsByteArray();
             String text = new PdfTextExtractor(new PdfReader(pdf)).getTextFromPage(1);
-            assertThat(text).contains("Dossier de rappel").contains(c2.path("code").asText());
+            assertThat(text).contains("Dossier de rappel").contains(c2.path("code").asText())
+                    .contains("10 kg ; 40 pcs");
 
             // Blocage du stock restant : 3 lots en QUARANTAINE, 3 webhooks.
             call(post("/api/lots/" + lf.path("id").asText() + "/recall/block"), TERRAIN,
@@ -412,6 +434,12 @@ class TraceabilityIT extends AbstractIntegrationTest {
             call(put("/api/connectors/webhook"), ADMIN, Map.of("url", "http://127.0.0.1:9/off", "enabled", false),
                     200);
         }
+    }
+
+    private static Map<String, Double> qty(JsonNode recall, String kind) {
+        Map<String, Double> out = new java.util.TreeMap<>();
+        recall.path("quantites").path(kind).forEach(q -> out.put(q.path("unit").asText(), q.path("qty").asDouble()));
+        return out;
     }
 
     private static boolean allSent(JsonNode deliveries, int n) {
@@ -518,7 +546,7 @@ class TraceabilityIT extends AbstractIntegrationTest {
         long ms = (System.nanoTime() - t0) / 1_000_000;
         assertThat(recall.path("lotsImpactes").size()).isEqualTo(1111);
         assertThat(recall.path("clients").size()).isEqualTo(9);
-        assertThat(recall.path("quantites").path("expedie").asDouble()).isEqualTo(9000.0);
+        assertThat(qty(recall, "expedie")).isEqualTo(Map.of("u", 9000.0));
         assertThat(ms).as("rappel en %d ms", ms).isLessThan(1000);
     }
 
@@ -550,6 +578,144 @@ class TraceabilityIT extends AbstractIntegrationTest {
                     + "'webhook_config','webhook_delivery') and relrowsecurity and relforcerowsecurity");
             rs.next();
             assertThat(rs.getInt(1)).isEqualTo(10);
+            var rs2 = st.executeQuery("select relrowsecurity and relforcerowsecurity from pg_class "
+                    + "where relname = 'inspection_attachment'");
+            rs2.next();
+            assertThat(rs2.getBoolean(1)).isTrue();
         }
+    }
+
+    // ---------------------------------------------------------------- correctifs de fin de M3b
+
+    static final RequestPostProcessor AUDITEUR = user("sub-b-auditeur", "tb.auditeur", "DEMO", "AUDITOR");
+    private static final byte[] PNG = {(byte) 0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0};
+
+    @Autowired
+    WebhookService webhookService;
+
+    @Test
+    void tolerancesAbsoluesEtVerdictClientIgnore() throws Exception {
+        JsonNode art = article(uniq("ART"), false);
+        JsonNode lot = lot(art, uniq("L"), null, 10, siteId(TERRAIN));
+        Map<String, Object> body = new java.util.HashMap<>();
+        body.put("code", uniq("PC"));
+        body.put("label", "Épaisseur");
+        body.put("point", "RECEPTION");
+        body.put("target", Map.of("type", "article", "id", art.path("id").asText()));
+        body.put("characteristics", List.of(Map.of("code", "EP", "libelle", "Épaisseur", "type", "mesure",
+                "nominal", 15.0, "tolMin", 14.5, "tolMax", 15.5, "unite", "mm", "criticite", "majeure")));
+        body.put("sampling", Map.of("mode", "fixe", "taille", 1));
+        JsonNode plan = call(post("/api/control-plans"), QUALITE, body, 201);
+        JsonNode insp = call(post("/api/inspections"), TERRAIN, Map.of("lotId", lot.path("id").asText(),
+                "controlPlanId", plan.path("id").asText()), 201);
+        String id = insp.path("id").asText();
+        JsonNode r = call(put("/api/inspections/" + id + "/results"), TERRAIN,
+                List.of(Map.of("characteristic", "EP", "values", List.of(16.5), "ok", true)), 200);
+        assertThat(r.path("results").get(0).path("ok").asBoolean()).isFalse();
+        assertThat(r.path("proposedDecision").asText()).isEqualTo("QUARANTAINE");
+        JsonNode ok = call(put("/api/inspections/" + id + "/results"), TERRAIN,
+                List.of(Map.of("characteristic", "EP", "values", List.of(15.5, 14.5), "ok", false)), 200);
+        assertThat(ok.path("results").get(0).path("ok").asBoolean()).isTrue();
+        assertThat(ok.path("proposedDecision").asText()).isEqualTo("LIBERE");
+        // L'auditeur peut décider, y compris la destruction.
+        JsonNode d = call(post("/api/inspections/" + id + "/decision"), AUDITEUR,
+                Map.of("decision", "DETRUIT", "comment", "Lot endommagé"), 200);
+        assertThat(d.path("decision").asText()).isEqualTo("DETRUIT");
+        assertThat(d.path("lot").path("qualityStatus").asText()).isEqualTo("DETRUIT");
+    }
+
+    @Test
+    void siteObligatoireALaCreationDUnLot() throws Exception {
+        JsonNode art = article(uniq("ART"), false);
+        JsonNode err = call(post("/api/lots"), TERRAIN, Map.of("articleId", art.path("id").asText(),
+                "numero", uniq("L"), "quantity", 1), 400);
+        assertThat(err.toString()).contains("Site obligatoire");
+    }
+
+    @Test
+    void photosDeControleContenuVerifieIdempotentesEtIsolees() throws Exception {
+        JsonNode art = article(uniq("ART"), false);
+        JsonNode lot = lot(art, uniq("L"), null, 10, siteId(TERRAIN));
+        JsonNode plan = plan("RECEPTION", art, Map.of("mode", "fixe", "taille", 1), null);
+        String id = call(post("/api/inspections"), TERRAIN, Map.of("lotId", lot.path("id").asText(),
+                "controlPlanId", plan.path("id").asText()), 201).path("id").asText();
+        String key = UUID.randomUUID().toString();
+        MockMultipartFile photo = new MockMultipartFile("file", "photo.png", "image/png", PNG);
+        JsonNode a1 = call(multipart("/api/inspections/" + id + "/attachments").file(photo)
+                .header("Idempotency-Key", key), TERRAIN, null, 201);
+        JsonNode a2 = call(multipart("/api/inspections/" + id + "/attachments").file(photo)
+                .header("Idempotency-Key", key), TERRAIN, null, 201);
+        assertThat(a2.path("id").asText()).isEqualTo(a1.path("id").asText());
+        assertThat(a1.path("contentType").asText()).isEqualTo("image/png");
+        call(multipart("/api/inspections/" + id + "/attachments").file(new MockMultipartFile("file", "x.png",
+                "image/png", "pas une image".getBytes(StandardCharsets.UTF_8))), TERRAIN, null, 400);
+        call(multipart("/api/inspections/" + id + "/attachments").file(photo), LECTEUR, null, 403);
+        call(multipart("/api/inspections/" + UUID.randomUUID() + "/attachments").file(photo), TERRAIN, null, 404);
+        JsonNode list = call(get("/api/inspections/" + id + "/attachments"), TERRAIN, null, 200);
+        assertThat(list.size()).isEqualTo(1);
+        byte[] content = perform(get("/api/inspections/attachments/" + a1.path("id").asText()), TERRAIN, null, 200)
+                .getResponse().getContentAsByteArray();
+        assertThat(content).isEqualTo(PNG);
+
+        try (Connection c = ownerConnection(); Statement st = c.createStatement()) {
+            st.execute("insert into tenant (code, name) values ('RLS-M3B', 'Autre') on conflict do nothing");
+            st.execute("insert into site (tenant_id, code, name) select id, 'S', 'Site' from tenant "
+                    + "where code = 'RLS-M3B' on conflict do nothing");
+        }
+        RequestPostProcessor autre = user("sub-b-autre", "tb.autre", "RLS-M3B", "ADMIN", "QUALITY_MANAGER");
+        call(get("/api/inspections/" + id + "/attachments"), autre, null, 404);
+        call(get("/api/inspections/attachments/" + a1.path("id").asText()), autre, null, 404);
+    }
+
+    @Test
+    void repriseDesWebhooksEnAttenteAvecEssaisRestants() throws Exception {
+        AtomicInteger calls = new AtomicInteger();
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/reprise", ex -> {
+            calls.incrementAndGet();
+            ex.sendResponseHeaders(200, -1);
+            ex.close();
+        });
+        server.start();
+        String url = "http://127.0.0.1:" + server.getAddress().getPort() + "/reprise";
+        try {
+            call(put("/api/connectors/webhook"), ADMIN, Map.of("url", url, "secret", "secret-reprise-0123456789",
+                    "enabled", true), 200);
+            String due;
+            String later;
+            String failed;
+            try (Connection c = ownerConnection(); Statement st = c.createStatement()) {
+                due = insertDelivery(st, url, "PENDING", 1, "now() - interval '1 minute'");
+                later = insertDelivery(st, url, "PENDING", 1, "now() + interval '1 hour'");
+                failed = insertDelivery(st, url, "FAILED", 3, "now() - interval '1 minute'");
+            }
+            assertThat(webhookService.retryDue()).isGreaterThanOrEqualTo(1);
+            assertThat(calls.get()).isGreaterThanOrEqualTo(1);
+            try (Connection c = ownerConnection(); Statement st = c.createStatement()) {
+                assertThat(deliveryState(st, due)).isEqualTo("SENT/2");
+                assertThat(deliveryState(st, later)).isEqualTo("PENDING/1");
+                assertThat(deliveryState(st, failed)).isEqualTo("FAILED/3");
+            }
+        } finally {
+            server.stop(0);
+            call(put("/api/connectors/webhook"), ADMIN, Map.of("url", "http://127.0.0.1:9/off", "enabled", false),
+                    200);
+        }
+    }
+
+    private static String insertDelivery(Statement st, String url, String status, int attempts, String next)
+            throws Exception {
+        var rs = st.executeQuery("""
+                insert into webhook_delivery (tenant_id, event, url, payload, status, attempts, next_attempt_at)
+                select id, 'lot.status_changed', '%s', '{"event":"lot.status_changed"}', '%s', %d, %s
+                from tenant where code = 'DEMO' returning id""".formatted(url, status, attempts, next));
+        rs.next();
+        return rs.getString(1);
+    }
+
+    private static String deliveryState(Statement st, String id) throws Exception {
+        var rs = st.executeQuery("select status || '/' || attempts from webhook_delivery where id = '" + id + "'");
+        rs.next();
+        return rs.getString(1);
     }
 }

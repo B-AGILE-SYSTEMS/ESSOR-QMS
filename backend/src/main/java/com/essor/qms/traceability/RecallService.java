@@ -163,6 +163,10 @@ class RecallService {
         return out.toByteArray();
     }
 
+    private static String fmt(List<Genealogy.UnitQty> q) {
+        return q.isEmpty() ? "0" : String.join(" ; ", q.stream().map(u -> (fmt(u.qty()) + " " + u.unit()).strip()).toList());
+    }
+
     private static String fmt(BigDecimal v) {
         return v == null ? "" : v.stripTrailingZeros().toPlainString();
     }

@@ -114,7 +114,11 @@ final class Genealogy {
     record ClientImpact(Ref partner, BigDecimal quantite, List<String> references) {
     }
 
-    record Quantities(BigDecimal enStock, BigDecimal enCours, BigDecimal expedie) {
+    record UnitQty(String unit, BigDecimal qty) {
+    }
+
+    /** Quantités regroupées par unité (jamais de somme entre unités différentes), triées par unité. */
+    record Quantities(List<UnitQty> enStock, List<UnitQty> enCours, List<UnitQty> expedie) {
     }
 
     record Recall(Lot source, List<ImpactedLot> lotsImpactes, List<ClientImpact> clients, Quantities quantites) {
@@ -132,11 +136,12 @@ final class Genealogy {
         List<Link> out = links(jdbc, "l.source_lot_id = any(:ids)", Map.of("ids", arr));
         Map<UUID, BigDecimal> used = new HashMap<>();
         Map<UUID, ClientAcc> clients = new LinkedHashMap<>();
-        BigDecimal shipped = BigDecimal.ZERO;
+        Map<String, BigDecimal> shipped = new java.util.TreeMap<>();
         for (Link l : out) {
             used.merge(l.sourceLotId(), l.quantity(), BigDecimal::add);
             if ("shipped_to".equals(l.kind())) {
-                shipped = shipped.add(l.quantity());
+                Lot src = lots.get(l.sourceLotId());
+                shipped.merge(unitOf(src), l.quantity(), BigDecimal::add);
                 ClientAcc acc = clients.computeIfAbsent(l.partner().id(), k -> new ClientAcc(l.partner()));
                 acc.qty = acc.qty.add(l.quantity());
                 if (l.reference() != null && !acc.refs.contains(l.reference())) {
@@ -144,15 +149,15 @@ final class Genealogy {
                 }
             }
         }
-        BigDecimal stock = BigDecimal.ZERO;
-        BigDecimal wip = BigDecimal.ZERO;
+        Map<String, BigDecimal> stock = new java.util.TreeMap<>();
+        Map<String, BigDecimal> wip = new java.util.TreeMap<>();
         List<ImpactedLot> impacted = new ArrayList<>();
         for (Lot lot : lots.values()) {
             BigDecimal remaining = lot.quantity().subtract(used.getOrDefault(lot.id(), BigDecimal.ZERO))
                     .max(BigDecimal.ZERO);
             switch (lot.qualityStatus()) {
-                case "LIBERE", "QUARANTAINE", "DEROGATION" -> stock = stock.add(remaining);
-                case "EN_ATTENTE" -> wip = wip.add(remaining);
+                case "LIBERE", "QUARANTAINE", "DEROGATION" -> stock.merge(unitOf(lot), remaining, BigDecimal::add);
+                case "EN_ATTENTE" -> wip.merge(unitOf(lot), remaining, BigDecimal::add);
                 default -> { }
             }
             Map<String, Object> article = new LinkedHashMap<>();
@@ -166,7 +171,16 @@ final class Genealogy {
                 : a.numero().compareTo(b.numero()));
         List<ClientImpact> cl = clients.values().stream()
                 .map(c -> new ClientImpact(c.partner, c.qty, List.copyOf(c.refs))).toList();
-        return new Recall(lots.get(start), List.copyOf(impacted), cl, new Quantities(stock, wip, shipped));
+        return new Recall(lots.get(start), List.copyOf(impacted), cl, new Quantities(byUnit(stock), byUnit(wip), byUnit(shipped)));
+    }
+
+    private static String unitOf(Lot lot) {
+        return lot == null || lot.unit() == null ? "" : lot.unit();
+    }
+
+    private static List<UnitQty> byUnit(Map<String, BigDecimal> m) {
+        return m.entrySet().stream().filter(e -> e.getValue().signum() > 0)
+                .map(e -> new UnitQty(e.getKey(), e.getValue())).toList();
     }
 
     private static final class ClientAcc {

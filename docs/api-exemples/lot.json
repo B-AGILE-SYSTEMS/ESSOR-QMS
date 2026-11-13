@@ -1,0 +1,60 @@
+{
+  "lot" : {
+    "id" : "ac3f7785-4116-444e-9b72-332ed3042929",
+    "article" : {
+      "id" : "12e85777-22e7-47a3-bb4b-5c02e39f91af",
+      "code" : "ART-3b2352e1",
+      "label" : "Article ART-3b2352e1",
+      "unit" : "kg",
+      "family" : "FAM-T"
+    },
+    "numero" : "L-135898f4",
+    "supplier" : {
+      "id" : "7478a059-a7c9-414d-8aab-d1d7b8177572",
+      "code" : "FOU-4d75ba2f",
+      "name" : "Nom FOU-4d75ba2f"
+    },
+    "supplierLot" : "F-L-135898f4",
+    "quantity" : 1000.0,
+    "unit" : "kg",
+    "dlc" : null,
+    "site" : {
+      "id" : "00000000-0000-0000-0000-0000000051a2",
+      "code" : "ENTREPOT-TNG",
+      "name" : "Entrepôt de Tanger"
+    },
+    "qualityStatus" : "REFUSE",
+    "createdAt" : "2026-11-13T14:26:43.137479Z",
+    "updatedAt" : "2026-11-13T14:26:43.209662Z"
+  },
+  "history" : [ {
+    "at" : "2026-11-13T14:26:43.137479Z",
+    "from" : null,
+    "to" : "EN_ATTENTE",
+    "reason" : "Création du lot",
+    "author" : "Nom tb.terrain",
+    "ncId" : null,
+    "inspectionId" : null
+  }, {
+    "at" : "2026-11-13T14:26:43.209662Z",
+    "from" : "EN_ATTENTE",
+    "to" : "REFUSE",
+    "reason" : "Contrôle PC-3dd90618 v1 : Diamètre hors tolérance",
+    "author" : "Nom tb.qualite",
+    "ncId" : "a065d331-c7f4-4f94-88c9-98589269b046",
+    "inspectionId" : "6d435f8d-a869-4f9c-8d40-6b9ee2df9675"
+  } ],
+  "inspections" : [ {
+    "id" : "6d435f8d-a869-4f9c-8d40-6b9ee2df9675",
+    "point" : "RECEPTION",
+    "controlPlan" : {
+      "label" : "Plan RECEPTION",
+      "code" : "PC-3dd90618",
+      "version" : 1
+    },
+    "decision" : "REFUSE",
+    "createdAt" : "2026-11-13T14:26:43.159278Z",
+    "decidedAt" : "2026-11-13T14:26:43.209662Z",
+    "ncId" : "a065d331-c7f4-4f94-88c9-98589269b046"
+  } ]
+}
