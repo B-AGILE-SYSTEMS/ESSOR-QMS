@@ -8,3 +8,5 @@ spring:
 essor:
   storage:
     dir: ${java.io.tmpdir}/essor-qms-test-files
+  webhook:
+    backoff-ms: 50
