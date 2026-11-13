@@ -95,8 +95,11 @@ describe('Écrans M3b', () => {
     (await req(http, '/api/inspections/i1')).flush({ id: 'i1', lotId: 'l1', controlPlanId: 'cp1', point: 'RECEPTION', status: 'A_FAIRE',
       sampling: { mode: 'fixe', sampleSize: 2, ac: 0, re: 1 }, results: [] });
     (await req(http, '/api/control-plans')).flush([PLAN]);
+    (await req(http, '/api/instruments')).flush([{ id: 'in1', code: 'PAC-1', status: 'en_service', nextDueDate: '2099-01-01' },
+      { id: 'in2', code: 'PAC-2', status: 'bloque' }]);
     await settle(f);
     const el: HTMLElement = f.nativeElement;
+    expect(el.querySelectorAll('#eq-instruments option').length).toBe(1);
     const input = el.querySelector('input[aria-label="Mesures Diamètre"]') as HTMLInputElement;
     input.value = '12 12,05';
     input.dispatchEvent(new Event('input'));
