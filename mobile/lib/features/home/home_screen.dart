@@ -10,6 +10,7 @@ import 'package:essor_mobile/core/providers.dart';
 import 'package:essor_mobile/core/scan/qr_location.dart';
 import 'package:essor_mobile/core/widgets/terrain.dart';
 import 'package:essor_mobile/core/theme/app_theme.dart';
+import 'package:essor_mobile/features/audits/audits_screen.dart';
 import 'package:essor_mobile/features/home/sync_indicator.dart';
 
 /// Accueil terrain (maquette mobile, écran 1). Tuiles : « mes tâches » en cache.
@@ -21,6 +22,7 @@ class HomeScreen extends ConsumerWidget {
     final session = ref.watch(sessionProvider);
     if (session is! Authenticated) return const SizedBox.shrink();
     final tasks = ref.watch(tasksProvider).value ?? const [];
+    final audits = ref.watch(auditsProvider).value ?? const [];
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -29,28 +31,32 @@ class HomeScreen extends ConsumerWidget {
             const SyncStatusBar(),
             _Header(session: session),
             Expanded(
-              child: ListView(
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
-                children: [
-                  const PendingBanner(),
-                  const ReviewBanner(),
-                  for (final t in tasks.take(3))
-                    _Tile(
-                      key: Key('tile-${t.id}'),
-                      title: t.title,
-                      subtitle: [
-                        t.reference,
-                        if (t.dueDate != null) 'Échéance ${t.dueDate}',
-                        t.statusLabel,
-                      ].join(' · '),
-                      onTap: () => context.go('/fiche/${t.id}'),
-                    ),
-                  if (tasks.isEmpty)
-                    const Text(
-                      'Aucune tâche en cache pour l\'instant.',
-                      style: TextStyle(fontSize: 16),
-                    ),
-                ],
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const PendingBanner(),
+                    const ReviewBanner(),
+                    for (final a in audits.take(1)) AuditTile(audit: a),
+                    for (final t in tasks.take(3))
+                      _Tile(
+                        key: Key('tile-${t.id}'),
+                        title: t.title,
+                        subtitle: [
+                          t.reference,
+                          if (t.dueDate != null) 'Échéance ${t.dueDate}',
+                          t.statusLabel,
+                        ].join(' · '),
+                        onTap: () => context.go('/fiche/${t.id}'),
+                      ),
+                    if (tasks.isEmpty && audits.isEmpty)
+                      const Text(
+                        'Aucune tâche en cache pour l\'instant.',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                  ],
+                ),
               ),
             ),
             const _Footer(),
@@ -242,6 +248,27 @@ class _Footer extends ConsumerWidget {
                 onPressed: () => _scan(context, ref),
                 icon: const Icon(Icons.qr_code_scanner, size: 26),
                 label: const Text('Scanner'),
+              ),
+            ),
+          ],
+        ),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                key: const Key('auditsButton'),
+                onPressed: () => context.go('/audits'),
+                icon: const Icon(Icons.fact_check, size: 26),
+                label: const Text('Mes audits'),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: OutlinedButton.icon(
+                key: const Key('documentsButton'),
+                onPressed: () => context.go('/documents'),
+                icon: const Icon(Icons.menu_book, size: 26),
+                label: const Text('Documents'),
               ),
             ),
           ],

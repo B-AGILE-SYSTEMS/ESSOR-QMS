@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
 
 import 'package:essor_mobile/core/api/api_client.dart';
 import 'package:essor_mobile/core/api/models.dart';
@@ -12,6 +14,10 @@ import 'package:essor_mobile/core/api/profile_cache.dart';
 import 'package:essor_mobile/core/api/records.dart';
 import 'package:essor_mobile/core/auth/auth_service.dart';
 import 'package:essor_mobile/core/config/server_config.dart';
+import 'package:essor_mobile/core/m3/audits_repository.dart';
+import 'package:essor_mobile/core/m3/documents_repository.dart';
+import 'package:essor_mobile/core/m3/m3_api.dart';
+import 'package:essor_mobile/core/m3/models.dart';
 import 'package:essor_mobile/core/sync/sync_database.dart';
 import 'package:essor_mobile/core/sync/api_uploader.dart';
 import 'package:essor_mobile/core/sync/operations.dart';
@@ -88,6 +94,37 @@ final tasksProvider = StreamProvider<List<RecordSummary>>(
   (ref) => ref.watch(tasksRepositoryProvider).watch(),
 );
 
+final auditsRepositoryProvider = Provider<AuditsRepository>(
+  (ref) => AuditsRepository(
+    ref.watch(syncDatabaseProvider),
+    ref.watch(operationQueueProvider),
+  ),
+);
+
+final documentsRepositoryProvider = Provider<DocumentsRepository>(
+  (ref) => DocumentsRepository(
+    ref.watch(syncDatabaseProvider),
+    ref.watch(operationQueueProvider),
+  ),
+);
+
+final auditsProvider = StreamProvider<List<AuditSummary>>(
+  (ref) => ref.watch(auditsRepositoryProvider).watch(),
+);
+
+final documentsProvider = StreamProvider<List<DocumentItem>>(
+  (ref) => ref.watch(documentsRepositoryProvider).watch(),
+);
+
+/// Dossier des documents téléchargés pour lecture hors ligne.
+final documentsDirProvider = FutureProvider<Directory>((ref) async {
+  final base = await getApplicationDocumentsDirectory();
+  return Directory('${base.path}/documents').create(recursive: true);
+});
+
+/// Horloge (surchargée en test) : année du programme d'audits.
+final clockProvider = Provider<DateTime Function()>((ref) => DateTime.now);
+
 final reviewCountProvider = StreamProvider<int>(
   (ref) => ref.watch(syncDatabaseProvider).watchReviewCount(),
 );
@@ -100,6 +137,10 @@ Future<void> runSyncCycle(Ref ref) async {
   final sync = ref.read(syncServiceProvider);
   final api = ref.read(apiClientProvider);
   final tasks = ref.read(tasksRepositoryProvider);
+  final audits = ref.read(auditsRepositoryProvider);
+  final docs = ref.read(documentsRepositoryProvider);
+  final now = ref.read(clockProvider)();
+  final docsDir = ref.read(documentsDirProvider.future);
   await sync.syncNow();
   if (api == null) return;
   try {
@@ -107,6 +148,18 @@ Future<void> runSyncCycle(Ref ref) async {
     await tasks.refresh(api);
   } on DioException {
     return;
+  }
+  // M3 : blocs indépendants, le cache est conservé en cas d'échec.
+  final m3 = M3Api(api.dio);
+  try {
+    await audits.refresh(m3, year: now.year);
+  } on DioException {
+    // Grilles en cache conservées.
+  }
+  try {
+    await docs.refresh(m3, await docsDir);
+  } on DioException {
+    // Documents en cache conservés.
   }
 }
 

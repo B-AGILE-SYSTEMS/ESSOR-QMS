@@ -56,7 +56,7 @@ class ApiErrorHandler {
     @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
     ResponseEntity<ApiError> tooLarge(org.springframework.web.multipart.MaxUploadSizeExceededException e) {
         return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
-                .body(new ApiError("too_large", "Fichier trop volumineux (10 Mo maximum)", Map.of()));
+                .body(new ApiError("too_large", "Fichier trop volumineux (20 Mo maximum)", Map.of()));
     }
 
     @ExceptionHandler(org.springframework.web.multipart.support.MissingServletRequestPartException.class)

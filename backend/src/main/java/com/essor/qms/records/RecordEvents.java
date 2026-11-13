@@ -25,10 +25,16 @@ public final class RecordEvents {
                                      String statusLabel, UUID ownerId, List<String> nextRoles, UUID actorId) {
     }
 
-    public enum DeadlineKind { OVERDUE, DUE_SOON }
+    /** {@code REVIEW_DUE} : revue périodique d'un document à J-30 ({@code dueDate} = date de revue). */
+    public enum DeadlineKind { OVERDUE, DUE_SOON, REVIEW_DUE }
 
     /** Échéance dépassée ou à J-2, détectée par la tâche planifiée quotidienne. */
     public record RecordDeadline(UUID recordId, String reference, String title, UUID ownerId, LocalDate dueDate,
                                  DeadlineKind kind) {
+    }
+
+    /** Version d'un document diffusée : les destinataires doivent en accuser lecture. */
+    public record DocumentDiffused(UUID recordId, String reference, String title, int version, List<UUID> recipients,
+                                   UUID actorId) {
     }
 }

@@ -53,6 +53,21 @@ class ApiOperationUploader implements OperationUploader {
             }),
             options: options,
           );
+        case OpKind.auditAnswer:
+          await _dio.put<Object?>(
+            '/audits/${p['auditId']}/answers/${p['questionId']}',
+            data: {
+              'result': p['result'],
+              'comment': p['comment'],
+              'evidence': null,
+            },
+            options: options,
+          );
+        case OpKind.documentAck:
+          await _dio.post<Object?>(
+            '/documents/${p['documentId']}/versions/${p['version']}/ack',
+            options: options,
+          );
         default:
           throw ConflictSyncException('Opération inconnue : ${op.kind}');
       }
