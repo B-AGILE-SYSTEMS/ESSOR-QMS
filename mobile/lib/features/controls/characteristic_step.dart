@@ -66,7 +66,7 @@ class _CharacteristicStepState extends State<CharacteristicStep> {
     if (_c.type == CharType.mesure) {
       final values = _parsed;
       final ok = measureVerdict(_c, values);
-      if (ok == null || (_c.instrumentRequis && inst == null)) return;
+      if (ok == null || (_c.instrumentRequis != null && inst == null)) return;
       widget.onChanged(
         CharResult(
           characteristic: _c.code,
@@ -113,8 +113,13 @@ class _CharacteristicStepState extends State<CharacteristicStep> {
           ),
         ),
         if (c.type == CharType.mesure) ..._measure(c) else ..._attribute(c),
-        if (c.instrumentRequis) ...[
+        if (c.instrumentRequis case final required?) ...[
           const SizedBox(height: 10),
+          Text(
+            'Instrument requis : $required',
+            key: const Key('instrumentRequired'),
+          ),
+          const SizedBox(height: 6),
           TextField(
             key: const Key('instrument'),
             controller: _instrument,

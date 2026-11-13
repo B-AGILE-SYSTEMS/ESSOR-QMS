@@ -46,6 +46,7 @@ void main() {
 
     expect(find.text('Caractéristique 1 sur 2'), findsOneWidget);
     expect(find.text('Tolérance 11,97 – 12,03 mm'), findsOneWidget);
+    expect(find.text('Instrument requis : micromètre'), findsOneWidget);
     expect(find.byKey(const Key('value-1')), findsOneWidget);
     await tester.enterText(find.byKey(const Key('value-0')), '12,01');
     await tester.enterText(find.byKey(const Key('value-1')), '12,05');
@@ -63,22 +64,21 @@ void main() {
     await tap(tester, 'controlNext');
 
     expect(find.text('Décision proposée : Refuser'), findsOneWidget);
-    expect(find.byKey(const Key('dec-DEROGATION')), findsNothing);
-    await tester.enterText(
-      find.byKey(const Key('decisionComment')),
-      'Ø hors tolérance',
-    );
+    // FIELD_USER : saisie des résultats, décision par le responsable qualité.
+    expect(find.text('Décision par le responsable qualité.'), findsOneWidget);
+    expect(find.byKey(const Key('dec-REFUSE')), findsNothing);
+    expect(find.byKey(const Key('decisionComment')), findsNothing);
     await tapPhoto(tester, 'controlPhoto', 1);
     expect(find.text('Photo (1)'), findsOneWidget);
     await shot(tester, 'controle-decision-hors-ligne');
     await tap(tester, 'controlSave');
     await settleUntil(
       tester,
-      () => find.text('Hors ligne · 4 en attente').evaluate().isNotEmpty,
+      () => find.text('Hors ligne · 3 en attente').evaluate().isNotEmpty,
     );
 
     expect(find.text('Contrôle enregistré'), findsOneWidget);
-    expect(find.text('Hors ligne · 4 en attente'), findsOneWidget);
+    expect(find.text('Hors ligne · 3 en attente'), findsOneWidget);
     expect(h.server.inspections, isEmpty);
 
     h.server.online = true;
@@ -103,10 +103,7 @@ void main() {
       },
     ]);
     expect(h.server.attachments, ['/inspections/insp-1/attachments']);
-    expect(h.server.decisions['insp-1'], {
-      'decision': 'REFUSE',
-      'comment': 'Ø hors tolérance',
-    });
+    expect(h.server.decisions, isEmpty);
     expect(h.server.keys.toSet(), hasLength(h.server.keys.length));
   });
 

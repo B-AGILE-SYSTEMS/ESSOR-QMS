@@ -11,6 +11,13 @@ import 'package:essor_mobile/core/sync/sync_database.dart';
 const lotsCacheKey = 'm3b.lots';
 const plansCacheKey = 'm3b.plans';
 
+/// `GET /lots/{id}` rend `{lot, history, inspections}` ; un lot seul est
+/// aussi accepté.
+Lot lotFromDetail(Map<String, dynamic> j) {
+  final inner = j['lot'];
+  return Lot.fromJson(inner is Map<String, dynamic> ? inner : j);
+}
+
 /// Lectures M3b. Les écritures passent par la file M2.
 class M3bApi {
   const M3bApi(this._dio);
@@ -29,7 +36,7 @@ class M3bApi {
 
   Future<Lot> lot(String id) async {
     final r = await _dio.get<Map<String, dynamic>>('/lots/$id');
-    return Lot.fromJson(r.data ?? {'id': id});
+    return lotFromDetail(r.data ?? {'id': id});
   }
 
   Future<List<ControlPlan>> plans() async {
@@ -104,7 +111,7 @@ class ControlsRepository {
     required Lot lot,
     required ControlPlan plan,
     required List<CharResult> results,
-    required String decision,
+    String? decision,
     String? comment,
     List<String> photoPaths = const [],
   }) => _db.transaction(() async {
@@ -120,6 +127,7 @@ class ControlsRepository {
     for (final p in photoPaths) {
       await _queue.inspectionPhoto(inspectionClientId: clientId, path: p);
     }
+    if (decision == null) return; // décision par le responsable qualité
     final note = (comment ?? '').trim();
     await _queue.inspectionDecision(
       inspectionClientId: clientId,

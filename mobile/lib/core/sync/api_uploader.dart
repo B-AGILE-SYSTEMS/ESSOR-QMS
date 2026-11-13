@@ -148,6 +148,7 @@ Exception classify(DioException e) {
       status >= 400 &&
       status < 500 &&
       status != 401 &&
+      status != 404 && // ressource pas encore visible : on retente
       status != 408 &&
       status != 429) {
     final body = e.response?.data;

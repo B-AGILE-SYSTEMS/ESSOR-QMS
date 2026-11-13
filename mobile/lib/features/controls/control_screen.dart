@@ -81,7 +81,9 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
   void _next(ControlPlan p) => setState(() {
     _index++;
     if (_index >= p.characteristics.length) {
-      _decision ??= proposeDecision(p.characteristics, _results);
+      if (_canDecide) {
+        _decision ??= proposeDecision(p.characteristics, _results);
+      }
     }
   });
 
@@ -94,15 +96,22 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
     setState(() => _photos.add(path));
   }
 
+  bool get _canDecide {
+    final s = ref.read(sessionProvider);
+    return s is Authenticated && canDecide(s.me.roles);
+  }
+
   bool get _canDerogate {
     final s = ref.read(sessionProvider);
     return s is Authenticated && s.me.roles.contains(qualityManagerRole);
   }
 
   Future<void> _save(Lot lot, ControlPlan plan) async {
-    final decision = _decision;
-    if (decision == null) return;
-    if (decisionNeedsReason(decision) && _comment.text.trim().isEmpty) {
+    final decision = _canDecide ? _decision : null;
+    if (decision == null && _canDecide) return;
+    if (decision != null &&
+        decisionNeedsReason(decision) &&
+        _comment.text.trim().isEmpty) {
       setState(() => _message = 'Cette décision exige un motif.');
       return;
     }
@@ -295,8 +304,14 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
           style: const TextStyle(fontSize: 17),
         ),
         const SizedBox(height: 12),
+        if (!_canDecide)
+          const Text(
+            'Décision par le responsable qualité.',
+            key: Key('decisionByManager'),
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+          ),
         for (final d in Decision.all)
-          if (d != Decision.derogation || _canDerogate)
+          if (_canDecide && (d != Decision.derogation || _canDerogate))
             OptionButton(
               key: Key('dec-$d'),
               icon: d == proposed ? '★' : '•',
@@ -304,18 +319,19 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
               selected: _decision == d,
               onTap: () => setState(() => _decision = d),
             ),
-        TextField(
-          key: const Key('decisionComment'),
-          controller: _comment,
-          minLines: 2,
-          maxLines: 4,
-          decoration: InputDecoration(
-            labelText: decisionNeedsReason(_decision ?? Decision.libere)
-                ? 'Motif (obligatoire)'
-                : 'Commentaire',
-            border: const OutlineInputBorder(),
+        if (_canDecide)
+          TextField(
+            key: const Key('decisionComment'),
+            controller: _comment,
+            minLines: 2,
+            maxLines: 4,
+            decoration: InputDecoration(
+              labelText: decisionNeedsReason(_decision ?? Decision.libere)
+                  ? 'Motif (obligatoire)'
+                  : 'Commentaire',
+              border: const OutlineInputBorder(),
+            ),
           ),
-        ),
         const SizedBox(height: 10),
         OutlinedButton.icon(
           key: const Key('controlPhoto'),
@@ -335,8 +351,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
     style: FilledButton.styleFrom(
       minimumSize: const Size.fromHeight(minTarget),
     ),
-    onPressed: _decision == null ? null : () => _save(l, p),
-    child: const Text('Valider la décision ✓'),
+    onPressed: _decision == null && _canDecide ? null : () => _save(l, p),
+    child: Text(
+      _canDecide ? 'Valider la décision ✓' : 'Enregistrer les résultats ✓',
+    ),
   );
 
   Widget _done() {

@@ -75,13 +75,6 @@ void main() {
       expect(measureVerdict(c, []), isNull);
     });
 
-    test('écarts au nominal quand la limite haute est sous le nominal', () {
-      final c = diam(lo: -0.03, hi: 0.03);
-      expect(c.limits, (11.97, 12.03));
-      expect(measureVerdict(c, [12.02]), isTrue);
-      expect(measureVerdict(c, [12.04]), isFalse);
-    });
-
     test('limite unique', () {
       final c = diam(nominal: null, lo: null, hi: 5);
       expect(measureVerdict(c, [4.9]), isTrue);

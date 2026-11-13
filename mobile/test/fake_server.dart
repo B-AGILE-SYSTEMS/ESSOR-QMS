@@ -103,7 +103,7 @@ class FakeServer {
           'tolMin': 11.97,
           'tolMax': 12.03,
           'unite': 'mm',
-          'instrumentRequis': true,
+          'instrumentRequis': 'micromètre',
           'criticite': 'critique',
         },
         {

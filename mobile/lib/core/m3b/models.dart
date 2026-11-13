@@ -98,7 +98,7 @@ class Characteristic {
     this.tolMin,
     this.tolMax,
     this.unite,
-    this.instrumentRequis = false,
+    this.instrumentRequis,
     this.criticite = 'majeure',
   });
   final String code;
@@ -108,7 +108,9 @@ class Characteristic {
   final double? tolMin;
   final double? tolMax;
   final String? unite;
-  final bool instrumentRequis;
+
+  /// Nom de l'instrument requis (texte libre du plan), ou null.
+  final String? instrumentRequis;
   final String criticite;
 
   factory Characteristic.fromJson(Map<String, dynamic> j) => Characteristic(
@@ -122,22 +124,13 @@ class Characteristic {
     tolMin: _num(j['tolMin']),
     tolMax: _num(j['tolMax']),
     unite: _str(j['unite']),
-    instrumentRequis: j['instrumentRequis'] == true,
+    instrumentRequis: _str(j['instrumentRequis']),
     criticite: _str(j['criticite']) ?? 'majeure',
   );
 
-  /// Limites absolues. Hypothèse : `tolMin`/`tolMax` sont les limites ;
-  /// si elles ne peuvent l'être (limite haute sous le nominal), ce sont
-  /// des écarts au nominal.
-  (double?, double?) get limits {
-    final n = nominal;
-    final lo = tolMin;
-    final hi = tolMax;
-    if (n != null && hi != null && hi < n) {
-      return (lo == null ? null : n + lo, n + hi);
-    }
-    return (lo, hi);
-  }
+  /// Limites ABSOLUES (contrat M3b) : `tolMin` et `tolMax` sont les bornes,
+  /// jamais des écarts au nominal.
+  (double?, double?) get limits => (tolMin, tolMax);
 
   bool inTolerance(double v) {
     final (lo, hi) = limits;
@@ -250,12 +243,14 @@ abstract final class Decision {
   static const quarantaine = 'QUARANTAINE';
   static const derogation = 'DEROGATION';
   static const refuse = 'REFUSE';
-  static const all = [libere, quarantaine, derogation, refuse];
+  static const detruit = 'DETRUIT';
+  static const all = [libere, quarantaine, derogation, refuse, detruit];
   static const labels = {
     libere: 'Libérer',
     quarantaine: 'Quarantaine',
     derogation: 'Dérogation',
     refuse: 'Refuser',
+    detruit: 'Détruire',
   };
 }
 
@@ -277,3 +272,8 @@ bool decisionNeedsReason(String d) => d != Decision.libere;
 
 /// La dérogation exige le rôle QUALITY_MANAGER (contrat M3b).
 const qualityManagerRole = 'QUALITY_MANAGER';
+
+/// Seuls QUALITY_MANAGER et AUDITOR décident ; un FIELD_USER saisit les
+/// résultats, la décision revient au responsable qualité.
+bool canDecide(List<String> roles) =>
+    roles.contains(qualityManagerRole) || roles.contains('AUDITOR');
