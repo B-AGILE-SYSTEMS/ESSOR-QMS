@@ -18,7 +18,7 @@ describe('roleGuard', () => {
 
   const run = () =>
     TestBed.runInInjectionContext(() =>
-      (roleGuard('ADMIN') as CanMatchFn)({}, []),
+      (roleGuard('ADMIN') as CanMatchFn)({}, [], {} as never),
     );
 
   it('autorise un ADMIN', () => {

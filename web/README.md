@@ -1,8 +1,8 @@
 # ESSOR QMS — front-end web
 
-Angular 19.2 (19.2.25, dernier correctif publié de la branche 19 ; standalone, signals, SCSS), sans bibliothèque UI. Direction visuelle : `docs/ux/maquettes-v2.html`.
+Angular 22.2 (22.2.4, versions épinglées : dernier correctif 22.x publié depuis au moins 14 jours ; CLI 22.2.5, TypeScript 6.0 ; standalone, signals, OnPush, SCSS), sans bibliothèque UI. Direction visuelle : `docs/ux/maquettes-v2.html`.
 
-Audit : 3 alertes hautes (`@angular/core`, `common`, `compiler` ≤ 19.2.25) n'ont pas de correctif en 19.x ; le job CI « audit » reste non bloquant en attendant l'arbitrage.
+Audit : `npm audit --omit=dev --audit-level=high` à 0 ; le job CI « audit » est bloquant. Montée de version : passer par chaque majeure avec `ng update` et choisir un correctif publié depuis au moins 14 jours.
 
 ## Commandes
 

@@ -1,24 +1,40 @@
-import { provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideHttpClient, withXhr } from '@angular/common/http';
+import {
+  HttpTestingController,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
 import { errorMessage } from './api-error';
-import { RecordsService, attachmentUrl, newIdempotencyKey } from './records.service';
+import {
+  RecordsService,
+  attachmentUrl,
+  newIdempotencyKey,
+} from './records.service';
 
 describe('RecordsService', () => {
   let svc: RecordsService;
   let http: HttpTestingController;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(withXhr()), provideHttpClientTesting()],
+    });
     svc = TestBed.inject(RecordsService);
     http = TestBed.inject(HttpTestingController);
   });
 
   afterEach(() => http.verify());
 
-  it("liste avec les filtres renseignés seulement", async () => {
-    const p = svc.list({ type: 'NC', status: 'ANALYSE', severity: '', q: 'fuite', page: 1, size: 20 });
+  it('liste avec les filtres renseignés seulement', async () => {
+    const p = svc.list({
+      type: 'NC',
+      status: 'ANALYSE',
+      severity: '',
+      q: 'fuite',
+      page: 1,
+      size: 20,
+    });
     const req = http.expectOne((r) => r.url === '/api/records');
     expect(req.request.params.get('type')).toBe('NC');
     expect(req.request.params.get('status')).toBe('ANALYSE');
@@ -38,7 +54,12 @@ describe('RecordsService', () => {
   });
 
   it('ajoute une action à la fiche parente', async () => {
-    const body = { actionType: 'curative' as const, title: 'Tri', ownerId: 'u1', dueDate: '2026-11-20' };
+    const body = {
+      actionType: 'curative' as const,
+      title: 'Tri',
+      ownerId: 'u1',
+      dueDate: '2026-11-20',
+    };
     const p = svc.addAction('r1', body);
     const req = http.expectOne('/api/records/r1/actions');
     expect(req.request.body).toEqual(body);
@@ -59,15 +80,25 @@ describe('RecordsService', () => {
   });
 
   it("restitue le message français d'une erreur 409", () => {
-    const e = new HttpErrorResponse({ status: 409, error: { error: 'transition_impossible', message: 'Manque : cause racine' } });
+    const e = new HttpErrorResponse({
+      status: 409,
+      error: {
+        error: 'transition_impossible',
+        message: 'Manque : cause racine',
+      },
+    });
     expect(errorMessage(e)).toBe('Manque : cause racine');
-    expect(errorMessage(new HttpErrorResponse({ status: 0 }))).toContain('injoignable');
+    expect(errorMessage(new HttpErrorResponse({ status: 0 }))).toContain(
+      'injoignable',
+    );
   });
 });
 
 describe('RecordsService — pièces jointes', () => {
   it('liste les pièces jointes et génère des clés UUID v4 distinctes', async () => {
-    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(withXhr()), provideHttpClientTesting()],
+    });
     const svc = TestBed.inject(RecordsService);
     const http = TestBed.inject(HttpTestingController);
     const p = svc.attachments('r 1');
@@ -75,7 +106,11 @@ describe('RecordsService — pièces jointes', () => {
     expect(await p).toEqual([]);
     expect(attachmentUrl('a/1')).toBe('/api/attachments/a%2F1');
     expect(newIdempotencyKey()).not.toBe(newIdempotencyKey());
-    const fp = svc.addAttachment('r1', new File(['x'], 'x.png', { type: 'image/png' }), 'k-1');
+    const fp = svc.addAttachment(
+      'r1',
+      new File(['x'], 'x.png', { type: 'image/png' }),
+      'k-1',
+    );
     const req = http.expectOne('/api/records/r1/attachments');
     expect(req.request.headers.get('Idempotency-Key')).toBe('k-1');
     req.flush({ id: 'a1' });

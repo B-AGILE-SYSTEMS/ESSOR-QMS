@@ -2,6 +2,7 @@ import {
   provideHttpClient,
   withInterceptors,
   withXsrfConfiguration,
+  withXhr,
 } from '@angular/common/http';
 import {
   ApplicationConfig,
@@ -38,6 +39,7 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(
+      withXhr(),
       withXsrfConfiguration({
         cookieName: 'XSRF-TOKEN',
         headerName: 'X-XSRF-TOKEN',
