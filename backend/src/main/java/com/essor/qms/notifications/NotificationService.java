@@ -1,6 +1,7 @@
 package com.essor.qms.notifications;
 
 import com.essor.qms.records.RecordEvents.DeadlineKind;
+import com.essor.qms.records.RecordEvents.DocumentDiffused;
 import com.essor.qms.records.RecordEvents.RecordAssigned;
 import com.essor.qms.records.RecordEvents.RecordDeadline;
 import com.essor.qms.records.RecordEvents.RecordTransitioned;
@@ -25,7 +26,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 @Service
 class NotificationService {
 
-    enum EventType { ASSIGNED, TRANSITION, OVERDUE, DUE_SOON }
+    enum EventType { ASSIGNED, TRANSITION, OVERDUE, DUE_SOON, DOCUMENT_DIFFUSED, REVIEW_DUE }
 
     enum Channel { IN_APP, EMAIL }
 
@@ -73,11 +74,27 @@ class NotificationService {
     @EventListener
     @Transactional(propagation = Propagation.MANDATORY)
     void onDeadline(RecordDeadline e) {
-        EventType type = e.kind() == DeadlineKind.OVERDUE ? EventType.OVERDUE : EventType.DUE_SOON;
-        String title = type == EventType.OVERDUE
-                ? e.reference() + " en retard (échéance " + e.dueDate() + ") : " + e.title()
-                : e.reference() + " arrive à échéance le " + e.dueDate() + " : " + e.title();
+        EventType type = switch (e.kind()) {
+            case OVERDUE -> EventType.OVERDUE;
+            case DUE_SOON -> EventType.DUE_SOON;
+            case REVIEW_DUE -> EventType.REVIEW_DUE;
+        };
+        String title = switch (type) {
+            case OVERDUE -> e.reference() + " en retard (échéance " + e.dueDate() + ") : " + e.title();
+            case REVIEW_DUE -> e.reference() + " à réviser avant le " + e.dueDate() + " : " + e.title();
+            default -> e.reference() + " arrive à échéance le " + e.dueDate() + " : " + e.title();
+        };
         notify(Set.of(e.ownerId()), type, title, e.recordId(), type + ":" + e.recordId() + ":" + e.dueDate());
+    }
+
+    @EventListener
+    @Transactional(propagation = Propagation.MANDATORY)
+    void onDocumentDiffused(DocumentDiffused e) {
+        Set<UUID> recipients = new LinkedHashSet<>(e.recipients());
+        recipients.remove(e.actorId());
+        notify(recipients, EventType.DOCUMENT_DIFFUSED, e.reference() + " v" + e.version()
+                + " diffusé, accusé de lecture attendu : " + e.title(), e.recordId(),
+                "DIFFUSED:" + e.recordId() + ":" + e.version());
     }
 
     private void notify(Set<UUID> recipients, EventType type, String title, UUID recordId, String dedupKey) {

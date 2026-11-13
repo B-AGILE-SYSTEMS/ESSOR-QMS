@@ -1,6 +1,6 @@
 # ESSOR QMS — front-end web
 
-Angular 22.2 (22.2.4, versions épinglées : dernier correctif 22.x publié depuis au moins 14 jours ; CLI 22.2.5, TypeScript 6.0 ; standalone, signals, OnPush, SCSS), sans bibliothèque UI. Direction visuelle : `docs/ux/maquettes-v2.html`.
+Angular 22.2 (22.2.4, versions épinglées : dernier correctif 22.x publié depuis au moins 14 jours ; CLI 22.2.5, builder esbuild `@angular/build` 22.2.5 — Webpack et `@angular-devkit/build-angular` retirés —, TypeScript 6.0 ; standalone, signals, OnPush, SCSS), sans bibliothèque UI. Direction visuelle : `docs/ux/maquettes-v2.html`.
 
 Audit : `npm audit --omit=dev --audit-level=high` à 0 ; le job CI « audit » est bloquant. Montée de version : passer par chaque majeure avec `ng update` et choisir un correctif publié depuis au moins 14 jours.
 
@@ -46,5 +46,26 @@ En déploiement : `docker compose --profile web up -d` depuis `deploy/` ; le Ngi
   avant envoi), vignettes et téléchargement par `GET /api/attachments/{id}`.
 - `features/parametrage` (ADMIN) : Workflows (diagramme états/transitions, édition JSON validée par le serveur via PUT),
   Règles de notification (matrice événement × canal).
-- `e2e/` : parcours NC complet, paramétrage, incidents et pièces jointes (contrôle de signature, Idempotency-Key, `sync/changes`), API simulée en mémoire (`page.route`), écran 1440 px.
+- M3 (contrat `docs/pilotage/cartes/M3-contrat.md`, `core/m3.models.ts`, `core/m3.service.ts`) — la fiche générique `features/nc/nc-fiche`
+  sert aussi les types `AUDIT` et `DOCUMENT` ; `RecordTypeView.tabs|startTab|severity` choisit les onglets, sans code par type :
+  - `features/referentiels` (ADMIN, Paramétrage → Référentiels) : import xlsx/csv (`file` + `standardCode|standardTitle|standardVersion`),
+    simulation `?dryRun=true` obligatoire avant l'import réel (tout ou rien), rapport `{created, updated, errors[line, message]}`,
+    modèle téléchargeable, arbre des exigences repliable, vue d'une exigence avec `{documents, records, findings}`.
+  - `features/fiches/record-requirements` : onglet « Exigences » (NC, incidents, documents) → `PUT /api/records/{id}/requirements`.
+  - `features/audits` : programme annuel en calendrier (`GET /api/audits?year=&auditor=me`), planification (fiche AUDIT, auditeurs choisis parmi les utilisateurs),
+    onglet « Grille d'audit » : génération, édition et suppression de questions (`PATCH|DELETE /api/audits/{id}/questions/{qid}`), exécution
+    (`PUT …/answers/{qid}` avec `Idempotency-Key` et `closed`), taux de conformité par chapitre, constats, NC créées, rapport `report.pdf`.
+  - `features/documents` : liste (`currentVersion.number`), création (`POST /api/documents`, rôles vérificateurs/approbateurs, destinataires),
+    onglet « Versions » (téléversement PDF/DOCX/XLSX ≤ 20 Mo + note, transitions par NUMÉRO de version
+    `POST …/versions/{n}/transitions/{code}`, visionneuse PDF intégrée `…/versions/{n}/file`), onglet « Diffusion & lecture » (accusés).
+- Formats M3 suivis : ceux du back-end livré (`backend/…/records/StandardService|AuditService|DocumentService`), normalisés dans
+  `core/m3.service.ts` : arbre `RequirementNode{position, children}`, détail `{standard, documents, records, findings}`, liens d'une fiche
+  `GET /api/records/{id}/requirements` ; programme `ProgramItem{datePrevue, auditeurs:[userId]}` ; grille dans `GET /api/audits/{id}`
+  (`questions[{text|question, closed, ncId, ncReference}]`) ; documents `DocumentSummary{code, docType, currentVersion{id, number, fileName}}`,
+  versions dans `GET /api/documents/{id}` (`VersionView{number, inForce, availableTransitions}`), accusés `{acknowledged, pending}` de
+  `{userId, name, ackedAt}`. Données de fiche : AUDIT `data.datePrevue|perimetre|auditeurs|audites|standardIds`, DOCUMENT
+  `data.code|docType|processus|recipients|verifierRoles|approverRoles|reviewDate`.
+- `e2e/` : parcours NC complet, paramétrage, incidents et pièces jointes (contrôle de signature, Idempotency-Key, `sync/changes`), M3
+  (import ISO 45001 avec simulation et erreur, audit jusqu'au rapport PDF, cycle d'un document jusqu'à l'accusé de lecture), API simulée
+  en mémoire (`page.route`, `mock-api.ts` + `mock-api-m3.ts`), écran 1440 px.
 - Design system : variables CSS dans `src/styles.scss`. Polices Archivo et IBM Plex Mono embarquées via `@fontsource` (aucun CDN).

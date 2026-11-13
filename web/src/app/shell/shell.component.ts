@@ -4,7 +4,7 @@ import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterLinkActive, Ro
 import { filter, map } from 'rxjs';
 import { AuthService } from '../core/auth.service';
 import { BrandingService } from '../core/branding.service';
-import { NAV_FAMILIES, NavItem } from './navigation.model';
+import { NAV_FAMILIES, NavItem, canSee } from './navigation.model';
 import { NotificationsService } from '../core/notifications.service';
 import { NotificationsPanelComponent } from './notifications/notifications-panel.component';
 import { PaletteComponent } from './palette.component';
@@ -48,7 +48,7 @@ export class ShellComponent {
   }
 
   private visible(i: NavItem): boolean {
-    return !i.role || this.auth.hasRole(i.role);
+    return canSee(i, (r) => this.auth.hasRole(r));
   }
 
   private buildCrumbs(): Crumb[] {

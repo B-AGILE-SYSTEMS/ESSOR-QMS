@@ -23,7 +23,7 @@
   @if (info(); as msg) { <p class="ok-msg" role="status">{{ msg }}</p> }
 
   <div class="tabs" role="tablist" aria-label="Sections de la fiche">
-    @for (t of tabs; track t.id) {
+    @for (t of tabs(); track t.id) {
       <button type="button" role="tab" [id]="'tab-' + t.id" [attr.aria-selected]="tab() === t.id" aria-controls="tabpanel"
         (click)="selectTab(t.id)">{{ t.label }}@if (t.id === 'actions') { ({{ r.children.length }}) }</button>
     }
@@ -37,6 +37,7 @@
             <label class="field"><span>Description</span>
               <textarea name="description" rows="5" [(ngModel)]="draft.description" [disabled]="locked()"></textarea>
             </label>
+            @if (hasSeverity()) {
             <div class="field" role="group" aria-labelledby="lbl-sev"><span id="lbl-sev">Gravité</span>
               <div class="chips">
                 @for (s of severities; track s) {
@@ -44,6 +45,7 @@
                 }
               </div>
             </div>
+            }
           </div>
           <div class="box pad">
             <dl class="kv">
@@ -72,6 +74,18 @@
       @case ('pieces') {
         <eq-attachments [recordId]="r.id" [canAdd]="!locked()" />
       }
+      @case ('exigences') {
+        <eq-record-requirements [record]="r" [readonly]="locked()" (changed)="load()" />
+      }
+      @case ('grille') {
+        <eq-audit-grille [record]="r" (changed)="load()" />
+      }
+      @case ('versions') {
+        <eq-doc-versions [docId]="r.id" [canUpload]="!locked()" (changed)="load()" />
+      }
+      @case ('lecture') {
+        <eq-doc-acks [record]="r" />
+      }
       @case ('historique') {
         <ol class="hist box pad">
           @for (h of history(); track $index) {
@@ -94,6 +108,13 @@
       <label class="cmt-in"><span class="note">Commentaire (joint à la transition)</span>
         <textarea rows="2" name="comment" [(ngModel)]="comment"></textarea>
       </label>
+      @if (confirmReport(); as c) {
+        <div class="confirm box pad" role="alertdialog" aria-labelledby="confirm-report-msg">
+          <p id="confirm-report-msg">{{ c.unanswered }} question(s) sans réponse : elles seront comptées « non évaluées » dans le rapport et exclues du taux de conformité. Rédiger le rapport quand même ?</p>
+          <button type="button" class="btn pri" [disabled]="busy()" (click)="transition(c.transition, true)">Confirmer et rédiger le rapport</button>
+          <button type="button" class="btn ghost" (click)="confirmReport.set(null)">Annuler</button>
+        </div>
+      }
       <div class="trs">
         @for (t of r.availableTransitions; track t.code) {
           <div class="tr">

@@ -1,7 +1,12 @@
 export interface NavItem {
   label: string;
   path: string;
-  role?: string;
+  /** Rôle(s) autorisé(s) : un seul suffit. */
+  role?: string | string[];
+}
+
+export function canSee(i: NavItem, hasRole: (r: string) => boolean): boolean {
+  return !i.role || [i.role].flat().some(hasRole);
 }
 
 export interface NavFamily {
@@ -37,6 +42,7 @@ export const NAV_FAMILIES: NavFamily[] = [
   {
     label: 'Administration',
     items: [
+      { label: 'Référentiels', path: '/parametrage/referentiels', role: ['ADMIN', 'QUALITY_MANAGER'] },
       { label: 'Workflows', path: '/parametrage/workflows', role: 'ADMIN' },
       { label: 'Règles de notification', path: '/parametrage/notifications', role: 'ADMIN' },
       { label: 'Apparence', path: '/parametrage/apparence', role: 'ADMIN' },

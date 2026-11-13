@@ -3,7 +3,7 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../core/auth.service';
-import { NAV_FAMILIES } from './navigation.model';
+import { NAV_FAMILIES, canSee } from './navigation.model';
 
 interface Command {
   label: string;
@@ -62,7 +62,7 @@ export class PaletteComponent implements AfterViewInit {
   private readonly commands: Command[] = [
     { label: 'Déclarer une non-conformité', group: 'Action', path: '/non-conformites/declarer' },
     ...NAV_FAMILIES.flatMap((f) =>
-      f.items.filter((i) => !i.role || this.auth.hasRole(i.role)).map((i) => ({ label: i.label, group: f.label, path: i.path })),
+      f.items.filter((i) => canSee(i, (r) => this.auth.hasRole(r))).map((i) => ({ label: i.label, group: f.label, path: i.path })),
     ),
   ];
 

@@ -44,6 +44,9 @@
     <dependency><groupId>org.springframework.modulith</groupId><artifactId>spring-modulith-starter-core</artifactId></dependency>
     <dependency><groupId>org.flywaydb</groupId><artifactId>flyway-core</artifactId></dependency>
     <dependency><groupId>org.flywaydb</groupId><artifactId>flyway-database-postgresql</artifactId></dependency>
+    <!-- M3 : import des référentiels (xlsx) et rapport d'audit PDF, bibliothèques libres sans service externe -->
+    <dependency><groupId>org.apache.poi</groupId><artifactId>poi-ooxml</artifactId><version>5.5.1</version></dependency>
+    <dependency><groupId>com.github.librepdf</groupId><artifactId>openpdf</artifactId><version>2.0.5</version></dependency>
     <dependency><groupId>org.postgresql</groupId><artifactId>postgresql</artifactId><scope>runtime</scope></dependency>
 
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-test</artifactId><scope>test</scope></dependency>

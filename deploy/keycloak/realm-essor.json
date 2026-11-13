@@ -248,7 +248,8 @@
         }
       ],
       "realmRoles": [
-        "FIELD_USER"
+        "FIELD_USER",
+        "AUDITOR"
       ]
     }
   ],

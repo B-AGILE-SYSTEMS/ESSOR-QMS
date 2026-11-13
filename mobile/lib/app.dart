@@ -4,6 +4,9 @@ import 'package:material_ui/material_ui.dart';
 
 import 'package:essor_mobile/core/providers.dart';
 import 'package:essor_mobile/core/theme/app_theme.dart';
+import 'package:essor_mobile/features/audits/audit_run_screen.dart';
+import 'package:essor_mobile/features/audits/audits_screen.dart';
+import 'package:essor_mobile/features/documents/documents_screen.dart';
 import 'package:essor_mobile/features/home/home_screen.dart';
 import 'package:essor_mobile/features/record/record_screen.dart';
 import 'package:essor_mobile/features/report/report_screen.dart';
@@ -46,6 +49,12 @@ final routerProvider = Provider<GoRouter>((ref) {
             ReportScreen(initialQr: state.uri.queryParameters['qr']),
       ),
       GoRoute(path: '/taches', builder: (_, _) => const TasksScreen()),
+      GoRoute(path: '/audits', builder: (_, _) => const AuditsScreen()),
+      GoRoute(
+        path: '/audit/:id',
+        builder: (_, state) => AuditRunScreen(id: state.pathParameters['id']!),
+      ),
+      GoRoute(path: '/documents', builder: (_, _) => const DocumentsScreen()),
       GoRoute(path: '/envois', builder: (_, _) => const OperationsScreen()),
       GoRoute(
         path: '/fiche/:id',

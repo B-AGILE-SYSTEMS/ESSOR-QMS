@@ -1,3 +1,4 @@
+import { AuditsService } from '../../core/m3.service';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
@@ -7,33 +8,44 @@ import { errorMessage } from '../../core/api-error';
 import { SEVERITY_LABELS, fieldLabel, formatDate, formatDateTime, statusTone } from '../../core/labels';
 import { RecordsService } from '../../core/records.service';
 import { AttachmentsComponent } from '../fiches/attachments.component';
-import { NC_VIEW, RecordTypeView, dataValue, fromMobile } from '../fiches/record-type-view';
+import { DEFAULT_TABS, NC_VIEW, RecordTypeView, TAB_LABELS, Tab, dataValue, fromMobile } from '../fiches/record-type-view';
+import { RecordRequirementsComponent } from '../fiches/record-requirements.component';
+import { AuditGrilleComponent } from '../audits/audit-grille.component';
+import { DocAcksComponent } from '../documents/doc-acks.component';
+import { DocVersionsComponent } from '../documents/doc-versions.component';
 import { NcActionsComponent } from './nc-actions.component';
 import { NcAnalyseComponent } from './nc-analyse.component';
 import { buildSteps } from './stepper';
 import { UserPickerComponent } from './user-picker.component';
 
-export type Tab = 'description' | 'analyse' | 'actions' | 'pieces' | 'historique';
+export type { Tab } from '../fiches/record-type-view';
 
 /** Onglet ouvert par défaut selon l'étape de la fiche. */
-export function defaultTab(status: string): Tab {
+export function defaultTab(status: string, view?: RecordTypeView): Tab {
+  const forced = view?.startTab?.[status];
+  if (forced) return forced;
+  if (view?.tabs && !view.tabs.includes('analyse')) return 'description';
   if (status === 'ANALYSE' || status === 'EN_ANALYSE') return 'analyse';
   if (status === 'ACTIONS' || status === 'VERIFICATION') return 'actions';
   return 'description';
 }
 
-const LOCKED = new Set(['CLOTUREE', 'REJETEE', 'CLOS', 'CLASSE_SANS_SUITE']);
+const LOCKED = new Set(['CLOTUREE', 'REJETEE', 'CLOS', 'CLASSE_SANS_SUITE', 'CLOTURE', 'PERIME']);
 
 /** Fiche générique (NC, incident…) : barre d'étapes, onglets, transitions issues de `availableTransitions`. */
 @Component({
     selector: 'eq-nc-fiche',
-    imports: [FormsModule, NcAnalyseComponent, NcActionsComponent, UserPickerComponent, AttachmentsComponent],
+    imports: [
+      FormsModule, NcAnalyseComponent, NcActionsComponent, UserPickerComponent, AttachmentsComponent, RecordRequirementsComponent,
+      AuditGrilleComponent, DocVersionsComponent, DocAcksComponent,
+    ],
     templateUrl: './nc-fiche.component.html',
     styleUrl: './nc-fiche.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class NcFicheComponent {
   private readonly records = inject(RecordsService);
+  private readonly audits = inject(AuditsService);
   readonly id = input.required<string>();
   /** Libellés du type (route `data.view`). */
   readonly view = input<RecordTypeView>(NC_VIEW);
@@ -47,6 +59,8 @@ export class NcFicheComponent {
   protected readonly info = signal<string | null>(null);
   protected readonly loadError = signal<string | null>(null);
   protected comment = '';
+  /** « Rédiger le rapport » avec des questions sans réponse : confirmation dans la page. */
+  protected readonly confirmReport = signal<{ transition: AvailableTransition; unanswered: number } | null>(null);
 
   protected readonly steps = computed(() => buildSteps(this.workflow(), this.record()?.status ?? ''));
   protected readonly locked = computed(() => {
@@ -56,13 +70,8 @@ export class NcFicheComponent {
   protected readonly mobile = computed(() => !!this.record() && fromMobile(this.record()!));
   protected readonly participle = computed(() => (this.view().feminine ? 'Déclarée' : 'Déclaré'));
   protected readonly value = dataValue;
-  protected readonly tabs: { id: Tab; label: string }[] = [
-    { id: 'description', label: 'Description' },
-    { id: 'analyse', label: 'Analyse' },
-    { id: 'actions', label: 'Actions' },
-    { id: 'pieces', label: 'Pièces jointes' },
-    { id: 'historique', label: 'Historique' },
-  ];
+  protected readonly tabs = computed(() => (this.view().tabs ?? DEFAULT_TABS).map((id) => ({ id, label: TAB_LABELS[id] })));
+  protected readonly hasSeverity = computed(() => this.view().severity !== false);
   protected readonly severities = SEVERITIES;
   protected readonly sevLabel = SEVERITY_LABELS;
   protected readonly date = formatDate;
@@ -90,7 +99,7 @@ export class NcFicheComponent {
     try {
       const rec = await this.records.get(id);
       this.setRecord(rec);
-      if (first) this.tab.set(defaultTab(rec.status));
+      if (first) this.tab.set(defaultTab(rec.status, this.view()));
       this.loadError.set(null);
       if (this.tab() === 'historique') await this.loadHistory();
     } catch (e) {
@@ -123,14 +132,22 @@ export class NcFicheComponent {
     return t.missing.map(fieldLabel).join(', ');
   }
 
-  async transition(t: AvailableTransition): Promise<void> {
+  async transition(t: AvailableTransition, confirmed = false): Promise<void> {
     const rec = this.record();
     if (!rec || t.missing.length) return;
+    if (!confirmed && rec.type === 'AUDIT' && t.code === 'rediger_rapport') {
+      const unanswered = (await this.audits.checklist(rec.id)).filter((q) => !q.result).length;
+      if (unanswered > 0) {
+        this.confirmReport.set({ transition: t, unanswered });
+        return;
+      }
+    }
+    this.confirmReport.set(null);
     await this.run(async () => {
       this.setRecord(await this.records.transition(rec.id, t.code, this.comment.trim()));
       this.comment = '';
       this.info.set(`Transition « ${t.label} » effectuée.`);
-      this.tab.set(defaultTab(this.record()!.status));
+      this.tab.set(defaultTab(this.record()!.status, this.view()));
     });
   }
 

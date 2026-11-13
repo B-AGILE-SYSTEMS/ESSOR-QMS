@@ -40,8 +40,8 @@ spring:
       request-timeout: 1800000   # flux SSE des notifications (30 min)
   servlet:
     multipart:
-      max-file-size: 10MB     # pièces jointes 10 Mo ; le logo reste limité à 512 Ko par le service
-      max-request-size: 11MB
+      max-file-size: 20MB     # versions de documents 20 Mo, pièces jointes 10 Mo et logo 512 Ko limités par leur service
+      max-request-size: 21MB
   security:
     oauth2:
       client:

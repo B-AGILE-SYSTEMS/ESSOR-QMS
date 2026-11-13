@@ -25,3 +25,4 @@
 .tr { display: flex; flex-direction: column; gap: 4px; max-width: 260px; }
 .miss { font-size: 12px; color: var(--crit); font-weight: 600; }
 .mob { display: inline-block; margin-top: 4px; }
+.confirm { margin-bottom: 10px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; p { margin: 0; flex-basis: 100%; } }

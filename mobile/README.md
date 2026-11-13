@@ -33,7 +33,16 @@ Il suit l'écran 1 de la maquette mobile : barre d'état hors ligne / synchro to
 - **Temps réel sans cloud** : à l'ouverture, toutes les 2 min au premier plan et au retour du réseau, envoi de la file puis `GET /api/sync/changes?since=` (pages de 500, rappel avec `since=serverTime`, dédoublonnage par `id`) et rafraîchissement de « mes tâches ». Au retour du réseau, le profil est rechargé. Le logo est mis en cache local.
 - **Permissions** : caméra (photos, QR).
 
+## M3 — audits et documents hors ligne (`lib/core/m3/`, `lib/features/audits/`, `lib/features/documents/`)
+- **Mes audits** : `GET /api/audits?year=` (audits PLANIFIE ou EN_COURS) et la grille de chacun, mises en cache à chaque cycle de synchro.
+- **Exécution** question par question (maquette v2, écran 3) : Conforme / Écart mineur / Écart majeur / Observation / N.A., commentaire, photos. Tout est enregistré sur le téléphone puis envoyé par la file M2 : `audit.answer` → `PUT /api/audits/{id}/answers/{questionId}` (`Idempotency-Key`), photos → `POST /api/records/{auditId}/attachments`. La NC liée est créée par le serveur.
+- **Documents en vigueur** : `GET /api/documents?status=DIFFUSE` ; chaque version est téléchargée une fois dans le dossier de l'application (lecture hors ligne avec le lecteur du téléphone, `open_filex`) ; une nouvelle version remplace la copie et l'accusé est à refaire.
+- **Accusé de lecture** : `document.ack` → `POST /api/documents/{id}/versions/{v}/ack`, différé tant que le réseau manque ; l'état « Lu » est immédiat.
+- **Hypothèses hors contrat** (à confirmer côté back) : lecture de la grille `GET /api/audits/{id}/checklist` ; fichier d'une version `GET /api/documents/{id}/versions/{v}/file` ; version en vigueur exposée dans `currentVersion {id, number, fileName}` de la liste.
+
 ## Captures
+`SCREENSHOT_DIR=<dossier> FLUTTER_ROOT=<sdk> flutter test test/widget/m3_flow_test.dart` écrit `mes-audits.png`, `audit-question-hors-ligne.png` et `documents-hors-ligne.png`.
+
 `SCREENSHOT_DIR=<dossier> FLUTTER_ROOT=<sdk> flutter test test/widget/m2_flow_test.dart` écrit `accueil.png`, `signalement-etape3-hors-ligne.png` et `mes-taches.png`.
 
 ## Commandes

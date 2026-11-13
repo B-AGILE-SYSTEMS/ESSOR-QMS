@@ -169,6 +169,18 @@ class KeycloakLoginIT extends AbstractIntegrationTest {
         JsonNode tasks = json.readTree(get(APP + "/api/my-tasks").body());
         assertThat(tasks.findValuesAsText("id")).contains("00000000-0000-0000-0000-00000000c004");
 
+        // audit de démo : Entrepôt Nord, auditeur désigné = utilisateur "terrain" (compte préparé)
+        assertThat(body.path("sites").findValuesAsText("code")).contains("NORD");
+        JsonNode demoAudit = json.readTree(get(APP + "/api/records/00000000-0000-0000-0000-0000000a0d01").body());
+        assertThat(demoAudit.path("siteName").asText()).isEqualTo("Entrepôt Nord");
+        String terrainId;
+        try (var c = ownerConnection(); var st = c.createStatement();
+             var rs = st.executeQuery("select id from app_user where username = 'terrain'")) {
+            rs.next();
+            terrainId = rs.getString(1);
+        }
+        assertThat(demoAudit.path("data").path("auditeurs").get(0).asText()).isEqualTo(terrainId);
+
         // sans session : 401
         HttpResponse<String> anonymous = HttpClient.newHttpClient().send(
                 HttpRequest.newBuilder(URI.create(APP + "/api/me")).GET().build(), HttpResponse.BodyHandlers.ofString());

@@ -20,6 +20,8 @@ const FIELD_LABELS: Record<string, string> = {
   ishikawa: 'Diagramme 6M',
   actions: 'Actions',
   efficacite: "Vérification d'efficacité",
+  grille: "Grille d'audit",
+  reponses: 'Réponses à toutes les questions',
 };
 
 export function fieldLabel(code: string): string {
