@@ -5,7 +5,7 @@ import { Page } from './api.models';
 import { itemsOf } from './m3.models';
 import {
   Article, ControlPlan, Decision, ImportReport, Inspection, InspectionResult, LinkKind, Lot, NewLot, Partner, Recall, Spc, TraceNode,
-  WebhookConfig, toInspection, toLot, toRecall, toSpc, toTrace,
+  WebhookConfig, WebhookDelivery, toInspection, toLot, toRecall, toSpc, toTrace,
 } from './m3b.models';
 import { newIdempotencyKey } from './records.service';
 
@@ -45,6 +45,12 @@ export class LotsService {
       this.http.get<Raw>(`/api/lots/${enc(id)}/trace`, { params: { direction, depth: String(depth) } })));
   }
 
+  /** Blocage du stock restant (lot source + lots impactés), fait par le serveur. */
+  async blockRecall(id: string, reason: string): Promise<Lot[]> {
+    const r = await firstValueFrom(this.http.post<{ blocked?: Raw[] }>(`/api/lots/${enc(id)}/recall/block`, { reason }));
+    return (r?.blocked ?? []).map(toLot);
+  }
+
   async recall(id: string): Promise<Recall> {
     return toRecall(await firstValueFrom(this.http.get<Raw>(`/api/lots/${enc(id)}/recall`)));
   }
@@ -75,7 +81,7 @@ export class ControlPlansService {
 export class InspectionsService {
   private readonly http = inject(HttpClient);
 
-  async list(f: { status?: string; lotId?: string } = {}): Promise<Inspection[]> {
+  async list(f: { status?: string; lotId?: string; point?: string } = {}): Promise<Inspection[]> {
     const params: Record<string, string> = {};
     for (const [k, v] of Object.entries(f)) if (v) params[k] = v;
     return itemsOf(await firstValueFrom(this.http.get<List<Raw>>('/api/inspections', { params }))).map(toInspection);
@@ -127,5 +133,9 @@ export class MasterDataService {
 
   saveWebhook(c: WebhookConfig): Promise<WebhookConfig> {
     return firstValueFrom(this.http.put<WebhookConfig>('/api/connectors/webhook', c));
+  }
+
+  async deliveries(): Promise<WebhookDelivery[]> {
+    return itemsOf(await firstValueFrom(this.http.get<List<WebhookDelivery>>('/api/connectors/webhook/deliveries')));
   }
 }

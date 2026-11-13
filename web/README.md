@@ -76,9 +76,11 @@ En déploiement : `docker compose --profile web up -d` depuis `deploy/` ; le Ngi
   - `features/controles` (Terrain → Contrôles) : à faire / en cours / historique, saisie guidée par le plan (verdict selon tolérances, `PUT …/results`
     avec `Idempotency-Key`, décision proposée selon Ac/Re, `POST …/decision`), carte de contrôle SVG X̄/R (`GET /api/inspections/spc`).
   - `features/parametrage` : Plans de contrôle (éditeur de caractéristiques), Données de base & connecteurs (import `?dryRun=true` puis réel, webhook).
-  - Hypothèses hors contrat : `GET /api/inspections?status=&lotId=`, `GET /api/inspections/{id}`, `GET /api/master-data/{articles|partners}`,
-    `GET|PUT /api/connectors/webhook {url, secret?, enabled, hasSecret}` ; plan `{code, libelle, version, point, target{type, value}, characteristics[],
-    sampling{mode, taille, nqa, niveau}, frequency{pieces, minutes}}` ; `tolMin/tolMax` bornes absolues ; contrôle `{sampleSize, codeLetter, ac, re, results, decision}` ;
-    SPC `{points[{index, mean, range}], limits{xbar, r}, cp, cpk, alerts[{type, index, message}]}`.
+  - Formats du back-end livré : blocage `POST /api/lots/{id}/recall/block {reason}` → `{blocked}` ; rappel `{source, lotsImpactes[remaining], …}` ;
+    `GET|PUT /api/connectors/webhook {url, secret, enabled}` (secret jamais renvoyé, `secretSet`) et `…/webhook/deliveries` ; inspections
+    `?status=&lotId=&point=`, `sampling{lotSize, nqa, codeLetter, planLetter, sampleSize, ac, re}`, statuts A_FAIRE|EN_COURS|TERMINEE, `proposedDecision` ;
+    motif obligatoire pour QUARANTAINE|DEROGATION|REFUSE|DETRUIT, commentaire obligatoire pour toute décision ≠ LIBERE ; plan `target{type, id, famille}`,
+    PUT = nouvelle version, 409 `plan_outdated` ; SPC `{subgroupSize, points, limits{xbar, range}, sigma, cp, cpk, alerts}`.
+  - Hypothèses restantes : `GET /api/inspections/{id}`, `GET /api/master-data/{articles|partners}`, champs des points SPC `{index, mean, range}`.
   - E2E : `e2e/m3b-lots-controles.spec.ts` sur `e2e/mock-api-m3b.ts`.
 - Design system : variables CSS dans `src/styles.scss`. Polices Archivo et IBM Plex Mono embarquées via `@fontsource` (aucun CDN).

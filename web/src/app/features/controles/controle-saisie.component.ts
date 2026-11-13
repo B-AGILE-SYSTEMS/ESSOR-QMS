@@ -58,7 +58,10 @@ interface Entry { c: Characteristic; text: string; defects: number; present: boo
             <select name="dec" aria-label="Décision" [(ngModel)]="decision">
               @for (d of decisions(); track d[0]) { <option [value]="d[0]">{{ d[1] }}</option> }</select>
             <input name="com" aria-label="Commentaire" [(ngModel)]="comment" placeholder="Commentaire" />
-            <button type="submit" class="btn pri" [disabled]="busy() || (decision === 'DEROGATION' && !comment.trim())">Valider la décision</button>
+            <button type="submit" class="btn pri" [disabled]="busy() || (decision !== 'LIBERE' && !comment.trim())">Valider la décision</button>
+          </div>
+          @if (decision !== 'LIBERE' && !comment.trim()) { <p class="note">Commentaire obligatoire pour cette décision.</p> }
+          <div>
           </div>
         </form>
       }
@@ -84,6 +87,7 @@ export class ControleSaisieComponent {
   protected readonly plan = signal<ControlPlan | null>(null);
   protected readonly entries = signal<Entry[]>([]);
   private readonly version = signal(0);
+  private savedVersion = 0;
   protected readonly saved = signal(false);
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -104,6 +108,8 @@ export class ControleSaisieComponent {
   });
   protected readonly proposed = computed(() => {
     const i = this.insp();
+    // Décision du serveur quand les résultats enregistrés n'ont pas été modifiés depuis.
+    if (i?.proposedDecision && this.saved() && this.version() === this.savedVersion) return i.proposedDecision;
     return proposeDecision(this.entries().map((e) => e.c), this.results(), this.defects(), i?.ac, i?.re);
   });
   protected readonly decisions = computed(() =>
@@ -167,6 +173,8 @@ export class ControleSaisieComponent {
     this.busy.set(true);
     try {
       await this.api.saveResults(i.id, this.results(), this.key);
+      this.insp.set(await this.api.get(i.id));
+      this.savedVersion = this.version();
       this.saved.set(true);
       this.decision = this.proposed();
       this.error.set(null);

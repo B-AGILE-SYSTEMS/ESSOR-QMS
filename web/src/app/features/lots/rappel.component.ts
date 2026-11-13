@@ -6,7 +6,7 @@ import { LotsService, recallPdfUrl } from '../../core/m3b.service';
 
 /**
  * Simulation de rappel depuis un lot : lots impactés, clients, quantités, dossier PDF et blocage du stock restant
- * (passage en QUARANTAINE de chaque lot non encore bloqué, après confirmation dans la page ; le serveur émet le webhook).
+ * (`POST /api/lots/{id}/recall/block`, après confirmation dans la page ; le serveur bloque et émet le webhook).
  */
 @Component({
   selector: 'eq-rappel',
@@ -25,11 +25,11 @@ import { LotsService, recallPdfUrl } from '../../core/m3b.service';
           <div><span>Expédié</span><b class="mono">{{ r.quantites.expedie }}</b></div>
         </div>
         <div class="cols">
-          <div><h4>Lots impactés</h4><table><thead><tr><th>Lot</th><th>Article</th><th class="r">Qté</th><th>Statut</th></tr></thead><tbody>
+          <div><h4>Lots impactés</h4><table><thead><tr><th>Lot</th><th>Article</th><th class="r">Qté</th><th class="r">Restant</th><th>Statut</th></tr></thead><tbody>
             @for (l of r.lotsImpactes; track l.id) {
               <tr><td><a class="lnk mono" [routerLink]="'/lots/' + l.id">{{ l.numero }}</a></td><td>{{ ref(l.article) }}</td>
-                <td class="r mono">{{ l.quantite ?? '—' }} {{ l.unite }}</td><td><span class="st" [class]="tone(l.qualityStatus)"><i></i>{{ label(l.qualityStatus) }}</span></td></tr>
-            } @empty { <tr><td colspan="4" class="note">Aucun.</td></tr> }</tbody></table></div>
+                <td class="r mono">{{ l.quantite ?? '—' }} {{ l.unite }}</td><td class="r mono">{{ l.remaining ?? '—' }}</td><td><span class="st" [class]="tone(l.qualityStatus)"><i></i>{{ label(l.qualityStatus) }}</span></td></tr>
+            } @empty { <tr><td colspan="5" class="note">Aucun.</td></tr> }</tbody></table></div>
           <div><h4>Clients touchés</h4><table><thead><tr><th>Client</th><th class="r">Qté</th><th>Références</th></tr></thead><tbody>
             @for (c of r.clients; track $index) {
               <tr><td><b>{{ ref(c.partner) }}</b></td><td class="r mono">{{ c.quantite }}</td><td class="mono note">{{ c.references.join(', ') }}</td></tr>
@@ -103,9 +103,8 @@ export class RappelComponent {
   async block(): Promise<void> {
     this.busy.set(true);
     const reason = `Rappel fournisseur — lot ${this.lot().numero}`;
-    const lots = this.toBlock();
     try {
-      for (const l of lots) await this.api.setStatus(l.id, 'QUARANTAINE', reason);
+      const lots = await this.api.blockRecall(this.lot().id, reason);
       this.done.set(`${lots.length} lot(s) bloqué(s) en quarantaine.`);
       this.confirming.set(false);
       this.blocked.emit();

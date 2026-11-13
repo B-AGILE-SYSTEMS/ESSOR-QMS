@@ -11,8 +11,9 @@ type Lot = {
 };
 type Link = { id: string; fromId: string; kind: string; targetLotId?: string; partnerId?: string; quantity: number; reference: string };
 type Insp = {
-  id: string; lotId: string; controlPlanId: string; planVersion: number; point: string; status: string; sampleSize: number; codeLetter: string;
-  ac: number; re: number; results: unknown[]; decision: string | null; createdAt: string; authorName: string;
+  id: string; lotId: string; controlPlanId: string; planVersion: number; point: string; status: string;
+  sampling: { mode: string; lotSize: number; nqa: number; codeLetter: string; planLetter: string; sampleSize: number; ac: number; re: number };
+  results: { ok: boolean }[]; proposedDecision: string | null; decision: string | null; createdAt: string; authorName: string;
 };
 
 const PDF = Buffer.from('%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n'
@@ -37,15 +38,16 @@ export class MockApiM3b extends MockApiM3 {
   lotLinks: Link[] = [];
   inspections: Insp[] = [];
   plans: Record<string, unknown>[] = [
-    { id: 'cp1', code: 'CP-REC-TUBE', libelle: 'Réception tube acier', version: 2, point: 'RECEPTION', target: { type: 'article', value: 'MP-TUBE-12' },
+    { id: 'cp1', code: 'CP-REC-TUBE', libelle: 'Réception tube acier', version: 2, point: 'RECEPTION', target: { type: 'article', id: 'a1', famille: null },
       characteristics: [DIAM, CERT], sampling: { mode: 'iso2859', nqa: 1.0, niveau: 'II' }, frequency: null },
-    { id: 'cp2', code: 'CP-ENC-AXE', libelle: 'En-cours usinage axe', version: 1, point: 'PRODUCTION_ENCOURS', target: { type: 'article', value: 'PF-AXE-12' },
+    { id: 'cp2', code: 'CP-ENC-AXE', libelle: 'En-cours usinage axe', version: 1, point: 'PRODUCTION_ENCOURS', target: { type: 'article', id: 'a2', famille: null },
       characteristics: [{ ...DIAM, nominal: 12, tolMin: 11.97, tolMax: 12.03 }], sampling: { mode: 'fixe', taille: 5 }, frequency: { pieces: 50 } },
   ];
   webhookEvents: Record<string, unknown>[] = [];
-  webhook = { url: 'http://wms.local/hooks/qualite', enabled: true, hasSecret: true };
+  webhook = { url: 'http://wms.local/hooks/qualite', enabled: true, secretSet: true };
   lastWebhookPut: Record<string, unknown> | null = null;
   statusCalls: { id: string; status: string; reason: string }[] = [];
+  blockCalls: { id: string; reason: string }[] = [];
   private n = 0;
 
   constructor() {
@@ -113,7 +115,8 @@ export class MockApiM3b extends MockApiM3 {
       references: ships.filter((k) => k.partnerId === pid).map((k) => k.reference) }));
     const expedie = ships.reduce((s, k) => s + k.quantity, 0);
     const shippedFinished = impacted.reduce((s, l) => s + l.quantite, 0);
-    return { lotsImpactes: impacted.map((l) => this.view(l)), clients,
+    const remaining = (l: Lot) => l.quantite - this.lotLinks.filter((k) => k.fromId === l.id).reduce((s, k) => s + k.quantity, 0);
+    return { source: { ...this.view(src), remaining: remaining(src) }, lotsImpactes: impacted.map((l) => ({ ...this.view(l), remaining: remaining(l) })), clients,
       quantites: { enStock: shippedFinished - expedie, enCours: 0, expedie } };
   }
 
@@ -123,10 +126,10 @@ export class MockApiM3b extends MockApiM3 {
     const ranges = [0.012, 0.009, 0.015, 0.011, 0.01, 0.013, 0.014, 0.008, 0.012, 0.016, 0.01, 0.011, 0.009, 0.013, 0.012, 0.031, 0.011, 0.01, 0.012, 0.009];
     return {
       points: means.map((m, i) => ({ index: i + 1, mean: m, range: ranges[i], at: `2026-11-12T${String(6 + Math.floor(i / 2)).padStart(2, '0')}:00:00Z` })),
-      limits: { xbar: { lcl: 11.9893, cl: 12.0041, ucl: 12.0189 }, r: { lcl: 0, cl: 0.0129, ucl: 0.0273 } },
+      subgroupSize: 5, sigma: 0.0055, limits: { xbar: { lcl: 11.9893, cl: 12.0041, ucl: 12.0189 }, range: { lcl: 0, cl: 0.0129, ucl: 0.0273 } },
       cp: 1.12, cpk: 1.05, tolMin: 11.97, tolMax: 12.03,
       alerts: [{ type: 'hors_limites', index: 10, message: 'Moyenne au-dessus de UCL' },
-        { type: 'sept_points', index: 17, message: '7 points consécutifs au-dessus de la ligne centrale' }],
+        { type: 'sept_points_meme_cote', index: 17, message: '7 points consécutifs au-dessus de la ligne centrale' }],
     };
   }
 
@@ -144,10 +147,13 @@ export class MockApiM3b extends MockApiM3 {
     if ((mm = p.match(/^\/api\/master-data\/(articles|partners)\/import$/))) {
       return json({ created: mm[1] === 'articles' ? 2 : 3, updated: 0, errors: [], dryRun: url.searchParams.get('dryRun') === 'true' });
     }
+    if (p === '/api/connectors/webhook/deliveries') {
+      return json(this.webhookEvents.map((e, i) => ({ id: `d${i}`, event: e['event'], at: e['at'], status: 200, ok: true })));
+    }
     if (p === '/api/connectors/webhook') {
       if (m === 'PUT') {
         this.lastWebhookPut = body();
-        this.webhook = { url: String(this.lastWebhookPut!['url']), enabled: !!this.lastWebhookPut!['enabled'], hasSecret: true };
+        this.webhook = { url: String(this.lastWebhookPut!['url']), enabled: !!this.lastWebhookPut!['enabled'], secretSet: true };
       }
       return json(this.webhook);
     }
@@ -162,20 +168,29 @@ export class MockApiM3b extends MockApiM3 {
       return json(this.lots.filter((l) => (!st || l.qualityStatus === st) && (!q || `${l.numero} ${l.lotFournisseur ?? ''}`.toLowerCase().includes(q)))
         .map((l) => this.view(l)));
     }
-    if ((mm = p.match(/^\/api\/lots\/([^/]+)(\/[a-z.]+)?$/))) {
+    if ((mm = p.match(/^\/api\/lots\/([^/]+)(\/[a-z./]+)?$/))) {
       const lot = this.lots.find((l) => l.id === mm![1]);
       if (!lot) return json({ error: 'introuvable', message: 'Lot introuvable.' }, 404);
       const sub = mm[2] ?? '';
       if (sub === '') return json(this.view(lot));
       if (sub === '/status' && m === 'POST') {
         const b = body();
-        if (b.status === 'DEROGATION' && !b.reason) return json({ error: 'motif_requis', message: 'La dérogation exige un motif.' }, 400);
+        if (['QUARANTAINE', 'DEROGATION', 'REFUSE', 'DETRUIT'].includes(b.status) && !b.reason) return json({ error: 'motif_requis', message: 'La dérogation exige un motif.' }, 400);
         this.statusCalls.push({ id: lot.id, status: b.status, reason: b.reason });
         this.setLotStatus(lot, b.status, b.reason);
         return json(this.view(lot));
       }
       if (sub === '/trace') return json(this.trace(lot.id, url.searchParams.get('direction') ?? 'down', Number(url.searchParams.get('depth') ?? 10)));
       if (sub === '/recall') return json(this.recall(lot.id));
+      if (sub === '/recall/block' && m === 'POST') {
+        const reason = body().reason;
+        this.blockCalls.push({ id: lot.id, reason });
+        const r = this.recall(lot.id);
+        const ids = [r.source, ...r.lotsImpactes].filter((l) => l.remaining > 0 && !['QUARANTAINE', 'REFUSE', 'DETRUIT'].includes(l.qualityStatus)).map((l) => l.id);
+        const blocked = ids.map((id) => this.lots.find((l) => l.id === id)!);
+        blocked.forEach((l) => this.setLotStatus(l, 'QUARANTAINE', reason));
+        return json({ blocked: blocked.map((l) => this.view(l)) });
+      }
       if (sub === '/recall.pdf') {
         return route.fulfill({ status: 200, body: PDF, headers: { 'content-type': 'application/pdf',
           'content-disposition': `attachment; filename="rappel-${lot.numero}.pdf"` } });
@@ -187,6 +202,7 @@ export class MockApiM3b extends MockApiM3 {
     }
     if ((mm = p.match(/^\/api\/control-plans\/([^/]+)$/)) && m === 'PUT') {
       const i = this.plans.findIndex((x) => x['id'] === mm![1]);
+      if (body().version !== this.plans[i]['version']) return json({ error: 'plan_outdated', message: 'Version non active.' }, 409);
       this.plans[i] = { ...body(), id: mm[1], version: Number(this.plans[i]['version']) + 1 };
       return json(this.plans[i]);
     }
@@ -195,7 +211,8 @@ export class MockApiM3b extends MockApiM3 {
       const b = body();
       const i: Insp = { id: `ins-${this.inspections.length + 1}`, lotId: b.lotId, controlPlanId: b.controlPlanId, point: b.point,
         planVersion: Number(this.plans.find((x) => x['id'] === b.controlPlanId)?.['version'] ?? 1), status: 'A_FAIRE',
-        sampleSize: 13, codeLetter: 'F', ac: 0, re: 1, results: [], decision: null, createdAt: this.now(), authorName: 'Salma Bennani' };
+        sampling: { mode: 'iso2859', lotSize: 500, nqa: 1.0, codeLetter: 'H', planLetter: 'F', sampleSize: 13, ac: 0, re: 1 },
+        results: [], proposedDecision: null, decision: null, createdAt: this.now(), authorName: 'Salma Bennani' };
       this.inspections.push(i);
       return json(this.inspView(i), 201);
     }
@@ -211,12 +228,14 @@ export class MockApiM3b extends MockApiM3 {
         if (!req.headers()['idempotency-key']) return json({ error: 'cle', message: 'Idempotency-Key requise.' }, 400);
         i.results = body();
         i.status = 'EN_COURS';
+        i.proposedDecision = i.results.every((r) => r.ok) ? 'LIBERE' : 'REFUSE';
         return json(this.inspView(i));
       }
       if (mm[2] === '/decision' && m === 'POST') {
         const b = body();
+        if (b.decision !== 'LIBERE' && !b.comment) return json({ error: 'commentaire_requis', message: 'Commentaire obligatoire.' }, 400);
         i.decision = b.decision;
-        i.status = 'TERMINE';
+        i.status = 'TERMINEE';
         this.setLotStatus(this.lots.find((l) => l.id === i.lotId)!, b.decision, b.comment || `Contrôle ${i.point}`);
         return json(this.inspView(i));
       }

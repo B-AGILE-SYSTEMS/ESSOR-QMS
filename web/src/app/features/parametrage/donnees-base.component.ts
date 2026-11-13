@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { errorMessage } from '../../core/api-error';
-import { ImportReport, WebhookConfig } from '../../core/m3b.models';
+import { formatDateTime } from '../../core/labels';
+import { ImportReport, WebhookConfig, WebhookDelivery } from '../../core/m3b.models';
 import { MasterDataService } from '../../core/m3b.service';
 
 const IMPORT_EXT = /\.(xlsx|csv)$/i;
@@ -36,10 +37,17 @@ type Kind = 'articles' | 'partners';
         <h3 class="t">Connecteur webhook (WMS) — événement lot.status_changed</h3>
         <label class="field"><span>URL</span><input name="url" type="url" [(ngModel)]="hook.url" placeholder="http://wms.local/hooks/qualite" /></label>
         <label class="field"><span>Secret HMAC</span><input name="sec" type="password" autocomplete="new-password" [(ngModel)]="secret"
-          [placeholder]="hook.hasSecret ? 'Secret enregistré — laisser vide pour le conserver' : ''" /></label>
+          [placeholder]="hook.secretSet ? 'Secret enregistré — laisser vide pour le conserver' : ''" /></label>
         <label class="chk"><input name="en" type="checkbox" [(ngModel)]="hook.enabled" /> Actif</label>
         <button type="submit" class="btn pri" [disabled]="busy()">Enregistrer le connecteur</button>
         @if (hookOk()) { <p class="note" role="status">Connecteur enregistré.</p> }
+        <h3 class="t sec">Journal des envois</h3>
+        <div class="tw"><table aria-label="Journal des envois"><thead><tr><th>Date</th><th>Événement</th><th>Résultat</th></tr></thead><tbody>
+          @for (d of deliveries(); track $index) {
+            <tr><td class="mono">{{ dt(d.at) }}</td><td class="mono">{{ d.event ?? '—' }}</td>
+              <td><span class="st" [class]="d.ok === false ? 'crit' : 'ok'"><i></i>{{ d.status ?? (d.ok === false ? 'Échec' : 'OK') }}</span>
+                @if (d.error) { <span class="note"> {{ d.error }}</span> }</td></tr>
+          } @empty { <tr><td colspan="3" class="note">Aucun envoi.</td></tr> }</tbody></table></div>
       </form>
     </div>
   `,
@@ -62,6 +70,8 @@ export class DonneesBaseComponent {
   protected readonly simulated = signal(false);
   protected readonly busy = signal(false);
   protected readonly hookOk = signal(false);
+  protected readonly deliveries = signal<WebhookDelivery[]>([]);
+  protected readonly dt = formatDateTime;
   protected readonly error = signal<string | null>(null);
 
   constructor() {
@@ -71,8 +81,9 @@ export class DonneesBaseComponent {
   private async loadHook(): Promise<void> {
     try {
       const h = await this.api.webhook();
-      this.hook = { url: h.url ?? '', enabled: h.enabled ?? false, hasSecret: h.hasSecret ?? false };
+      this.hook = { url: h.url ?? '', enabled: h.enabled ?? false, secretSet: h.secretSet ?? false };
       this.hookOk.set(false);
+      this.deliveries.set(await this.api.deliveries());
     } catch {
       // Aucun connecteur configuré : formulaire vierge.
     }
@@ -117,7 +128,7 @@ export class DonneesBaseComponent {
     try {
       const body: WebhookConfig = { url: this.hook.url.trim(), enabled: this.hook.enabled, ...(this.secret ? { secret: this.secret } : {}) };
       const h = await this.api.saveWebhook(body);
-      this.hook = { url: h.url ?? body.url, enabled: h.enabled ?? body.enabled, hasSecret: h.hasSecret ?? (!!this.secret || this.hook.hasSecret) };
+      this.hook = { url: h.url ?? body.url, enabled: h.enabled ?? body.enabled, secretSet: h.secretSet ?? (!!this.secret || this.hook.secretSet) };
       this.secret = '';
       this.hookOk.set(true);
       this.error.set(null);

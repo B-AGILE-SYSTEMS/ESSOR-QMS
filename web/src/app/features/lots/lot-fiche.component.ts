@@ -5,7 +5,7 @@ import { errorMessage } from '../../core/api-error';
 import { AuthService } from '../../core/auth.service';
 import { formatDate, formatDateTime } from '../../core/labels';
 import {
-  ControlPlan, INSPECTION_STATUS_LABELS, Inspection, LINK_LABELS, LinkKind, Lot, QUALITY_STATUS_LABELS, QualityStatus, TraceRow,
+  ControlPlan, INSPECTION_STATUS_LABELS, Inspection, LINK_LABELS, LinkKind, Lot, QUALITY_STATUS_LABELS, QualityStatus, REASON_REQUIRED, TraceRow,
   flattenTrace, pointLabel, qualityTone, refLabel, statusLabel,
 } from '../../core/m3b.models';
 import { ControlPlansService, InspectionsService, LotsService } from '../../core/m3b.service';
@@ -75,7 +75,7 @@ import { RappelComponent } from './rappel.component';
             <label class="field"><span>Nouveau statut</span><select name="ns" [(ngModel)]="newStatus">
               @for (s of statusOptions(); track s[0]) { <option [value]="s[0]">{{ s[1] }}</option> }</select></label>
             <label class="field"><span>Motif</span><input name="motif" [(ngModel)]="reason" /></label>
-            @if (newStatus === 'DEROGATION' && !reason.trim()) { <p class="note">La dérogation exige un motif.</p> }
+            @if (!canSubmitStatus()) { <p class="note">Ce statut exige un motif.</p> }
             <button type="submit" class="btn" [disabled]="busy() || !canSubmitStatus()">Changer le statut</button>
           </form>
 
@@ -173,7 +173,7 @@ export class LotFicheComponent {
   }
 
   protected canSubmitStatus(): boolean {
-    return !!this.reason.trim() || this.newStatus !== 'DEROGATION';
+    return !!this.reason.trim() || !REASON_REQUIRED.includes(this.newStatus);
   }
 
   async changeStatus(): Promise<void> {

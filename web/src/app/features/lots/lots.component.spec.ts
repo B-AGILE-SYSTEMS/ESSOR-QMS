@@ -52,10 +52,9 @@ describe('Écrans M3b', () => {
     f.detectChanges();
     expect(el.querySelector('[role=alertdialog]')!.textContent).toContain('Bloquer 2 lot(s)');
     (el.querySelector('[role=alertdialog] .btn.pri') as HTMLButtonElement).click();
-    const r1 = await req(http, '/api/lots/l1/status');
-    expect(r1.request.body).toEqual({ status: 'QUARANTAINE', reason: 'Rappel fournisseur — lot R-1' });
-    r1.flush({ ...LOT, qualityStatus: 'QUARANTAINE' });
-    (await req(http, '/api/lots/l2/status')).flush({ id: 'l2', qualityStatus: 'QUARANTAINE' });
+    const r1 = await req(http, '/api/lots/l1/recall/block');
+    expect(r1.request.body).toEqual({ reason: 'Rappel fournisseur — lot R-1' });
+    r1.flush({ blocked: [{ ...LOT, qualityStatus: 'QUARANTAINE' }, { id: 'l2', qualityStatus: 'QUARANTAINE' }] });
     await settle(f);
     expect(el.querySelector('.ok-msg')!.textContent).toContain('2 lot(s) bloqué(s)');
   });
@@ -77,6 +76,10 @@ describe('Écrans M3b', () => {
     const up = await req(http, (r) => r.url === '/api/lots/l1/trace');
     expect(up.request.params.get('direction')).toBe('up');
     up.flush({ lot: LOT, children: [] });
+    const motif = el.querySelector('input[name=motif]') as HTMLInputElement;
+    motif.value = 'Suspicion';
+    motif.dispatchEvent(new Event('input'));
+    await settle(f);
     (el.querySelector('form[aria-label="Changer le statut qualité"] button') as HTMLButtonElement).click();
     const st = await req(http, '/api/lots/l1/status');
     expect(st.request.body.status).toBe('QUARANTAINE');
@@ -89,7 +92,8 @@ describe('Écrans M3b', () => {
     const f = TestBed.createComponent(ControleSaisieComponent);
     f.componentRef.setInput('id', 'i1');
     f.detectChanges();
-    (await req(http, '/api/inspections/i1')).flush({ id: 'i1', lotId: 'l1', controlPlanId: 'cp1', point: 'RECEPTION', sampleSize: 2, ac: 0, re: 1, results: [] });
+    (await req(http, '/api/inspections/i1')).flush({ id: 'i1', lotId: 'l1', controlPlanId: 'cp1', point: 'RECEPTION', status: 'A_FAIRE',
+      sampling: { mode: 'fixe', sampleSize: 2, ac: 0, re: 1 }, results: [] });
     (await req(http, '/api/control-plans')).flush([PLAN]);
     await settle(f);
     const el: HTMLElement = f.nativeElement;
@@ -103,6 +107,8 @@ describe('Écrans M3b', () => {
     expect(put.request.headers.get('Idempotency-Key')).toBeTruthy();
     expect(put.request.body[0]).toEqual({ characteristic: 'D', values: [12, 12.05], ok: true, instrument: null });
     put.flush({});
+    (await req(http, '/api/inspections/i1')).flush({ id: 'i1', lotId: 'l1', controlPlanId: 'cp1', point: 'RECEPTION', status: 'EN_COURS',
+      sampling: { sampleSize: 2, ac: 0, re: 1 }, results: put.request.body, proposedDecision: 'LIBERE' });
     await settle(f);
     expect(el.textContent).toContain('Décision proposée : Libérer');
     (el.querySelector('form[aria-label="Décision"] button') as HTMLButtonElement).click();
@@ -117,7 +123,7 @@ describe('Écrans M3b', () => {
     (await req(http, '/api/control-plans')).flush([PLAN]);
     const spc = await req(http, (r) => r.url === '/api/inspections/spc');
     expect(spc.request.params.get('characteristic')).toBe('D');
-    spc.flush({ points: [{ mean: 12 , range: 0.1 }, { mean: 12.2, range: 0.1 }], limits: { xbar: { lcl: 11.9, cl: 12, ucl: 12.1 }, r: { lcl: 0, cl: 0.1, ucl: 0.3 } },
+    spc.flush({ points: [{ mean: 12 , range: 0.1 }, { mean: 12.2, range: 0.1 }], limits: { xbar: { lcl: 11.9, cl: 12, ucl: 12.1 }, range: { lcl: 0, cl: 0.1, ucl: 0.3 } },
       cp: 1.4, cpk: 1.1, alerts: [] });
     await settle(f);
     const el: HTMLElement = f.nativeElement;

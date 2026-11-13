@@ -65,7 +65,7 @@ describe('Modèles M3b', () => {
   });
 
   it('normalise un contrôle et une carte de contrôle', () => {
-    const i = toInspection({ id: 'i', lot: { id: 'l', numero: 'L' }, tailleEchantillon: 13, lettreCode: 'F' });
+    const i = toInspection({ id: 'i', lot: { id: 'l', numero: 'L' }, sampling: { sampleSize: 13, planLetter: 'F', ac: 0, re: 1 } });
     expect([i.lotId, i.lotNumero, i.sampleSize, i.codeLetter, i.status]).toEqual(['l', 'L', 13, 'F', 'A_FAIRE']);
     const s = toSpc({ points: [{ moyenne: 1, etendue: 0.1 }, { mean: 5, range: 0.2 }], limits: { xbar: { lcl: 0, cl: 2, ucl: 4 } },
       alerts: [{ type: 'x', index: 1 }] });

@@ -79,8 +79,7 @@ test('Rappel depuis le lot fournisseur : généalogie, clients, PDF et blocage d
   if (SHOTS) await page.screenshot({ path: `${SHOTS}/m3b-2-simulation-rappel.png`, fullPage: true });
   await rap.getByRole('button', { name: 'Confirmer le blocage' }).click();
   await expect(rap.getByRole('status')).toHaveText('2 lot(s) bloqué(s) en quarantaine.');
-  expect(api.statusCalls.map((c) => [c.status, c.reason])).toEqual([
-    ['QUARANTAINE', 'Rappel fournisseur — lot R-2611'], ['QUARANTAINE', 'Rappel fournisseur — lot R-2611']]);
+  expect(api.blockCalls).toEqual([{ id: api.lots[0].id, reason: 'Rappel fournisseur — lot R-2611' }]);
   expect(api.webhookEvents.map((e) => e['numero'])).toEqual(['R-2611', 'PF-2611-B']);
   await expect(page.getByTestId('lot-status')).toHaveText('Quarantaine');
 
@@ -131,5 +130,6 @@ test('Paramétrage : éditeur de plan, import de données de base, connecteur we
   await hook.getByLabel('Secret HMAC').fill('valeur-de-test');
   await hook.getByRole('button', { name: 'Enregistrer le connecteur' }).click();
   await expect(hook.getByRole('status')).toHaveText('Connecteur enregistré.');
+  await expect(hook.getByRole('table', { name: 'Journal des envois' })).toBeVisible();
   expect(api.lastWebhookPut).toEqual({ url: 'http://wms.local/hooks/qualite', enabled: true, secret: 'valeur-de-test' });
 });

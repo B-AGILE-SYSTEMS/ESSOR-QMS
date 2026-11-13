@@ -46,6 +46,8 @@ export interface Lot {
   id: string; numero: string; article: Ref | string | null; fournisseur?: Ref | string | null; lotFournisseur?: string | null;
   quantite?: number | null; unite?: string | null; dlc?: string | null; site?: Ref | string | null; qualityStatus: QualityStatus | string;
   historique: StatusChange[]; ncId?: string | null;
+  /** Quantité restante (rappel). */
+  remaining?: number | null;
 }
 export interface NewLot {
   articleId: string; numero: string; fournisseurId: string | null; lotFournisseur: string | null; quantite: number; unite: string;
@@ -77,6 +79,7 @@ export function toLot(raw: Raw): Lot {
     site: (raw['site'] ?? null) as Lot['site'],
     qualityStatus: String(raw['qualityStatus'] ?? raw['status'] ?? 'EN_ATTENTE'),
     ncId: str(raw['ncId']),
+    remaining: (raw['remaining'] ?? null) as number | null,
     historique: hist.map((h) => ({
       from: str(h['from']), status: String(h['status'] ?? h['to'] ?? ''), reason: str(h['reason'] ?? h['motif']),
       by: str(h['byName'] ?? h['by'] ?? h['auteur']), at: String(h['at'] ?? h['date'] ?? ''),
@@ -117,12 +120,13 @@ export function flattenTrace(root: TraceNode): TraceRow[] {
 
 export interface RecallClient { partner: Ref; quantite: number; references: string[] }
 export interface Recall {
-  lotsImpactes: Lot[]; clients: RecallClient[]; quantites: { enStock: number; enCours: number; expedie: number };
+  source: Lot | null; lotsImpactes: Lot[]; clients: RecallClient[]; quantites: { enStock: number; enCours: number; expedie: number };
 }
 
 export function toRecall(raw: Raw): Recall {
   const q = (raw['quantites'] ?? {}) as Raw;
   return {
+    source: raw['source'] ? toLot(raw['source'] as Raw) : null,
     lotsImpactes: ((raw['lotsImpactes'] ?? []) as Raw[]).map(toLot),
     clients: ((raw['clients'] ?? []) as Raw[]).map((c) => ({
       partner: (c['partner'] ?? {}) as Ref, quantite: Number(c['quantite'] ?? 0), references: (c['references'] ?? []) as string[],
@@ -131,11 +135,18 @@ export function toRecall(raw: Raw): Recall {
   };
 }
 
-/** Lots encore à bloquer : le lot source et les lots impactés qui ne sont ni en quarantaine, ni refusés, ni détruits. */
+/**
+ * Lots que le blocage touchera : le lot source et les lots impactés ni en quarantaine, ni refusés, ni détruits,
+ * et dont il reste du stock (`remaining` > 0 quand le serveur le fournit). Le blocage lui-même est fait par le serveur.
+ */
 export function lotsToBlock(source: Lot, recall: Recall): Lot[] {
-  const all = [source, ...recall.lotsImpactes.filter((l) => l.id !== source.id)];
-  return all.filter((l) => !BLOCKED_STATUSES.includes(l.qualityStatus as QualityStatus));
+  const src = recall.source ?? source;
+  const all = [src, ...recall.lotsImpactes.filter((l) => l.id !== src.id)];
+  return all.filter((l) => !BLOCKED_STATUSES.includes(l.qualityStatus as QualityStatus) && (l.remaining === null || l.remaining === undefined || l.remaining > 0));
 }
+
+/** Statuts de lot pour lesquels le serveur exige un motif. */
+export const REASON_REQUIRED: string[] = ['QUARANTAINE', 'DEROGATION', 'REFUSE', 'DETRUIT'];
 
 /* ===== Plans de contrôle ===== */
 
@@ -147,7 +158,7 @@ export interface Characteristic {
 }
 export interface Sampling { mode: 'fixe' | 'iso2859'; taille?: number | null; nqa?: number | null; niveau?: string | null }
 export interface Frequency { pieces?: number | null; minutes?: number | null }
-export interface PlanTarget { type: 'article' | 'famille' | 'fournisseur' | 'client'; value: string }
+export interface PlanTarget { type: 'article' | 'famille' | 'fournisseur' | 'client'; id?: string | null; famille?: string | null }
 export interface ControlPlan {
   id?: string; code: string; libelle: string; version?: number; point: FlowPoint; target: PlanTarget;
   characteristics: Characteristic[]; sampling: Sampling; frequency?: Frequency | null;
@@ -158,7 +169,7 @@ export function emptyCharacteristic(): Characteristic {
   return { code: '', libelle: '', type: 'mesure', nominal: null, tolMin: null, tolMax: null, unite: null, instrumentRequis: false, criticite: 'majeure' };
 }
 export function emptyPlan(): ControlPlan {
-  return { code: '', libelle: '', point: 'RECEPTION', target: { type: 'article', value: '' }, characteristics: [emptyCharacteristic()],
+  return { code: '', libelle: '', point: 'RECEPTION', target: { type: 'article', id: null, famille: null }, characteristics: [emptyCharacteristic()],
     sampling: { mode: 'iso2859', nqa: 1.0, niveau: 'II' }, frequency: null };
 }
 
@@ -191,12 +202,13 @@ export function samplingLabel(s: Sampling | null | undefined): string {
 export interface InspectionResult { characteristic: string; values: (number | string)[]; ok: boolean; instrument?: string | null }
 export interface Inspection {
   id: string; lotId: string; lotNumero?: string | null; controlPlanId: string; planVersion?: number | null; point: FlowPoint | string;
-  status: string; sampleSize: number; codeLetter?: string | null; ac?: number | null; re?: number | null;
-  results: InspectionResult[]; decision?: string | null; createdAt?: string | null; author?: string | null;
+  status: string; sampleSize: number; codeLetter?: string | null; ac?: number | null; re?: number | null; lotSize?: number | null;
+  results: InspectionResult[]; decision?: string | null; proposedDecision?: Decision | null; createdAt?: string | null; author?: string | null;
 }
 
 export function toInspection(raw: Raw): Inspection {
   const lot = raw['lot'] as Raw | undefined;
+  const s = (raw['sampling'] ?? {}) as Raw;
   return {
     id: String(raw['id']),
     lotId: String(raw['lotId'] ?? lot?.['id'] ?? ''),
@@ -205,10 +217,12 @@ export function toInspection(raw: Raw): Inspection {
     planVersion: (raw['planVersion'] ?? null) as number | null,
     point: String(raw['point'] ?? ''),
     status: String(raw['status'] ?? 'A_FAIRE'),
-    sampleSize: Number(raw['sampleSize'] ?? raw['tailleEchantillon'] ?? 1),
-    codeLetter: str(raw['codeLetter'] ?? raw['lettreCode']),
-    ac: (raw['ac'] ?? null) as number | null,
-    re: (raw['re'] ?? null) as number | null,
+    sampleSize: Number(s['sampleSize'] ?? raw['sampleSize'] ?? 1),
+    codeLetter: str(s['planLetter'] ?? s['codeLetter'] ?? raw['codeLetter']),
+    ac: (s['ac'] ?? raw['ac'] ?? null) as number | null,
+    re: (s['re'] ?? raw['re'] ?? null) as number | null,
+    lotSize: (s['lotSize'] ?? null) as number | null,
+    proposedDecision: (raw['proposedDecision'] ?? null) as Decision | null,
     results: (raw['results'] ?? []) as InspectionResult[],
     decision: str(raw['decision']),
     createdAt: str(raw['createdAt']),
@@ -216,7 +230,7 @@ export function toInspection(raw: Raw): Inspection {
   };
 }
 
-export const INSPECTION_STATUS_LABELS: Record<string, string> = { A_FAIRE: 'À faire', EN_COURS: 'En cours', TERMINE: 'Terminé' };
+export const INSPECTION_STATUS_LABELS: Record<string, string> = { A_FAIRE: 'À faire', EN_COURS: 'En cours', TERMINEE: 'Terminée' };
 
 /** Verdict d'une mesure : chaque valeur dans [tolMin, tolMax] (bornes absolues). */
 export function measureOk(c: Characteristic, values: number[]): boolean {
@@ -255,7 +269,7 @@ export interface Limits { lcl: number; cl: number; ucl: number }
 export interface SpcPoint { index: number; mean: number; range: number; at?: string | null }
 export interface SpcAlert { type: string; index: number; message?: string | null }
 export interface Spc {
-  points: SpcPoint[]; xbar: Limits | null; r: Limits | null; cp: number | null; cpk: number | null; alerts: SpcAlert[];
+  points: SpcPoint[]; xbar: Limits | null; r: Limits | null; subgroupSize?: number | null; sigma?: number | null; cp: number | null; cpk: number | null; alerts: SpcAlert[];
   tolMin?: number | null; tolMax?: number | null;
 }
 
@@ -268,7 +282,9 @@ export function toSpc(raw: Raw): Spc {
       at: str(p['at']),
     })),
     xbar: (lim['xbar'] ?? raw['xbar'] ?? null) as Limits | null,
-    r: (lim['r'] ?? raw['r'] ?? null) as Limits | null,
+    r: (lim['range'] ?? lim['r'] ?? null) as Limits | null,
+    subgroupSize: (raw['subgroupSize'] ?? null) as number | null,
+    sigma: (raw['sigma'] ?? null) as number | null,
     cp: (raw['cp'] ?? null) as number | null,
     cpk: (raw['cpk'] ?? null) as number | null,
     alerts: (raw['alerts'] ?? []) as SpcAlert[],
@@ -320,4 +336,5 @@ export function fmt(n: number | null | undefined, digits = 3): string {
 /* ===== Imports de données de base et connecteur ===== */
 
 export interface ImportReport { created: number; updated: number; errors: { line: number; message: string }[] }
-export interface WebhookConfig { url: string; secret?: string | null; enabled: boolean; hasSecret?: boolean }
+export interface WebhookConfig { url: string; secret?: string | null; enabled: boolean; secretSet?: boolean }
+export interface WebhookDelivery { id?: string; event?: string; at?: string; status?: number | string | null; ok?: boolean; error?: string | null; [k: string]: unknown }

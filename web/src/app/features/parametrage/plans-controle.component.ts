@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { errorMessage } from '../../core/api-error';
@@ -5,6 +6,10 @@ import {
   ControlPlan, FLOW_POINTS, NQA_VALUES, emptyCharacteristic, emptyPlan, pointLabel, samplingLabel, validatePlan,
 } from '../../core/m3b.models';
 import { ControlPlansService } from '../../core/m3b.service';
+
+function isOutdated(e: unknown): boolean {
+  return e instanceof HttpErrorResponse && e.status === 409 && (e.error as { error?: string } | null)?.error === 'plan_outdated';
+}
 
 /** Paramétrage → Plans de contrôle : liste versionnée et éditeur de caractéristiques. */
 @Component({
@@ -32,7 +37,11 @@ import { ControlPlansService } from '../../core/m3b.service';
             <label class="field"><span>Cible</span><select name="ct" [(ngModel)]="d.target.type">
               <option value="article">Article</option><option value="famille">Famille</option>
               <option value="fournisseur">Fournisseur</option><option value="client">Client</option></select></label>
-            <label class="field"><span>Valeur cible (code)</span><input name="cv" [(ngModel)]="d.target.value" /></label>
+            @if (d.target.type === 'famille') {
+              <label class="field"><span>Famille</span><input name="cf" [(ngModel)]="d.target.famille" /></label>
+            } @else {
+              <label class="field"><span>Identifiant cible</span><input name="cv" [(ngModel)]="d.target.id" /></label>
+            }
             <label class="field"><span>Échantillonnage</span><select name="sm" [(ngModel)]="d.sampling.mode">
               <option value="iso2859">ISO 2859-1 (niveau II, simple, normal)</option><option value="fixe">Taille fixe</option></select></label>
             @if (d.sampling.mode === 'fixe') {
@@ -138,7 +147,10 @@ export class PlansControleComponent {
       this.draft.set(null);
       await this.load();
     } catch (e) {
-      this.error.set(errorMessage(e, "Le plan n'a pas pu être enregistré."));
+      this.error.set(isOutdated(e)
+        ? 'Ce plan a été modifié entre-temps : vous éditiez une version qui n’est plus active. Rechargez-la.'
+        : errorMessage(e, "Le plan n'a pas pu être enregistré."));
+      if (isOutdated(e)) await this.load();
     } finally {
       this.busy.set(false);
     }

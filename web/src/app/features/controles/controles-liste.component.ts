@@ -6,7 +6,7 @@ import { INSPECTION_STATUS_LABELS, Inspection, pointLabel, statusLabel } from '.
 import { InspectionsService } from '../../core/m3b.service';
 
 const TABS = [
-  { code: 'A_FAIRE', label: 'À faire' }, { code: 'EN_COURS', label: 'En cours' }, { code: 'TERMINE', label: 'Historique' },
+  { code: 'A_FAIRE', label: 'À faire' }, { code: 'EN_COURS', label: 'En cours' }, { code: 'TERMINEE', label: 'Historique' },
 ];
 
 /** Terrain → Contrôles : à faire, en cours, historique. */
