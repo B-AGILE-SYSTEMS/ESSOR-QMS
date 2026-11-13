@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { errorMessage } from '../../core/api-error';
@@ -18,7 +18,7 @@ import { LotsService, MasterDataService } from '../../core/m3b.service';
     @if (showForm()) {
       <form class="box pad frm" (ngSubmit)="create()" aria-label="Réception d'un lot">
         <div class="row">
-          <label class="field"><span>Article</span><select name="art" [(ngModel)]="draft.articleId" required>
+          <label class="field"><span>Article</span><select name="art" [(ngModel)]="draft.articleId" (ngModelChange)="articleChanged($event)" required>
             <option value="">—</option>@for (a of articles(); track a.id) { <option [value]="a.id">{{ a.code }} — {{ a.designation }}</option> }</select></label>
           <label class="field"><span>N° de lot</span><input name="num" [(ngModel)]="draft.numero" required /></label>
           <label class="field"><span>Fournisseur</span><select name="four" [(ngModel)]="draft.fournisseurId">
@@ -27,8 +27,10 @@ import { LotsService, MasterDataService } from '../../core/m3b.service';
           <label class="field"><span>Quantité</span><input name="qte" type="number" min="0" [(ngModel)]="draft.quantite" required /></label>
           <label class="field"><span>Unité</span><input name="u" [(ngModel)]="draft.unite" /></label>
           <label class="field"><span>DLC</span><input name="dlc" type="date" [(ngModel)]="draft.dlc" /></label>
+          <label class="field"><span>Site</span><select name="site" [(ngModel)]="draft.siteId" required>
+            <option [ngValue]="null">—</option>@for (s of sites(); track s.id) { <option [ngValue]="s.id">{{ s.name ?? s.code }}</option> }</select></label>
         </div>
-        <button type="submit" class="btn pri" [disabled]="busy() || !draft.articleId || !draft.numero">Enregistrer la réception</button>
+        <button type="submit" class="btn pri" [disabled]="busy() || !draft.articleId || !draft.numero || !draft.siteId">Enregistrer la réception</button>
       </form>
     }
 
@@ -71,6 +73,12 @@ export class LotsListeComponent {
   protected readonly articles = signal<Article[]>([]);
   protected readonly suppliers = signal<Partner[]>([]);
   protected readonly showForm = signal(false);
+  protected readonly sites = computed(() => this.auth.me()?.sites ?? []);
+
+  /** L'unité suit celle de l'article choisi. */
+  protected articleChanged(id: string): void {
+    this.draft = { ...this.draft, articleId: id, unite: this.articles().find((a) => a.id === id)?.unite ?? '' };
+  }
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
 
@@ -80,7 +88,7 @@ export class LotsListeComponent {
   }
 
   private blank(): NewLot {
-    return { articleId: '', numero: '', fournisseurId: null, lotFournisseur: null, quantite: 0, unite: 'pcs', dlc: null,
+    return { articleId: '', numero: '', fournisseurId: null, lotFournisseur: null, quantite: 0, unite: '', dlc: null,
       siteId: this.auth.me()?.sites?.[0]?.id ?? null };
   }
 

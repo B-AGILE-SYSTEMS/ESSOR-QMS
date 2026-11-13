@@ -67,7 +67,7 @@ function isOutdated(e: unknown): boolean {
                 <td><input [name]="'mi' + i" type="number" step="any" [attr.aria-label]="'Tolérance min ' + (i + 1)" [(ngModel)]="c.tolMin" [disabled]="c.type !== 'mesure'" /></td>
                 <td><input [name]="'ma' + i" type="number" step="any" [attr.aria-label]="'Tolérance max ' + (i + 1)" [(ngModel)]="c.tolMax" [disabled]="c.type !== 'mesure'" /></td>
                 <td><input [name]="'un' + i" [(ngModel)]="c.unite" /></td>
-                <td><input [name]="'ir' + i" type="checkbox" [(ngModel)]="c.instrumentRequis" aria-label="Instrument requis" /></td>
+                <td><input [name]="'ir' + i" [(ngModel)]="c.instrumentRequis" [attr.aria-label]="'Instrument requis ' + (i + 1)" placeholder="ex. pied à coulisse" /></td>
                 <td><select [name]="'cr' + i" [(ngModel)]="c.criticite"><option value="critique">critique</option><option value="majeure">majeure</option>
                   <option value="mineure">mineure</option></select></td>
                 <td><button type="button" class="btn" [attr.aria-label]="'Retirer la caractéristique ' + (i + 1)" (click)="remove(i)">✕</button></td></tr>

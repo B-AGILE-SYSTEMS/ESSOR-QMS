@@ -24,8 +24,8 @@ async function settle(f: { whenStable(): Promise<unknown>; detectChanges(): void
 
 const LOT = { id: 'l1', numero: 'R-1', article: { id: 'a', code: 'MP', designation: 'Tube' }, qualityStatus: 'LIBERE', historique: [] };
 const PLAN = { id: 'cp1', code: 'CP', libelle: 'Réception', point: 'RECEPTION', target: { type: 'article', value: 'MP' }, sampling: { mode: 'fixe', taille: 2 },
-  characteristics: [{ code: 'D', libelle: 'Diamètre', type: 'mesure', nominal: 12, tolMin: 11.9, tolMax: 12.1, unite: 'mm', instrumentRequis: false, criticite: 'majeure' },
-    { code: 'A', libelle: 'Aspect', type: 'attribut', nominal: null, tolMin: null, tolMax: null, unite: null, instrumentRequis: false, criticite: 'mineure' }] };
+  characteristics: [{ code: 'D', libelle: 'Diamètre', type: 'mesure', nominal: 12, tolMin: 11.9, tolMax: 12.1, unite: 'mm', instrumentRequis: null, criticite: 'majeure' },
+    { code: 'A', libelle: 'Aspect', type: 'attribut', nominal: null, tolMin: null, tolMax: null, unite: null, instrumentRequis: null, criticite: 'mineure' }] };
 
 describe('Écrans M3b', () => {
   let http: HttpTestingController;
@@ -43,7 +43,7 @@ describe('Écrans M3b', () => {
     (await req(http, '/api/lots/l1/recall')).flush({
       lotsImpactes: [{ id: 'l2', numero: 'PF-1', qualityStatus: 'LIBERE' }],
       clients: [{ partner: { id: 'c', code: 'C1', nom: 'Client 1' }, quantite: 10, references: ['BL-1'] }],
-      quantites: { enStock: 5, enCours: 0, expedie: 10 } });
+      quantites: { enStock: [{ unit: 'pcs', qty: 5 }], enCours: [], expedie: [{ unit: 'pcs', qty: 10 }] } });
     await settle(f);
     const el: HTMLElement = f.nativeElement;
     expect(el.textContent).toContain('C1 — Client 1');

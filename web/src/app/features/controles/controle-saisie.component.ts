@@ -40,7 +40,8 @@ interface Entry { c: Characteristic; text: string; defects: number; present: boo
                 @default { <label><input type="checkbox" [name]="'p-' + e.c.code" [(ngModel)]="e.present" (ngModelChange)="touch()" [disabled]="closed()" /> présent</label> }
               }</td>
               <td><input class="in" [name]="'i-' + e.c.code" [attr.aria-label]="'Instrument ' + e.c.libelle" [(ngModel)]="e.instrument"
-                [required]="e.c.instrumentRequis" [disabled]="closed()" /></td>
+                [required]="!!e.c.instrumentRequis" [placeholder]="e.c.instrumentRequis ?? ''" [disabled]="closed()" />
+                @if (e.c.instrumentRequis) { <span class="note">Requis : {{ e.c.instrumentRequis }}</span> }</td>
               <td>@if (result(e); as r) { <span class="st" [class]="r.ok ? 'ok' : 'crit'"><i></i>{{ r.ok ? 'Conforme' : 'Non conforme' }}</span> }</td></tr>
           }</tbody></table></div>
         @if (!closed()) {

@@ -31,7 +31,7 @@ import { SpcChartComponent } from './spc-chart.component';
         <eq-spc-chart title="Carte des étendues" [points]="s.points" [limits]="s.r" kind="range" /></div>
       @if (s.alerts.length) {
         <ul class="box pad alerts sec" aria-label="Alertes">@for (a of s.alerts; track $index) {
-          <li><span class="st crit"><i></i>Sous-groupe {{ a.index }}</span> {{ a.message ?? a.type }}</li> }</ul>
+          <li><span class="st crit"><i></i>Sous-groupe {{ a.index + 1 }}</span> {{ a.message ?? a.type }}</li> }</ul>
       }
     }
   `,

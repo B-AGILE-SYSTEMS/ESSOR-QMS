@@ -4,6 +4,7 @@ import { MockApiM3 } from './mock-api-m3';
 /**
  * API simulée M3b (docs/pilotage/cartes/M3B-contrat.md) : données de base, lots, généalogie, rappel, plans de contrôle,
  * contrôles et carte de contrôle. Étend l'API M1→M3. Démo : lot fournisseur → OF → lot fini expédié à 2 clients.
+ * Les réponses reprennent la forme RÉELLE du serveur (voir docs/api-exemples/*.json, écrits par les tests du back).
  */
 type Lot = {
   id: string; numero: string; articleId: string; fournisseurId: string | null; lotFournisseur: string | null; quantite: number; unite: string;
@@ -20,28 +21,28 @@ const PDF = Buffer.from('%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2
   + '3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 300 120]>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n');
 
 export const ARTICLES = [
-  { id: 'a1', code: 'MP-TUBE-12', designation: 'Tube acier Ø 12', famille: 'Matière', unite: 'm', suivi: 'lot', dlc: false },
-  { id: 'a2', code: 'PF-AXE-12', designation: 'Axe usiné Ø 12,00', famille: 'Produit fini', unite: 'pcs', suivi: 'lot', dlc: false },
+  { id: 'a1', code: 'MP-TUBE-12', label: 'Tube acier Ø 12', family: 'Matière', unit: 'm', tracking: 'lot', dlc: false },
+  { id: 'a2', code: 'PF-AXE-12', label: 'Axe usiné Ø 12,00', family: 'Produit fini', unit: 'pcs', tracking: 'lot', dlc: false },
 ];
 export const PARTNERS = [
-  { id: 'p1', code: 'F-ACIERNORD', nom: 'Aciers du Nord', type: 'fournisseur' },
-  { id: 'p2', code: 'C-RENO', nom: 'Renault Tanger', type: 'client' },
-  { id: 'p3', code: 'C-STELL', nom: 'Stellantis Kénitra', type: 'client' },
+  { id: 'p1', code: 'F-ACIERNORD', name: 'Aciers du Nord', type: 'fournisseur' },
+  { id: 'p2', code: 'C-RENO', name: 'Renault Tanger', type: 'client' },
+  { id: 'p3', code: 'C-STELL', name: 'Stellantis Kénitra', type: 'client' },
 ];
 const DIAM = { code: 'DIAM', libelle: 'Diamètre extérieur', type: 'mesure', nominal: 12, tolMin: 11.97, tolMax: 12.03, unite: 'mm',
-  instrumentRequis: true, criticite: 'majeure' };
+  instrumentRequis: 'pied à coulisse', criticite: 'majeure' };
 const CERT = { code: 'CERT', libelle: 'Certificat matière 3.1', type: 'document', nominal: null, tolMin: null, tolMax: null, unite: null,
-  instrumentRequis: false, criticite: 'critique' };
+  instrumentRequis: null, criticite: 'critique' };
 
 export class MockApiM3b extends MockApiM3 {
   lots: Lot[] = [];
   lotLinks: Link[] = [];
   inspections: Insp[] = [];
   plans: Record<string, unknown>[] = [
-    { id: 'cp1', code: 'CP-REC-TUBE', libelle: 'Réception tube acier', version: 2, point: 'RECEPTION', target: { type: 'article', id: 'a1', famille: null },
-      characteristics: [DIAM, CERT], sampling: { mode: 'iso2859', nqa: 1.0, niveau: 'II' }, frequency: null },
-    { id: 'cp2', code: 'CP-ENC-AXE', libelle: 'En-cours usinage axe', version: 1, point: 'PRODUCTION_ENCOURS', target: { type: 'article', id: 'a2', famille: null },
-      characteristics: [{ ...DIAM, nominal: 12, tolMin: 11.97, tolMax: 12.03 }], sampling: { mode: 'fixe', taille: 5 }, frequency: { pieces: 50 } },
+    { id: 'cp1', code: 'CP-REC-TUBE', label: 'Réception tube acier', version: 2, point: 'RECEPTION', target: { type: 'article', id: 'a1', famille: null },
+      characteristics: [DIAM, CERT], sampling: { mode: 'iso2859', taille: null, nqa: '1.0', niveau: 'II' }, frequency: null, active: true },
+    { id: 'cp2', code: 'CP-ENC-AXE', label: 'En-cours usinage axe', version: 1, point: 'PRODUCTION_ENCOURS', target: { type: 'article', id: 'a2', famille: null },
+      characteristics: [{ ...DIAM, nominal: 12, tolMin: 11.97, tolMax: 12.03 }], sampling: { mode: 'fixe', taille: 5, nqa: null, niveau: null }, frequency: { pieces: 50, minutes: null }, active: true },
   ];
   webhookEvents: Record<string, unknown>[] = [];
   webhook = { url: 'http://wms.local/hooks/qualite', enabled: true, secretSet: true };
@@ -69,12 +70,27 @@ export class MockApiM3b extends MockApiM3 {
     return lot;
   }
 
+  /** Forme réelle d'un lot (LotService.Lot). */
   private view(l: Lot) {
     const a = ARTICLES.find((x) => x.id === l.articleId)!;
     const f = PARTNERS.find((x) => x.id === l.fournisseurId);
-    return { id: l.id, numero: l.numero, article: { id: a.id, code: a.code, designation: a.designation },
-      fournisseur: f ? { id: f.id, code: f.code, nom: f.nom } : null, lotFournisseur: l.lotFournisseur, quantite: l.quantite, unite: l.unite,
-      dlc: l.dlc, site: { id: 's1', code: 'KEN', name: 'Kénitra' }, qualityStatus: l.qualityStatus, historique: [...l.historique].reverse() };
+    return { id: l.id, article: { id: a.id, code: a.code, label: a.label, unit: a.unit, family: a.family }, numero: l.numero,
+      supplier: f ? { id: f.id, code: f.code, name: f.name } : null, supplierLot: l.lotFournisseur, quantity: l.quantite, unit: l.unite,
+      dlc: l.dlc, site: { id: 's1', code: 'KEN', name: 'Kénitra' }, qualityStatus: l.qualityStatus, createdAt: '2026-11-10T08:00:00Z',
+      updatedAt: this.now() };
+  }
+
+  /** Forme réelle de `GET /api/lots/{id}` : `{lot, history, inspections}`. */
+  private detail(l: Lot) {
+    return { lot: this.view(l), history: l.historique.map((h) => ({ at: h.at, from: h.from, to: h.status, reason: h.reason, author: h.byName,
+      ncId: null, inspectionId: null })), inspections: [] };
+  }
+
+  /** Forme réelle d'un lot impacté de rappel (Genealogy.ImpactedLot). */
+  private impacted(l: Lot, remaining: number) {
+    const v = this.view(l);
+    return { id: v.id, numero: v.numero, article: { id: v.article.id, code: v.article.code, label: v.article.label },
+      qualityStatus: v.qualityStatus, quantity: v.quantity, remaining, unit: v.unit, supplier: v.supplier, supplierLot: v.supplierLot };
   }
 
   setLotStatus(l: Lot, status: string, reason: string): void {
@@ -86,7 +102,7 @@ export class MockApiM3b extends MockApiM3 {
 
   private partner(id?: string) {
     const p = PARTNERS.find((x) => x.id === id)!;
-    return { id: p.id, code: p.code, nom: p.nom };
+    return { id: p.id, code: p.code, name: p.name };
   }
 
   private trace(id: string, dir: string, depth: number): unknown {
@@ -113,11 +129,17 @@ export class MockApiM3b extends MockApiM3 {
     const clients = [...new Set(ships.map((k) => k.partnerId!))].map((pid) => ({
       partner: this.partner(pid), quantite: ships.filter((k) => k.partnerId === pid).reduce((s, k) => s + k.quantity, 0),
       references: ships.filter((k) => k.partnerId === pid).map((k) => k.reference) }));
-    const expedie = ships.reduce((s, k) => s + k.quantity, 0);
-    const shippedFinished = impacted.reduce((s, l) => s + l.quantite, 0);
-    const remaining = (l: Lot) => l.quantite - this.lotLinks.filter((k) => k.fromId === l.id).reduce((s, k) => s + k.quantity, 0);
-    return { source: { ...this.view(src), remaining: remaining(src) }, lotsImpactes: impacted.map((l) => ({ ...this.view(l), remaining: remaining(l) })), clients,
-      quantites: { enStock: shippedFinished - expedie, enCours: 0, expedie } };
+    const remaining = (l: Lot) => Math.max(0, l.quantite - this.lotLinks.filter((k) => k.fromId === l.id).reduce((s, k) => s + k.quantity, 0));
+    const byUnit = (rows: { unit: string; qty: number }[]) => {
+      const m = new Map<string, number>();
+      rows.forEach((r) => m.set(r.unit, (m.get(r.unit) ?? 0) + r.qty));
+      return [...m.entries()].filter(([, q]) => q > 0).sort(([a], [b]) => a.localeCompare(b)).map(([unit, qty]) => ({ unit, qty }));
+    };
+    const unitOf = (id: string) => this.lots.find((l) => l.id === id)!.unite;
+    const stock = all.filter((l) => ['LIBERE', 'QUARANTAINE', 'DEROGATION'].includes(l.qualityStatus)).map((l) => ({ unit: l.unite, qty: remaining(l) }));
+    const wip = all.filter((l) => l.qualityStatus === 'EN_ATTENTE').map((l) => ({ unit: l.unite, qty: remaining(l) }));
+    return { source: this.view(src), lotsImpactes: all.map((l) => this.impacted(l, remaining(l))), clients,
+      quantites: { enStock: byUnit(stock), enCours: byUnit(wip), expedie: byUnit(ships.map((k) => ({ unit: unitOf(k.fromId), qty: k.quantity }))) } };
   }
 
   private spc() {
@@ -160,7 +182,11 @@ export class MockApiM3b extends MockApiM3 {
     if (p === '/api/lots' && m === 'POST') {
       const b = body();
       if (this.lots.some((l) => l.numero === b.numero)) return json({ error: 'conflit', message: 'Ce numéro de lot existe déjà.' }, 409);
-      return json(this.view(this.addLot({ ...b, qualityStatus: 'EN_ATTENTE' })), 201);
+      if (!b.siteId) return json({ error: 'bad_request', message: 'Site obligatoire' }, 400);
+      const a = ARTICLES.find((x) => x.id === b.articleId)!;
+      return json(this.view(this.addLot({ numero: b.numero, articleId: b.articleId, fournisseurId: b.supplierId ?? null,
+        lotFournisseur: b.supplierLot ?? null, quantite: Number(b.quantity), unite: b.unit || a.unit, dlc: b.dlc ?? null, siteId: b.siteId,
+        qualityStatus: 'EN_ATTENTE' })), 201);
     }
     if (p === '/api/lots') {
       const q = (url.searchParams.get('q') ?? '').toLowerCase();
@@ -172,7 +198,7 @@ export class MockApiM3b extends MockApiM3 {
       const lot = this.lots.find((l) => l.id === mm![1]);
       if (!lot) return json({ error: 'introuvable', message: 'Lot introuvable.' }, 404);
       const sub = mm[2] ?? '';
-      if (sub === '') return json(this.view(lot));
+      if (sub === '') return json(this.detail(lot));
       if (sub === '/status' && m === 'POST') {
         const b = body();
         if (['QUARANTAINE', 'DEROGATION', 'REFUSE', 'DETRUIT'].includes(b.status) && !b.reason) return json({ error: 'motif_requis', message: 'La dérogation exige un motif.' }, 400);
@@ -186,7 +212,7 @@ export class MockApiM3b extends MockApiM3 {
         const reason = body().reason;
         this.blockCalls.push({ id: lot.id, reason });
         const r = this.recall(lot.id);
-        const ids = [r.source, ...r.lotsImpactes].filter((l) => l.remaining > 0 && !['QUARANTAINE', 'REFUSE', 'DETRUIT'].includes(l.qualityStatus)).map((l) => l.id);
+        const ids = r.lotsImpactes.filter((l) => l.remaining > 0 && !['QUARANTAINE', 'REFUSE', 'DETRUIT'].includes(l.qualityStatus)).map((l) => l.id);
         const blocked = ids.map((id) => this.lots.find((l) => l.id === id)!);
         blocked.forEach((l) => this.setLotStatus(l, 'QUARANTAINE', reason));
         return json({ blocked: blocked.map((l) => this.view(l)) });
@@ -245,6 +271,9 @@ export class MockApiM3b extends MockApiM3 {
   }
 
   private inspView(i: Insp) {
-    return { ...i, lot: { id: i.lotId, numero: this.lots.find((l) => l.id === i.lotId)?.numero } };
+    const { lotId, controlPlanId, planVersion, authorName, ...rest } = i;
+    void planVersion;
+    return { ...rest, lot: this.view(this.lots.find((l) => l.id === lotId)!), controlPlan: this.plans.find((x) => x['id'] === controlPlanId),
+      sampleSize: i.sampling.sampleSize, createdBy: authorName };
   }
 }

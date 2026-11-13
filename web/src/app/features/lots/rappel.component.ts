@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { errorMessage } from '../../core/api-error';
-import { Lot, Recall, lotsToBlock, qualityTone, refLabel, statusLabel } from '../../core/m3b.models';
+import { Lot, Recall, formatUnitQty, lotsToBlock, qualityTone, refLabel, statusLabel } from '../../core/m3b.models';
 import { LotsService, recallPdfUrl } from '../../core/m3b.service';
 
 /**
@@ -20,9 +20,9 @@ import { LotsService, recallPdfUrl } from '../../core/m3b.service';
         <div class="kpis">
           <div><span>Lots impactés</span><b class="mono">{{ r.lotsImpactes.length }}</b></div>
           <div><span>Clients touchés</span><b class="mono">{{ r.clients.length }}</b></div>
-          <div><span>En stock</span><b class="mono">{{ r.quantites.enStock }}</b></div>
-          <div><span>En cours</span><b class="mono">{{ r.quantites.enCours }}</b></div>
-          <div><span>Expédié</span><b class="mono">{{ r.quantites.expedie }}</b></div>
+          <div><span>En stock</span><b class="mono">{{ qty(r.quantites.enStock) }}</b></div>
+          <div><span>En cours</span><b class="mono">{{ qty(r.quantites.enCours) }}</b></div>
+          <div><span>Expédié</span><b class="mono">{{ qty(r.quantites.expedie) }}</b></div>
         </div>
         <div class="cols">
           <div><h4>Lots impactés</h4><table><thead><tr><th>Lot</th><th>Article</th><th class="r">Qté</th><th class="r">Restant</th><th>Statut</th></tr></thead><tbody>
@@ -72,6 +72,7 @@ export class RappelComponent {
   readonly blocked = output<void>();
   private readonly api = inject(LotsService);
   protected readonly ref = refLabel;
+  protected readonly qty = formatUnitQty;
   protected readonly label = statusLabel;
   protected readonly tone = qualityTone;
   protected readonly recall = signal<Recall | null>(null);

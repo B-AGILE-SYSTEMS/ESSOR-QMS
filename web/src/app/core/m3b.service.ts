@@ -5,7 +5,7 @@ import { Page } from './api.models';
 import { itemsOf } from './m3.models';
 import {
   Article, ControlPlan, Decision, ImportReport, Inspection, InspectionResult, LinkKind, Lot, NewLot, Partner, Recall, Spc, TraceNode,
-  WebhookConfig, WebhookDelivery, toInspection, toLot, toRecall, toSpc, toTrace,
+  WebhookConfig, WebhookDelivery, toArticle, toInspection, toLot, toLotBody, toPartner, toPlan, toPlanBody, toRecall, toSpc, toTrace,
 } from './m3b.models';
 import { newIdempotencyKey } from './records.service';
 
@@ -29,7 +29,7 @@ export class LotsService {
   }
 
   async create(body: NewLot): Promise<Lot> {
-    return toLot(await firstValueFrom(this.http.post<Raw>('/api/lots', body)));
+    return toLot(await firstValueFrom(this.http.post<Raw>('/api/lots', toLotBody(body))));
   }
 
   async setStatus(id: string, status: string, reason: string): Promise<Lot> {
@@ -66,13 +66,14 @@ export class ControlPlansService {
   private readonly http = inject(HttpClient);
 
   async list(): Promise<ControlPlan[]> {
-    return itemsOf(await firstValueFrom(this.http.get<List<ControlPlan>>('/api/control-plans')));
+    return itemsOf(await firstValueFrom(this.http.get<List<Raw>>('/api/control-plans'))).map(toPlan);
   }
 
-  save(p: ControlPlan): Promise<ControlPlan> {
-    return p.id
-      ? firstValueFrom(this.http.put<ControlPlan>(`/api/control-plans/${enc(p.id)}`, p))
-      : firstValueFrom(this.http.post<ControlPlan>('/api/control-plans', p));
+  async save(p: ControlPlan): Promise<ControlPlan> {
+    const body = toPlanBody(p);
+    return toPlan(await (p.id
+      ? firstValueFrom(this.http.put<Raw>(`/api/control-plans/${enc(p.id)}`, body))
+      : firstValueFrom(this.http.post<Raw>('/api/control-plans', body))));
   }
 }
 
@@ -114,11 +115,11 @@ export class MasterDataService {
   private readonly http = inject(HttpClient);
 
   async articles(): Promise<Article[]> {
-    return itemsOf(await firstValueFrom(this.http.get<List<Article>>('/api/master-data/articles')));
+    return itemsOf(await firstValueFrom(this.http.get<List<Raw>>('/api/master-data/articles'))).map(toArticle);
   }
 
   async partners(): Promise<Partner[]> {
-    return itemsOf(await firstValueFrom(this.http.get<List<Partner>>('/api/master-data/partners')));
+    return itemsOf(await firstValueFrom(this.http.get<List<Raw>>('/api/master-data/partners'))).map(toPartner);
   }
 
   import(kind: 'articles' | 'partners', file: File, dryRun: boolean): Promise<ImportReport> {

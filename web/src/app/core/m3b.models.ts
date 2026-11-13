@@ -4,7 +4,7 @@
  */
 
 export type QualityStatus = 'EN_ATTENTE' | 'LIBERE' | 'QUARANTAINE' | 'DEROGATION' | 'REFUSE' | 'DETRUIT';
-export type Decision = 'LIBERE' | 'QUARANTAINE' | 'DEROGATION' | 'REFUSE';
+export type Decision = 'LIBERE' | 'QUARANTAINE' | 'DEROGATION' | 'REFUSE' | 'DETRUIT';
 export type FlowPoint =
   | 'RECEPTION' | 'STOCKAGE' | 'PREPARATION' | 'PRODUCTION_ENTREE' | 'PRODUCTION_ENCOURS' | 'PRODUCTION_SORTIE' | 'EXPEDITION';
 export type LinkKind = 'consumed_by' | 'shipped_to' | 'split_into';
@@ -19,7 +19,7 @@ export const FLOW_POINTS: { code: FlowPoint; label: string }[] = [
 ];
 export const LINK_LABELS: Record<LinkKind, string> = { consumed_by: 'Consommé par', shipped_to: 'Expédié à', split_into: 'Divisé en' };
 export const DECISION_LABELS: Record<Decision, string> = {
-  LIBERE: 'Libérer', QUARANTAINE: 'Mettre en quarantaine', DEROGATION: 'Accepter par dérogation', REFUSE: 'Refuser',
+  LIBERE: 'Libérer', QUARANTAINE: 'Mettre en quarantaine', DEROGATION: 'Accepter par dérogation', REFUSE: 'Refuser', DETRUIT: 'Détruire',
 };
 /** Statuts qui n'ont plus besoin d'être bloqués lors d'un rappel. */
 export const BLOCKED_STATUSES: QualityStatus[] = ['QUARANTAINE', 'REFUSE', 'DETRUIT'];
@@ -37,7 +37,7 @@ export function qualityTone(s: string | null | undefined): 'ok' | 'warn' | 'crit
   return 'info';
 }
 
-export interface Ref { id: string; code?: string; designation?: string; nom?: string; name?: string }
+export interface Ref { id: string; code?: string; designation?: string; label?: string; nom?: string; name?: string }
 export interface Article { id: string; code: string; designation: string; famille?: string; unite?: string; suivi?: string; dlc?: boolean }
 export interface Partner { id: string; code: string; nom: string; type: 'fournisseur' | 'client' | string }
 
@@ -54,18 +54,40 @@ export interface NewLot {
   dlc: string | null; siteId: string | null;
 }
 
+/** Corps de `POST /api/lots` (noms du serveur ; le site est obligatoire). */
+export function toLotBody(l: NewLot): Record<string, unknown> {
+  return { articleId: l.articleId, numero: l.numero, supplierId: l.fournisseurId, supplierLot: l.lotFournisseur, quantity: l.quantite,
+    unit: l.unite, dlc: l.dlc, siteId: l.siteId };
+}
+
 /** Libellé lisible d'une référence (article, partenaire, site) quelle que soit sa forme. */
 export function refLabel(r: Ref | string | null | undefined): string {
   if (!r) return '—';
   if (typeof r === 'string') return r;
-  const name = r.designation ?? r.nom ?? r.name ?? '';
+  const name = r.designation ?? r.label ?? r.nom ?? r.name ?? '';
   return [r.code, name].filter(Boolean).join(' — ') || r.id;
 }
 
 type Raw = Record<string, unknown>;
 const str = (v: unknown): string | null => (v === undefined || v === null || v === '' ? null : String(v));
 
-export function toLot(raw: Raw): Lot {
+/** Article du serveur ({code, label, family, unit, tracking, dlc}) → modèle web. */
+export function toArticle(raw: Raw): Article {
+  return {
+    id: String(raw['id']), code: String(raw['code'] ?? ''), designation: String(raw['designation'] ?? raw['label'] ?? ''),
+    famille: str(raw['famille'] ?? raw['family']) ?? undefined, unite: str(raw['unite'] ?? raw['unit']) ?? undefined,
+    suivi: str(raw['suivi'] ?? raw['tracking']) ?? undefined, dlc: Boolean(raw['dlc']),
+  };
+}
+
+/** Partenaire du serveur ({code, name, type}) → modèle web. */
+export function toPartner(raw: Raw): Partner {
+  return { id: String(raw['id']), code: String(raw['code'] ?? ''), nom: String(raw['nom'] ?? raw['name'] ?? ''), type: String(raw['type'] ?? '') };
+}
+
+/** Lot seul, ou fiche `GET /api/lots/{id}` = `{lot, history, inspections}` (historique : `{at, from, to, reason, author}`). */
+export function toLot(input: Raw): Lot {
+  const raw: Raw = input['lot'] && typeof input['lot'] === 'object' ? { ...(input['lot'] as Raw), history: input['history'] } : input;
   const hist = (raw['historique'] ?? raw['history'] ?? []) as Raw[];
   return {
     id: String(raw['id']),
@@ -82,7 +104,7 @@ export function toLot(raw: Raw): Lot {
     remaining: (raw['remaining'] ?? null) as number | null,
     historique: hist.map((h) => ({
       from: str(h['from']), status: String(h['status'] ?? h['to'] ?? ''), reason: str(h['reason'] ?? h['motif']),
-      by: str(h['byName'] ?? h['by'] ?? h['auteur']), at: String(h['at'] ?? h['date'] ?? ''),
+      by: str(h['byName'] ?? h['by'] ?? h['auteur'] ?? h['author']), at: String(h['at'] ?? h['date'] ?? ''),
     })),
   };
 }
@@ -119,8 +141,19 @@ export function flattenTrace(root: TraceNode): TraceRow[] {
 }
 
 export interface RecallClient { partner: Ref; quantite: number; references: string[] }
+export interface UnitQty { unit: string; qty: number }
+/** Quantités regroupées par unité : jamais de somme entre unités différentes. */
+export interface RecallQuantities { enStock: UnitQty[]; enCours: UnitQty[]; expedie: UnitQty[] }
 export interface Recall {
-  source: Lot | null; lotsImpactes: Lot[]; clients: RecallClient[]; quantites: { enStock: number; enCours: number; expedie: number };
+  source: Lot | null; lotsImpactes: Lot[]; clients: RecallClient[]; quantites: RecallQuantities;
+}
+
+const toUnitQty = (v: unknown): UnitQty[] =>
+  Array.isArray(v) ? (v as Raw[]).map((q) => ({ unit: String(q['unit'] ?? ''), qty: Number(q['qty'] ?? 0) })) : [];
+
+/** « 10 kg ; 40 pcs », ou « 0 ». */
+export function formatUnitQty(q: UnitQty[]): string {
+  return q.length ? q.map((x) => `${String(x.qty).replace('.', ',')} ${x.unit}`.trim()).join(' ; ') : '0';
 }
 
 export function toRecall(raw: Raw): Recall {
@@ -131,7 +164,7 @@ export function toRecall(raw: Raw): Recall {
     clients: ((raw['clients'] ?? []) as Raw[]).map((c) => ({
       partner: (c['partner'] ?? {}) as Ref, quantite: Number(c['quantite'] ?? 0), references: (c['references'] ?? []) as string[],
     })),
-    quantites: { enStock: Number(q['enStock'] ?? 0), enCours: Number(q['enCours'] ?? 0), expedie: Number(q['expedie'] ?? 0) },
+    quantites: { enStock: toUnitQty(q['enStock']), enCours: toUnitQty(q['enCours']), expedie: toUnitQty(q['expedie']) },
   };
 }
 
@@ -154,7 +187,8 @@ export type CharType = 'mesure' | 'attribut' | 'document';
 export type Criticity = 'critique' | 'majeure' | 'mineure';
 export interface Characteristic {
   code: string; libelle: string; type: CharType; nominal: number | null; tolMin: number | null; tolMax: number | null;
-  unite: string | null; instrumentRequis: boolean; criticite: Criticity;
+  /** Nom de l'instrument requis (texte libre), ou null. */
+  unite: string | null; instrumentRequis: string | null; criticite: Criticity;
 }
 export interface Sampling { mode: 'fixe' | 'iso2859'; taille?: number | null; nqa?: number | null; niveau?: string | null }
 export interface Frequency { pieces?: number | null; minutes?: number | null }
@@ -166,11 +200,39 @@ export interface ControlPlan {
 export const NQA_VALUES = [0.65, 1.0, 1.5, 2.5, 4.0, 6.5];
 
 export function emptyCharacteristic(): Characteristic {
-  return { code: '', libelle: '', type: 'mesure', nominal: null, tolMin: null, tolMax: null, unite: null, instrumentRequis: false, criticite: 'majeure' };
+  return { code: '', libelle: '', type: 'mesure', nominal: null, tolMin: null, tolMax: null, unite: null, instrumentRequis: null, criticite: 'majeure' };
 }
 export function emptyPlan(): ControlPlan {
   return { code: '', libelle: '', point: 'RECEPTION', target: { type: 'article', id: null, famille: null }, characteristics: [emptyCharacteristic()],
     sampling: { mode: 'iso2859', nqa: 1.0, niveau: 'II' }, frequency: null };
+}
+
+/** Plan du serveur (`label`, `nqa` en texte) → modèle web (`libelle`, `nqa` nombre). */
+export function toPlan(raw: Raw): ControlPlan {
+  const sampling = (raw['sampling'] ?? {}) as Raw;
+  const chars = (raw['characteristics'] ?? []) as Raw[];
+  const num = (v: unknown): number | null => (v === null || v === undefined || v === '' ? null : Number(v));
+  return {
+    id: str(raw['id']) ?? undefined, code: String(raw['code'] ?? ''), libelle: String(raw['libelle'] ?? raw['label'] ?? ''),
+    version: (raw['version'] ?? undefined) as number | undefined, point: String(raw['point'] ?? 'RECEPTION') as FlowPoint,
+    target: (raw['target'] ?? { type: 'article', id: null, famille: null }) as PlanTarget,
+    characteristics: chars.map((c) => ({
+      code: String(c['code'] ?? ''), libelle: String(c['libelle'] ?? ''), type: String(c['type'] ?? 'mesure') as CharType,
+      nominal: num(c['nominal']), tolMin: num(c['tolMin']), tolMax: num(c['tolMax']), unite: str(c['unite']),
+      instrumentRequis: typeof c['instrumentRequis'] === 'string' ? str(c['instrumentRequis']) : null,
+      criticite: String(c['criticite'] ?? 'majeure') as Criticity,
+    })),
+    sampling: { mode: (sampling['mode'] ?? 'fixe') as Sampling['mode'], taille: num(sampling['taille']), nqa: num(sampling['nqa']),
+      niveau: str(sampling['niveau']) },
+    frequency: (raw['frequency'] ?? null) as Frequency | null,
+  };
+}
+
+/** Corps attendu par `POST/PUT /api/control-plans` (`label`). */
+export function toPlanBody(p: ControlPlan): Raw {
+  const { libelle, ...rest } = p;
+  return { ...rest, label: libelle,
+    characteristics: p.characteristics.map((c) => ({ ...c, instrumentRequis: c.instrumentRequis?.trim() || null })) };
 }
 
 /** Erreurs de saisie d'un plan avant envoi (le serveur reste juge). */
@@ -201,6 +263,7 @@ export function samplingLabel(s: Sampling | null | undefined): string {
 
 export interface InspectionResult { characteristic: string; values: (number | string)[]; ok: boolean; instrument?: string | null }
 export interface Inspection {
+  plan?: ControlPlan | null;
   id: string; lotId: string; lotNumero?: string | null; controlPlanId: string; planVersion?: number | null; point: FlowPoint | string;
   status: string; sampleSize: number; codeLetter?: string | null; ac?: number | null; re?: number | null; lotSize?: number | null;
   results: InspectionResult[]; decision?: string | null; proposedDecision?: Decision | null; createdAt?: string | null; author?: string | null;
@@ -213,8 +276,9 @@ export function toInspection(raw: Raw): Inspection {
     id: String(raw['id']),
     lotId: String(raw['lotId'] ?? lot?.['id'] ?? ''),
     lotNumero: str(raw['lotNumero'] ?? lot?.['numero']),
-    controlPlanId: String(raw['controlPlanId'] ?? ''),
-    planVersion: (raw['planVersion'] ?? null) as number | null,
+    controlPlanId: String(raw['controlPlanId'] ?? (raw['controlPlan'] as Raw | undefined)?.['id'] ?? ''),
+    plan: raw['controlPlan'] ? toPlan(raw['controlPlan'] as Raw) : null,
+    planVersion: (raw['planVersion'] ?? (raw['controlPlan'] as Raw | undefined)?.['version'] ?? null) as number | null,
     point: String(raw['point'] ?? ''),
     status: String(raw['status'] ?? 'A_FAIRE'),
     sampleSize: Number(s['sampleSize'] ?? raw['sampleSize'] ?? 1),

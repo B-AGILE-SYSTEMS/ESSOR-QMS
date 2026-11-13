@@ -1,10 +1,10 @@
 import {
-  Characteristic, chartGeometry, emptyPlan, flaggedPoints, flattenTrace, fmt, lotsToBlock, measureDefects, measureOk, parseValues,
+  Characteristic, chartGeometry, formatUnitQty, toLotBody, emptyPlan, flaggedPoints, flattenTrace, fmt, lotsToBlock, measureDefects, measureOk, parseValues,
   proposeDecision, qualityTone, refLabel, samplingLabel, statusLabel, toInspection, toLot, toRecall, toSpc, toTrace, validatePlan,
 } from './m3b.models';
 
 const DIAM: Characteristic = { code: 'D', libelle: 'Diamètre', type: 'mesure', nominal: 12, tolMin: 11.97, tolMax: 12.03, unite: 'mm',
-  instrumentRequis: true, criticite: 'majeure' };
+  instrumentRequis: 'pied à coulisse', criticite: 'majeure' };
 
 describe('Modèles M3b', () => {
   it('normalise un lot et ses variantes de champs', () => {
@@ -31,9 +31,11 @@ describe('Modèles M3b', () => {
   it('calcule les lots à bloquer lors d’un rappel', () => {
     const src = toLot({ id: 's', numero: 'S', qualityStatus: 'LIBERE' });
     const r = toRecall({ lotsImpactes: [{ id: 'a', qualityStatus: 'LIBERE' }, { id: 'b', qualityStatus: 'QUARANTAINE' }, { id: 's', qualityStatus: 'LIBERE' }],
-      clients: [{ partner: { id: 'c' }, quantite: 3, references: ['BL'] }], quantites: { enStock: 5 } });
+      clients: [{ partner: { id: 'c' }, quantite: 3, references: ['BL'] }], quantites: { enStock: [{ unit: 'kg', qty: 5 }, { unit: 'pcs', qty: 2 }] } });
     expect(lotsToBlock(src, r).map((l) => l.id)).toEqual(['s', 'a']);
-    expect(r.quantites).toEqual({ enStock: 5, enCours: 0, expedie: 0 });
+    expect(r.quantites).toEqual({ enStock: [{ unit: 'kg', qty: 5 }, { unit: 'pcs', qty: 2 }], enCours: [], expedie: [] });
+    expect(formatUnitQty(r.quantites.enStock)).toBe('5 kg ; 2 pcs');
+    expect(formatUnitQty([])).toBe('0');
   });
 
   it('juge les mesures et propose une décision', () => {
@@ -78,5 +80,12 @@ describe('Modèles M3b', () => {
     expect(chartGeometry([3, 3], []).max).toBeGreaterThan(3);
     expect(fmt(null)).toBe('—');
     expect(fmt(1.5)).toBe('1,5');
+  });
+});
+
+describe('Corps de réception d’un lot', () => {
+  it('envoie les noms du serveur et le site', () => {
+    expect(toLotBody({ articleId: 'a', numero: 'L', fournisseurId: 'f', lotFournisseur: 'FL', quantite: 3, unite: 'kg', dlc: null, siteId: 's' }))
+      .toEqual({ articleId: 'a', numero: 'L', supplierId: 'f', supplierLot: 'FL', quantity: 3, unit: 'kg', dlc: null, siteId: 's' });
   });
 });
