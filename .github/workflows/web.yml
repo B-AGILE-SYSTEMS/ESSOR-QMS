@@ -52,7 +52,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      # Non bloquant : 3 alertes hautes (core, common, compiler <= 19.2.25) sans correctif publié en 19.x (19.2.26 n'existe pas). Arbitrage Driss requis.
+      # Bloquant : aucune vulnérabilité haute ou critique en production.
       - name: npm audit (dépendances de production)
-        continue-on-error: true
         run: npm audit --omit=dev --audit-level=high

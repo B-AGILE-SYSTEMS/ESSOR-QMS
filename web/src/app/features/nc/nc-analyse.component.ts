@@ -64,7 +64,7 @@ export class NcAnalyseComponent {
 
   constructor() {
     // Angular 18 : pas de linkedSignal ; le brouillon se réinitialise quand la fiche est rechargée.
-    effect(() => this.draft.set(readAnalyse(this.data())), { allowSignalWrites: true });
+    effect(() => this.draft.set(readAnalyse(this.data())));
   }
 
   protected setWhy(i: number, v: string): void {
