@@ -96,7 +96,7 @@ export interface NewRecord {
   siteId: string;
   title: string;
   description: string;
-  severity: Severity;
+  severity?: Severity;
   data: RecordData;
 }
 
@@ -177,8 +177,10 @@ export interface ApiError {
   details?: Record<string, unknown>;
 }
 
-/** Chemin de la fiche selon son type (INCIDENT → /incidents, sinon non-conformités). */
+const RECORD_BASES: Record<string, string> = { INCIDENT: '/incidents', AUDIT: '/audits', DOCUMENT: '/documents' };
+
+/** Chemin de la fiche selon son type (INCIDENT → /incidents, AUDIT → /audits, DOCUMENT → /documents, sinon NC). */
 export function recordPath(type: string | null | undefined, id: string): string {
-  const base = type === 'INCIDENT' ? '/incidents' : '/non-conformites';
+  const base = RECORD_BASES[type ?? ''] ?? '/non-conformites';
   return `${base}/${encodeURIComponent(id)}`;
 }

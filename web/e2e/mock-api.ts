@@ -4,7 +4,7 @@ import { Page, Route } from '@playwright/test';
  * API simulée, conforme aux contrats M1 et M2 (docs/pilotage/cartes/M1-contrat.md, M2-contrat.md), en mémoire.
  * Elle reproduit les règles du workflow NC (champs requis, actions toutes FAITE) pour tester le parcours.
  */
-type Rec = {
+export type Rec = {
   id: string; reference: string; type: string; status: string; title: string; description: string | null;
   severity: string | null; siteId: string; siteName: string; ownerId: string | null; ownerName: string | null;
   dueDate: string | null; data: Record<string, unknown>; createdAt: string; createdBy: string; createdByName: string; parentId?: string;
@@ -12,8 +12,8 @@ type Rec = {
 };
 export type Att = { id: string; recordId: string; fileName: string; contentType: string; size: number; createdAt: string; createdByName: string; body: Buffer };
 
-const SITES = [{ id: 's1', code: 'KEN', name: 'Kénitra' }, { id: 's2', code: 'CAS', name: 'Casablanca' }];
-const USERS = [{ id: 'u1', displayName: 'Karim Tazi' }, { id: 'u2', displayName: 'Salma Bennani' }];
+export const SITES = [{ id: 's1', code: 'KEN', name: 'Kénitra' }, { id: 's2', code: 'CAS', name: 'Casablanca' }];
+export const USERS = [{ id: 'u1', displayName: 'Karim Tazi' }, { id: 'u2', displayName: 'Salma Bennani' }];
 
 export const NC_WORKFLOW = {
   initial: 'DECLAREE',
@@ -53,8 +53,8 @@ export const INCIDENT_WORKFLOW = {
     { code: 'clore', label: 'Clore', from: 'ACTIONS', to: 'CLOS', roles: ['QUALITE'], requires: ['actions'] },
   ],
 };
-const WORKFLOWS: Record<string, typeof NC_WORKFLOW> = { NC: NC_WORKFLOW, INCIDENT: INCIDENT_WORKFLOW };
-const PREFIX: Record<string, string> = { NC: 'NC', INCIDENT: 'INC', ACTION: 'ACT' };
+export const WORKFLOWS: Record<string, typeof NC_WORKFLOW> = { NC: NC_WORKFLOW, INCIDENT: INCIDENT_WORKFLOW };
+export const PREFIX: Record<string, string> = { NC: 'NC', INCIDENT: 'INC', ACTION: 'ACT' };
 /** Formats admis (contrat M2) et signatures du contenu réel. */
 const MAGIC: Record<string, number[]> = { 'image/jpeg': [0xff, 0xd8, 0xff], 'image/png': [0x89, 0x50, 0x4e, 0x47], 'application/pdf': [0x25, 0x50, 0x44, 0x46] };
 const MAX_SIZE = 10 * 1024 * 1024;
@@ -63,7 +63,7 @@ const ACTION_TR = [
   { code: 'demarrer', label: 'Démarrer', from: 'A_FAIRE', to: 'EN_COURS' },
   { code: 'terminer', label: 'Marquer faite', from: 'EN_COURS', to: 'FAITE' },
 ];
-const LABELS: Record<string, string> = {
+export const LABELS: Record<string, string> = {
   DECLAREE: 'Déclarée', QUALIFIEE: 'Qualifiée', ANALYSE: 'Analyse', ACTIONS: 'Actions', VERIFICATION: 'Vérification',
   CLOTUREE: 'Clôturée', REJETEE: 'Rejetée', DECLARE: 'Déclaré', EN_ANALYSE: 'En analyse', CLOS: 'Clos', CLASSE_SANS_SUITE: 'Classé sans suite', A_FAIRE: 'À faire', EN_COURS: 'En cours', FAITE: 'Faite',
 };
@@ -94,11 +94,11 @@ export class MockApi {
     }, undefined, 'u1');
   }
 
-  private now(): string {
+  protected now(): string {
     return new Date(Date.UTC(2026, 10, 12, 8, this.seq++)).toISOString();
   }
 
-  private create(b: Record<string, unknown>, status?: string, ownerId: string | null = null, parentId?: string): Rec {
+  protected create(b: Record<string, unknown>, status?: string, ownerId: string | null = null, parentId?: string): Rec {
     const type = String(b['type']);
     const n = this.records.filter((r) => r.type === type).length + 1;
     const owner = USERS.find((u) => u.id === ownerId);
@@ -115,7 +115,7 @@ export class MockApi {
     return rec;
   }
 
-  private notify(title: string, recordId: string): void {
+  protected notify(title: string, recordId: string): void {
     const n = { id: `n${this.notifications.length + 1}`, type: 'TRANSITION_DONE', title, recordId, read: false, createdAt: this.now() };
     this.notifications.push(n);
     this.stream.push(JSON.stringify(n));
@@ -125,7 +125,7 @@ export class MockApi {
     return this.records.filter((c) => c.parentId === r.id);
   }
 
-  private missing(r: Rec, requires: string[]): string[] {
+  protected missing(r: Rec, requires: string[]): string[] {
     return requires.filter((f) => {
       if (f === 'actions') return !this.children(r).length || this.children(r).some((c) => c.status !== 'FAITE');
       if (f.startsWith('data.')) return !r.data[f.slice(5)];
@@ -133,7 +133,7 @@ export class MockApi {
     });
   }
 
-  private transitionsOf(r: Rec) {
+  protected transitionsOf(r: Rec) {
     const list = WORKFLOWS[r.type] ? WORKFLOWS[r.type].transitions : ACTION_TR.map((t) => ({ ...t, roles: [], requires: [] as string[] }));
     return list.filter((t) => t.from === r.status);
   }
@@ -156,7 +156,7 @@ export class MockApi {
     await page.route('**/api/**', (route) => this.handle(route));
   }
 
-  private async handle(route: Route): Promise<void> {
+  protected async handle(route: Route): Promise<void> {
     const req = route.request();
     const url = new URL(req.url());
     const p = url.pathname;

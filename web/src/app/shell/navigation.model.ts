@@ -37,6 +37,7 @@ export const NAV_FAMILIES: NavFamily[] = [
   {
     label: 'Administration',
     items: [
+      { label: 'Référentiels', path: '/parametrage/referentiels', role: 'ADMIN' },
       { label: 'Workflows', path: '/parametrage/workflows', role: 'ADMIN' },
       { label: 'Règles de notification', path: '/parametrage/notifications', role: 'ADMIN' },
       { label: 'Apparence', path: '/parametrage/apparence', role: 'ADMIN' },

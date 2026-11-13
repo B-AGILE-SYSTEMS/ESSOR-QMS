@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { roleGuard } from './core/role.guard';
-import { INCIDENT_VIEW, NC_VIEW } from './features/fiches/record-type-view';
+import { AUDIT_VIEW, DOCUMENT_VIEW, INCIDENT_VIEW, NC_VIEW } from './features/fiches/record-type-view';
 import { AVenirComponent } from './features/a-venir/a-venir.component';
 import { ShellComponent } from './shell/shell.component';
 
@@ -46,11 +46,35 @@ export const routes: Routes = [
         loadComponent: () => import('./features/nc/nc-liste.component').then((m) => m.NcListeComponent),
         data: { crumbs: ['Terrain', 'Incidents & sécurité'], view: INCIDENT_VIEW },
       },
-      aVenir('audits', 'Terrain', 'Audits & inspections'),
+      {
+        path: 'audits/:id',
+        loadComponent: () => import('./features/nc/nc-fiche.component').then((m) => m.NcFicheComponent),
+        data: { crumbs: ['Terrain', 'Audits & inspections', 'Fiche'], view: AUDIT_VIEW },
+      },
+      {
+        path: 'audits',
+        loadComponent: () => import('./features/audits/audits-programme.component').then((m) => m.AuditsProgrammeComponent),
+        data: { crumbs: ['Terrain', 'Audits & inspections'] },
+      },
       aVenir('indicateurs', 'Pilotage', 'Indicateurs'),
       aVenir('risques', 'Pilotage', 'Risques & conformité'),
       aVenir('equipements', 'Ressources', 'Équipements'),
-      aVenir('documents', 'Ressources', 'Documents'),
+      {
+        path: 'documents/:id',
+        loadComponent: () => import('./features/nc/nc-fiche.component').then((m) => m.NcFicheComponent),
+        data: { crumbs: ['Ressources', 'Documents', 'Fiche'], view: DOCUMENT_VIEW },
+      },
+      {
+        path: 'documents',
+        loadComponent: () => import('./features/documents/documents-liste.component').then((m) => m.DocumentsListeComponent),
+        data: { crumbs: ['Ressources', 'Documents'] },
+      },
+      {
+        path: 'parametrage/referentiels',
+        canMatch: [roleGuard('ADMIN')],
+        loadComponent: () => import('./features/referentiels/referentiels.component').then((m) => m.ReferentielsComponent),
+        data: { crumbs: ['Administration', 'Paramétrage', 'Référentiels'] },
+      },
       {
         path: 'parametrage/workflows',
         canMatch: [roleGuard('ADMIN')],
