@@ -32,8 +32,10 @@ class RecordTypeController {
     private final RecordTypes types;
     private final RecordService records;
     private final JdbcClient jdbc;
+    private final List<DashboardKpis> kpis;
 
-    RecordTypeController(RecordTypes types, RecordService records, JdbcClient jdbc) {
+    RecordTypeController(RecordTypes types, RecordService records, JdbcClient jdbc, List<DashboardKpis> kpis) {
+        this.kpis = kpis;
         this.types = types;
         this.records = records;
         this.jdbc = jdbc;
@@ -86,6 +88,12 @@ class RecordTypeController {
                 from record
                 where type_code = 'NC' and created_at >= date_trunc('month', now())
                 """).query(BigDecimal.class).single();
-        return new DashboardSummary(ncOpen, toQualify, overdue, cost);
+        Map<String, Object> extra = new java.util.HashMap<>();
+        kpis.forEach(k -> extra.putAll(k.kpis()));
+        Object rate = extra.get("regulatoryComplianceRate");
+        return new DashboardSummary(ncOpen, toQualify, overdue, cost,
+                rate instanceof Number n ? n.doubleValue() : null,
+                extra.get("calibrationsDueSoon") instanceof Number n ? n.longValue() : 0,
+                extra.get("instrumentsOverdue") instanceof Number n ? n.longValue() : 0);
     }
 }

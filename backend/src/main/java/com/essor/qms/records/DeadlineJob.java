@@ -40,8 +40,11 @@ class DeadlineJob {
     private final TransactionTemplate tx;
     private final RecordTypes types;
     private final ApplicationEventPublisher events;
+    private final List<DailyTask> dailyTasks;
 
-    DeadlineJob(JdbcClient jdbc, TransactionTemplate tx, RecordTypes types, ApplicationEventPublisher events) {
+    DeadlineJob(JdbcClient jdbc, TransactionTemplate tx, RecordTypes types, ApplicationEventPublisher events,
+                List<DailyTask> dailyTasks) {
+        this.dailyTasks = dailyTasks;
         this.jdbc = jdbc;
         this.tx = tx;
         this.types = types;
@@ -79,7 +82,11 @@ class DeadlineJob {
             DeadlineKind kind = d.dueDate().isBefore(today) ? DeadlineKind.OVERDUE : DeadlineKind.DUE_SOON;
             events.publishEvent(new RecordDeadline(d.id(), d.reference(), d.title(), d.ownerId(), d.dueDate(), kind));
         }
-        return due.size() + reviewAlerts(today);
+        int others = 0;
+        for (DailyTask task : dailyTasks) {
+            others += task.run(today);
+        }
+        return due.size() + reviewAlerts(today) + others;
     }
 
     /** Documents non archivés dont la date de revue ({@code data.reviewDate}) tombe dans les 30 jours. */

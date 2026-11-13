@@ -2,6 +2,7 @@ package com.essor.qms.records;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -31,6 +32,17 @@ public final class RecordEvents {
     /** Échéance dépassée ou à J-2, détectée par la tâche planifiée quotidienne. */
     public record RecordDeadline(UUID recordId, String reference, String title, UUID ownerId, LocalDate dueDate,
                                  DeadlineKind kind) {
+    }
+
+    /** Alertes des modules M4 (métrologie, veille) : type de notification et lien de l'écran à ouvrir. */
+    public enum AlertKind { INSTRUMENT_BLOCKED, CALIBRATION_DUE, REGULATION_DUE }
+
+    /**
+     * Alerte hors fiche : destinataires explicites et/ou porteurs de {@code roles}, sauf l'auteur. {@code dedupKey}
+     * non nul : une seule notification par destinataire et clé (rappels quotidiens).
+     */
+    public record Alert(AlertKind kind, String title, String link, Set<UUID> recipients, List<String> roles,
+                        String dedupKey, UUID actorId) {
     }
 
     /** Version d'un document diffusée : les destinataires doivent en accuser lecture. */

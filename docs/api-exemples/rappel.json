@@ -1,57 +1,57 @@
 {
   "source" : {
-    "id" : "dc88b0e6-0d23-4b97-8d3d-4e6f184a4337",
+    "id" : "dc333721-9f77-4411-8a62-b844b0fce4de",
     "article" : {
-      "id" : "31e48cdf-4852-4143-99fb-a2c73b9ddd52",
-      "code" : "MP-d06f56b9",
-      "label" : "Article MP-d06f56b9",
+      "id" : "9b3e911e-4e9b-4c5a-8ded-1e82a52204df",
+      "code" : "MP-ced9c8c5",
+      "label" : "Article MP-ced9c8c5",
       "unit" : "kg",
       "family" : "FAM-T"
     },
-    "numero" : "LF-614ad0a3",
+    "numero" : "LF-e0797067",
     "supplier" : {
-      "id" : "b63bc6d7-9716-40fc-b392-d3c54ec888a6",
-      "code" : "FOU-d0e644cd",
-      "name" : "Nom FOU-d0e644cd"
+      "id" : "169a183c-c8f4-4432-b486-3308c73592fc",
+      "code" : "FOU-7a20b5c9",
+      "name" : "Nom FOU-7a20b5c9"
     },
-    "supplierLot" : "F-LF-614ad0a3",
+    "supplierLot" : "F-LF-e0797067",
     "quantity" : 100.0,
     "unit" : "kg",
     "dlc" : null,
     "site" : {
-      "id" : "00000000-0000-0000-0000-0000000051a2",
-      "code" : "ENTREPOT-TNG",
-      "name" : "Entrepôt de Tanger"
+      "id" : "9487177b-98f3-42b1-b0ed-6b6ab7b3f115",
+      "code" : "SIEGE",
+      "name" : "Siège"
     },
     "qualityStatus" : "EN_ATTENTE",
-    "createdAt" : "2026-11-13T14:26:42.748931Z",
-    "updatedAt" : "2026-11-13T14:26:42.748931Z"
+    "createdAt" : "2026-11-13T15:21:49.881713Z",
+    "updatedAt" : "2026-11-13T15:21:49.881713Z"
   },
   "lotsImpactes" : [ {
-    "id" : "dc88b0e6-0d23-4b97-8d3d-4e6f184a4337",
-    "numero" : "LF-614ad0a3",
+    "id" : "dc333721-9f77-4411-8a62-b844b0fce4de",
+    "numero" : "LF-e0797067",
     "article" : {
-      "id" : "31e48cdf-4852-4143-99fb-a2c73b9ddd52",
-      "code" : "MP-d06f56b9",
-      "label" : "Article MP-d06f56b9"
+      "id" : "9b3e911e-4e9b-4c5a-8ded-1e82a52204df",
+      "code" : "MP-ced9c8c5",
+      "label" : "Article MP-ced9c8c5"
     },
     "qualityStatus" : "EN_ATTENTE",
     "quantity" : 100.0,
     "remaining" : 10.0,
     "unit" : "kg",
     "supplier" : {
-      "id" : "b63bc6d7-9716-40fc-b392-d3c54ec888a6",
-      "code" : "FOU-d0e644cd",
-      "name" : "Nom FOU-d0e644cd"
+      "id" : "169a183c-c8f4-4432-b486-3308c73592fc",
+      "code" : "FOU-7a20b5c9",
+      "name" : "Nom FOU-7a20b5c9"
     },
-    "supplierLot" : "F-LF-614ad0a3"
+    "supplierLot" : "F-LF-e0797067"
   }, {
-    "id" : "814ac294-be6b-4c0a-a266-3423eedbad8a",
-    "numero" : "FINI-1a90452e",
+    "id" : "47ccb75a-ba31-4f0e-a6bf-93f10b02be05",
+    "numero" : "FINI-1caa7eba",
     "article" : {
-      "id" : "0b382ab0-a75f-4ec7-a3ae-d9aa5958c2a9",
-      "code" : "PF-b029efbe",
-      "label" : "Article PF-b029efbe"
+      "id" : "e59646f1-549c-4cb1-a819-4c4d7d3df345",
+      "code" : "PF-a925e2f2",
+      "label" : "Article PF-a925e2f2"
     },
     "qualityStatus" : "EN_ATTENTE",
     "quantity" : 60.0,
@@ -60,12 +60,12 @@
     "supplier" : null,
     "supplierLot" : null
   }, {
-    "id" : "71ba6b64-417e-4abd-a685-f06e05159cff",
-    "numero" : "SEMI-5ee14647",
+    "id" : "bb310a89-899d-4458-be4d-4c04858af44f",
+    "numero" : "SEMI-04b0e7bd",
     "article" : {
-      "id" : "0b382ab0-a75f-4ec7-a3ae-d9aa5958c2a9",
-      "code" : "PF-b029efbe",
-      "label" : "Article PF-b029efbe"
+      "id" : "e59646f1-549c-4cb1-a819-4c4d7d3df345",
+      "code" : "PF-a925e2f2",
+      "label" : "Article PF-a925e2f2"
     },
     "qualityStatus" : "EN_ATTENTE",
     "quantity" : 80.0,
@@ -76,17 +76,17 @@
   } ],
   "clients" : [ {
     "partner" : {
-      "id" : "11167e68-6c8c-421c-b03f-b43bd94d2203",
-      "code" : "CLI-7a965e9a",
-      "name" : "Nom CLI-7a965e9a"
+      "id" : "e87e894a-f592-48dd-a52e-7c4d58c7f07f",
+      "code" : "CLI-6742275d",
+      "name" : "Nom CLI-6742275d"
     },
     "quantite" : 25.0,
     "references" : [ "BL-1", "BL-3" ]
   }, {
     "partner" : {
-      "id" : "85bc1579-619e-4a88-a03e-ead00251a436",
-      "code" : "CLI-98f46a74",
-      "name" : "Nom CLI-98f46a74"
+      "id" : "feb1e755-cf58-4b80-89de-eb0a5c8e7386",
+      "code" : "CLI-a2d0087c",
+      "name" : "Nom CLI-a2d0087c"
     },
     "quantite" : 15.0,
     "references" : [ "BL-2 SSCC-0001" ]

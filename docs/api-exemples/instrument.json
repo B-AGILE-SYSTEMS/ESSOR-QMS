@@ -1,0 +1,68 @@
+{
+  "instrument" : {
+    "id" : "a5cddcca-66f7-48b7-8860-cce86a87a66a",
+    "code" : "PAC-69d11fa9",
+    "label" : "Pied à coulisse 150 mm",
+    "type" : "pied_a_coulisse",
+    "site" : {
+      "name" : "Siège",
+      "id" : "3e634eef-fae4-40c1-a800-22267f3d0d2d",
+      "code" : "SIEGE"
+    },
+    "location" : "Labo réception",
+    "serialNumber" : "SN-PAC-69d11fa9",
+    "rangeMin" : 0.0,
+    "rangeMax" : 150.0,
+    "unit" : "mm",
+    "resolution" : 0.01,
+    "emt" : 0.03,
+    "periodMonths" : 12,
+    "provider" : "Labo Métrologie Casablanca",
+    "status" : "en_service",
+    "nextDue" : "2027-11-03",
+    "dueState" : "ok",
+    "selectable" : true,
+    "qr" : "essor://instrument/a5cddcca-66f7-48b7-8860-cce86a87a66a",
+    "createdAt" : "2026-11-13T15:22:15.499988Z",
+    "updatedAt" : "2026-11-13T15:22:15.507463Z"
+  },
+  "calibrations" : [ {
+    "id" : "4df92519-8196-4284-a297-833ca90eee7a",
+    "instrumentId" : "a5cddcca-66f7-48b7-8860-cce86a87a66a",
+    "calibratedOn" : "2026-11-03",
+    "provider" : "Labo Métrologie Casablanca",
+    "internal" : false,
+    "certificateNumber" : "CE-2026-11-03",
+    "points" : [ {
+      "ecart" : 0.01,
+      "mesure" : 10.01,
+      "nominal" : 10.0,
+      "conforme" : true
+    }, {
+      "ecart" : 0.02,
+      "mesure" : 50.02,
+      "nominal" : 50.0,
+      "conforme" : true
+    }, {
+      "ecart" : -0.03,
+      "mesure" : 99.97,
+      "nominal" : 100.0,
+      "conforme" : true
+    } ],
+    "emt" : 0.03,
+    "maxAbsError" : 0.03,
+    "verdict" : "conforme",
+    "nextDue" : "2027-11-03",
+    "ncId" : null,
+    "ncReference" : null,
+    "certificate" : {
+      "fileName" : "certificat.pdf",
+      "url" : "/api/calibrations/4df92519-8196-4284-a297-833ca90eee7a/certificate",
+      "size" : 16,
+      "contentType" : "application/pdf"
+    },
+    "comment" : "Étalonnage annuel",
+    "createdBy" : "Nom m4.terrain",
+    "createdAt" : "2026-11-13T15:22:15.507463Z"
+  } ]
+}

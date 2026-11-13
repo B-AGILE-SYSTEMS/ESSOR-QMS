@@ -1,5 +1,6 @@
 package com.essor.qms.notifications;
 
+import com.essor.qms.records.RecordEvents.Alert;
 import com.essor.qms.records.RecordEvents.DeadlineKind;
 import com.essor.qms.records.RecordEvents.DocumentDiffused;
 import com.essor.qms.records.RecordEvents.RecordAssigned;
@@ -26,7 +27,8 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 @Service
 class NotificationService {
 
-    enum EventType { ASSIGNED, TRANSITION, OVERDUE, DUE_SOON, DOCUMENT_DIFFUSED, REVIEW_DUE }
+    enum EventType { ASSIGNED, TRANSITION, OVERDUE, DUE_SOON, DOCUMENT_DIFFUSED, REVIEW_DUE, INSTRUMENT_BLOCKED, CALIBRATION_DUE,
+        REGULATION_DUE }
 
     enum Channel { IN_APP, EMAIL }
 
@@ -97,14 +99,31 @@ class NotificationService {
                 "DIFFUSED:" + e.recordId() + ":" + e.version());
     }
 
+    @EventListener
+    @Transactional(propagation = Propagation.MANDATORY)
+    void onAlert(Alert e) {
+        Set<UUID> recipients = new LinkedHashSet<>(e.recipients() == null ? Set.of() : e.recipients());
+        if (e.roles() != null && !e.roles().isEmpty()) {
+            recipients.addAll(jdbc.sql("select id from app_user where roles && cast(:roles as text[])")
+                    .param("roles", e.roles().toArray(String[]::new)).query(UUID.class).list());
+        }
+        recipients.remove(e.actorId());
+        notify(recipients, EventType.valueOf(e.kind().name()), e.title(), null, e.dedupKey(), e.link());
+    }
+
     private void notify(Set<UUID> recipients, EventType type, String title, UUID recordId, String dedupKey) {
+        notify(recipients, type, title, recordId, dedupKey, null);
+    }
+
+    private void notify(Set<UUID> recipients, EventType type, String title, UUID recordId, String dedupKey,
+                        String link) {
         if (recipients.isEmpty()) {
             return;
         }
         String shortTitle = title.length() > 300 ? title.substring(0, 297) + "..." : title;
         if (rules.enabled(type, Channel.IN_APP)) {
             for (UUID r : recipients) {
-                insert(r, type, shortTitle, recordId, dedupKey).ifPresent(n -> afterCommit(() -> sse.send(r, n)));
+                insert(r, type, shortTitle, recordId, dedupKey, link).ifPresent(n -> afterCommit(() -> sse.send(r, n)));
             }
         }
         if (rules.enabled(type, Channel.EMAIL) && mail.isEnabled()) {
@@ -115,7 +134,7 @@ class NotificationService {
     }
 
     private java.util.Optional<Notification> insert(UUID recipient, EventType type, String title, UUID recordId,
-                                                    String dedupKey) {
+                                                    String dedupKey, String link) {
         return jdbc.sql("""
                 insert into notification (tenant_id, recipient_id, type, title, record_id, link, dedup_key)
                 values (app_current_tenant(), :r, :type, :title, :rec, :link, :dedup)
@@ -124,7 +143,7 @@ class NotificationService {
                           (select r.type_code from record r where r.id = record_id) as record_type
                 """)
                 .param("r", recipient).param("type", type.name()).param("title", title).param("rec", recordId)
-                .param("link", recordId == null ? null : "/records/" + recordId).param("dedup", dedupKey)
+                .param("link", link != null ? link : recordId == null ? null : "/records/" + recordId).param("dedup", dedupKey)
                 .query(Notification.class).optional();
     }
 
