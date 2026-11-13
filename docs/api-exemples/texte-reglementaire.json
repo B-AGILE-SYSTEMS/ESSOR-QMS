@@ -1,0 +1,54 @@
+{
+  "id" : "615698eb-8d5f-4449-b982-37ca3a350e60",
+  "reference" : "Loi 65-99 art. 281-2958e3d0",
+  "title" : "Code du travail — protection des salariés",
+  "domain" : "sst",
+  "jurisdiction" : "Maroc",
+  "publishedOn" : "2004-09-08",
+  "effectiveOn" : "2004-06-08",
+  "summary" : "Résumé maison.",
+  "sourceUrl" : "https://www.sgg.gov.ma",
+  "status" : "en_vigueur",
+  "reviewMonths" : 12,
+  "updatedAt" : "2026-11-13T15:29:19.759566Z",
+  "requirements" : [ {
+    "id" : "d417e62f-9dac-4d65-b132-cb0517cbaaff",
+    "code" : "E1",
+    "text" : "Évaluer les risques",
+    "position" : 0,
+    "applicability" : [ {
+      "siteId" : "f604a747-2a57-4022-a122-78dc70c32b16",
+      "siteCode" : "SIEGE",
+      "siteName" : "Siège",
+      "applicable" : true,
+      "justification" : "Site industriel"
+    } ]
+  }, {
+    "id" : "65b6302d-5ebe-4fba-90d2-8f540351da78",
+    "code" : "E2",
+    "text" : "Former les salariés",
+    "position" : 1,
+    "applicability" : [ ]
+  } ],
+  "evaluations" : [ {
+    "id" : "b0efb61a-fcfb-4580-b710-b422f03d7995",
+    "regulationId" : "615698eb-8d5f-4449-b982-37ca3a350e60",
+    "site" : {
+      "id" : "f604a747-2a57-4022-a122-78dc70c32b16",
+      "name" : "Siège",
+      "code" : "SIEGE"
+    },
+    "result" : "non_conforme",
+    "evidence" : "Visite du 12/11",
+    "comment" : "DUER non mis à jour",
+    "evaluatedAt" : "2026-11-13T15:29:19.841420Z",
+    "evaluatedBy" : "Nom m4.qualite",
+    "nextDue" : "2027-11-13",
+    "overdue" : false,
+    "action" : {
+      "reference" : "ACT-2026-0001",
+      "id" : "05ee8af7-4d23-4bbd-8190-7231a9b90fc9",
+      "status" : "A_FAIRE"
+    }
+  } ]
+}

@@ -1,0 +1,21 @@
+{
+  "id" : "b0efb61a-fcfb-4580-b710-b422f03d7995",
+  "regulationId" : "615698eb-8d5f-4449-b982-37ca3a350e60",
+  "site" : {
+    "id" : "f604a747-2a57-4022-a122-78dc70c32b16",
+    "name" : "Siège",
+    "code" : "SIEGE"
+  },
+  "result" : "non_conforme",
+  "evidence" : "Visite du 12/11",
+  "comment" : "DUER non mis à jour",
+  "evaluatedAt" : "2026-11-13T15:29:19.841420Z",
+  "evaluatedBy" : "Nom m4.qualite",
+  "nextDue" : "2027-11-13",
+  "overdue" : false,
+  "action" : {
+    "reference" : "ACT-2026-0001",
+    "id" : "05ee8af7-4d23-4bbd-8190-7231a9b90fc9",
+    "status" : "A_FAIRE"
+  }
+}
