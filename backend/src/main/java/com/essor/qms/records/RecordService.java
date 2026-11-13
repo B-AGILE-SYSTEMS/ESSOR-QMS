@@ -43,6 +43,11 @@ import org.springframework.transaction.annotation.Transactional;
 class RecordService {
 
     static final String ACTION_TYPE = "ACTION";
+    static final String DOCUMENT_TYPE = "DOCUMENT";
+
+    /** Changement de statut d'une fiche (interne au module : réactions par type de fiche, ex. NC d'audit). */
+    record StatusChanged(UUID recordId, String typeCode, String from, String to) {
+    }
     static final ZoneId ZONE = ZoneId.of("Africa/Casablanca");
     static final int MAX_SYNC_RECORDS = 500;
     private static final Duration MAX_CLOCK_SKEW = Duration.ofMinutes(5);
@@ -189,6 +194,9 @@ class RecordService {
         if (ACTION_TYPE.equals(type.code())) {
             throw ApiException.badRequest("Une action se crée depuis sa fiche parente (POST /api/records/{id}/actions)");
         }
+        if (DOCUMENT_TYPE.equals(type.code())) {
+            throw ApiException.badRequest("Un document se crée par POST /api/documents");
+        }
         if (body.clientId() != null) {
             // renvoi depuis le téléphone (clé d'idempotence perdue) : pas de doublon, on rend la fiche existante
             var existing = store.findByClientId(body.clientId());
@@ -284,8 +292,33 @@ class RecordService {
         return get(id);
     }
 
+    /**
+     * Fiche créée par un autre service du module (NC d'audit, document), sans contrôle du site de l'utilisateur.
+     * Journalisée et notifiée comme une déclaration.
+     */
+    UUID createInternal(String typeCode, String title, String description, String severity, UUID siteId,
+                        UUID ownerId, Map<String, Object> data, Map<String, Object> auditDetails) {
+        RecordType type = types.get(typeCode);
+        String cut = title.length() > 200 ? title.substring(0, 197) + "..." : title;
+        UUID id = insert(type, cut, description, severity, siteId, ownerId, null, null,
+                data == null ? new LinkedHashMap<>() : data);
+        audit.record("RECORD_CREATED", "record", id.toString(),
+                auditDetails == null ? null : store.write(auditDetails));
+        Workflow wf = type.workflow();
+        List<String> firstRoles = wf.from(wf.initial()).stream().flatMap(tr -> tr.roles().stream()).distinct().toList();
+        Row created = load(id, false);
+        events.publishEvent(new RecordTransitioned(id, created.reference(), created.title(), "Déclaration",
+                wf.label(wf.initial()), ownerId, firstRoles, ExecutionContext.userId()));
+        return id;
+    }
+
     RecordView transition(UUID id, String code, String comment) {
         Row row = load(id, true);
+        if (DOCUMENT_TYPE.equals(row.typeCode())) {
+            throw new ApiException(HttpStatus.CONFLICT, "transition_impossible",
+                    "Le workflow d'un document s'applique à ses versions "
+                            + "(POST /api/documents/{id}/versions/{v}/transitions/{code})", Map.of("status", row.status()));
+        }
         RecordType type = types.get(row.typeCode());
         Workflow wf = type.workflow();
         Workflow.Transition t = wf.from(row.status()).stream().filter(tr -> tr.code().equals(code)).findFirst()
@@ -313,6 +346,7 @@ class RecordService {
             details.put("comment", comment.strip());
         }
         audit.record("TRANSITION", "record", id.toString(), store.write(details));
+        events.publishEvent(new StatusChanged(id, row.typeCode(), row.status(), t.to()));
         List<String> nextRoles = wf.from(t.to()).stream().flatMap(tr -> tr.roles().stream()).distinct().toList();
         events.publishEvent(new RecordTransitioned(id, row.reference(), row.title(), t.label(), wf.label(t.to()),
                 row.ownerId(), nextRoles, ExecutionContext.userId()));
@@ -365,18 +399,18 @@ class RecordService {
         }
     }
 
-    private Row load(UUID id, boolean forUpdate) {
+    Row load(UUID id, boolean forUpdate) {
         return store.find(id, forUpdate).orElseThrow(() -> ApiException.notFound("Fiche"));
     }
 
-    private void requireWriter() {
+    void requireWriter() {
         Set<String> roles = store.currentRoles();
         if (roles.isEmpty() || roles.equals(Set.of("READER"))) {
             throw new ApiException(HttpStatus.FORBIDDEN, "forbidden", "Accès en lecture seule");
         }
     }
 
-    private static boolean hasRole(Set<String> roles, Workflow.Transition t) {
+    static boolean hasRole(Set<String> roles, Workflow.Transition t) {
         return t.roles() != null && t.roles().stream().anyMatch(roles::contains);
     }
 

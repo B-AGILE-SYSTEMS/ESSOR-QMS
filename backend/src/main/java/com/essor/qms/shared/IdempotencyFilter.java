@@ -19,7 +19,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 
 /**
- * En-tête {@code Idempotency-Key} (UUID) sur un POST de l'API : la réponse est gardée 48 h par (tenant, clé).
+ * En-tête {@code Idempotency-Key} (UUID) sur un POST ou un PUT de l'API (ex. réponses d'audit mobiles) : la réponse est gardée 48 h par (tenant, clé).
  * Un renvoi rend la même réponse (statut et corps) sans réexécuter la requête. Clé réutilisée pour une autre
  * requête ou encore en cours de traitement : 409. Les erreurs 5xx ne sont pas mémorisées (nouvel essai possible).
  * S'exécute après {@code ExecutionContextFilter} (tenant connu, RLS).
@@ -46,7 +46,7 @@ class IdempotencyFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !"POST".equals(request.getMethod()) || request.getHeader(HEADER) == null
+        return !("POST".equals(request.getMethod()) || "PUT".equals(request.getMethod())) || request.getHeader(HEADER) == null
                 || !request.getRequestURI().startsWith("/api/");
     }
 
@@ -64,7 +64,7 @@ class IdempotencyFilter extends OncePerRequestFilter {
             error(response, 400, "invalid", "Idempotency-Key doit être un UUID");
             return;
         }
-        String fingerprint = truncate("POST " + request.getRequestURI());
+        String fingerprint = truncate(request.getMethod() + " " + request.getRequestURI());
         Optional<Stored> previous = reserve(key, fingerprint);
         if (previous.isPresent()) {
             replay(previous.get(), fingerprint, response);

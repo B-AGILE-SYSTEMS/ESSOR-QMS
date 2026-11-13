@@ -81,6 +81,37 @@ Type INCIDENT (préfixe INC, champs `data.categorie|lieu|blesses|temoins`) : DEC
 exige un responsable) → ACTIONS (`planifier_actions`) → CLOS (`clore`, actions FAITE/VERIFIEE) ;
 `classer` / `classer_apres_analyse` → CLASSE_SANS_SUITE. Pièces jointes : `<essor.storage.dir>/attachments/<tenant>/<id>`.
 
+## API (M3) — voir `docs/pilotage/cartes/M3-contrat.md`
+
+| Méthode | Chemin | Accès |
+|---|---|---|
+| POST | `/api/standards/import?dryRun=` multipart `file` (xlsx ou csv `;`, en-tête `code;titre;texte;parent;auditable`, ≤ 5 Mo) + `standardId` ou `standardCode`, `standardVersion`, `standardTitle` → `{standardId, created, updated, errors:[{line,message}], applied, dryRun}` (tout ou rien : une erreur = rien d'écrit) | ADMIN, QUALITY_MANAGER |
+| GET | `/api/standards/import/template?format=xlsx|csv` ; `/api/standards` → `[{id,code,version,title,requirementCount}]` | authentifié |
+| GET | `/api/standards/{id}/requirements` → arbre `[{id,code,title,text,auditable,position,children}]` | authentifié |
+| GET | `/api/requirements/{id}` → `{..., standard, parent, children, documents, records, findings}` | authentifié |
+| GET / PUT | `/api/records/{id}/requirements` (`[requirementId]`, remplace) → `[{id,code,title,standardId,standardCode}]` | — / sauf READER |
+| GET | `/api/audits?year=&status=PLANIFIE,EN_COURS&auditor=me` (programme ; année de `data.datePrevue`) ; `/api/audits/{id}` → `{..., questions, ncs, summary}` | authentifié |
+| GET | `/api/audits/{id}/checklist` → `[{id,requirementId,requirementCode,requirementTitle,position,text,question,result,comment,evidence,closed,answeredAt,answeredByName,ncId,ncReference}]` | authentifié |
+| POST | `/api/audits/{id}/checklist/generate` `{standardIds, requirementIds?}` (une question par exigence auditable, sans doublon) ; `/api/audits/{id}/questions` `{text,requirementId?,position?}` ; PATCH / DELETE `/api/audits/{id}/questions/{qid}` | AUDITOR, QUALITY_MANAGER, ADMIN |
+| PUT | `/api/audits/{id}/answers/{qid}` `{result,comment,evidence,closed?}` (`Idempotency-Key` accepté) ; `closed:true` sur un écart crée la NC aussitôt | idem |
+| GET | `/api/audits/{id}/report.pdf` (OpenPDF : logo PNG/JPEG et couleur du tenant, synthèse, taux par chapitre, constats, NC) | authentifié |
+| POST | `/api/documents` `{code,title,docType,processus,siteId?,ownerId?,recipients:{roles,siteIds},verifierRoles,approverRoles,reviewDate,requirementIds}` → 201 `{document, ownerId, ..., versions}` | sauf READER |
+| GET | `/api/documents?status=&type=&q=&inForce=` → `[{id,reference,code,title,docType,processus,status,statusLabel,currentVersion:{id,number,fileName}|null,latestVersion,reviewDate,updatedAt}]` ; `/api/documents/{id}` | authentifié |
+| POST | `/api/documents/{id}/versions` multipart `file` (PDF/DOCX/XLSX ≤ 20 Mo) + `note` → 201 (409 `version_in_progress` si une version est en cours) | sauf READER |
+| POST | `/api/documents/{id}/versions/{n}/transitions/{code}` `{comment}` : `soumettre`, `verifier` / `refuser_verification` (rôles `verifierRoles`), `approuver` / `refuser_approbation` (rôles `approverRoles`), `archiver` | rôles |
+| GET | `/api/documents/{id}/versions/{n}/file?download=` (nosniff) | authentifié |
+| POST / GET | `/api/documents/{id}/versions/{n}/ack` (destinataire, version en vigueur) ; `.../acks` → `{version, acknowledged:[{userId,name,ackedAt}], pending:[...]}` | destinataire / authentifié |
+
+Type AUDIT (préfixe AUD) : PLANIFIE → EN_COURS (`demarrer`) → RAPPORT (`rediger_rapport`, crée les NC des écarts
+restants ; `reprendre` revient en cours) → CLOTURE (`cloturer`). Taux de conformité = (conforme + observation) /
+réponses hors « na ». NC d'écart : site de l'audit, gravité majeure/mineure, `data.auditId|questionId|requirementId`,
+liée à l'exigence. Type DOCUMENT (préfixe DOC) : le statut de la fiche suit sa dernière version ; transitions
+génériques refusées (409). Version approuvée = DIFFUSE (en vigueur, index unique), la précédente devient PERIME.
+Notifications `DOCUMENT_DIFFUSED` (destinataires : rôles ou sites) et `REVIEW_DUE` (responsable, `data.reviewDate`
+à J-30 au plus, une fois par date, tâche quotidienne M1). Fichiers : `<essor.storage.dir>/documents/<tenant>/<id>`.
+Démo (profil `demo`) : ISO 9001:2015 et ISO 45001:2018 (titres, résumés maison), un audit planifié, PR-QHSE-07.
+RLS FORCE sur `standard`, `requirement`, `record_requirement`, `audit_question`, `document_version`, `document_ack`.
+
 ## Multi-tenant et RLS
 
 - Un utilisateur appartient à un seul tenant (`app_user.tenant_id`), donné par l'attribut Keycloak `tenant`

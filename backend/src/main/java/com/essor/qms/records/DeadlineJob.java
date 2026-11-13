@@ -25,6 +25,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 class DeadlineJob {
 
     static final int DUE_SOON_DAYS = 2;
+    /** Alerte de revue périodique des documents : J-30 (rappel quotidien dédoublonné par date de revue). */
+    static final int REVIEW_ALERT_DAYS = 30;
 
     @Configuration
     @EnableScheduling
@@ -76,6 +78,23 @@ class DeadlineJob {
         for (Due d : due) {
             DeadlineKind kind = d.dueDate().isBefore(today) ? DeadlineKind.OVERDUE : DeadlineKind.DUE_SOON;
             events.publishEvent(new RecordDeadline(d.id(), d.reference(), d.title(), d.ownerId(), d.dueDate(), kind));
+        }
+        return due.size() + reviewAlerts(today);
+    }
+
+    /** Documents non archivés dont la date de revue ({@code data.reviewDate}) tombe dans les 30 jours. */
+    private int reviewAlerts(LocalDate today) {
+        List<Due> due = jdbc.sql("""
+                select id, reference, title, coalesce(owner_id, created_by) as owner_id,
+                       review_date as due_date
+                from (select r.*, case when r.data->>'reviewDate' ~ '^\\d{4}-\\d{2}-\\d{2}$'
+                                       then cast(r.data->>'reviewDate' as date) end as review_date
+                      from record r where r.type_code = 'DOCUMENT' and r.status <> 'ARCHIVE') d
+                where coalesce(owner_id, created_by) is not null and review_date <= :limit
+                """).param("limit", today.plusDays(REVIEW_ALERT_DAYS)).query(Due.class).list();
+        for (Due d : due) {
+            events.publishEvent(new RecordDeadline(d.id(), d.reference(), d.title(), d.ownerId(), d.dueDate(),
+                    DeadlineKind.REVIEW_DUE));
         }
         return due.size();
     }
