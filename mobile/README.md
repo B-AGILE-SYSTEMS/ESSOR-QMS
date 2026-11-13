@@ -49,6 +49,12 @@ Il suit l'écran 1 de la maquette mobile : barre d'état hors ligne / synchro to
 - **Hypothèses hors contrat** : `tolMin`/`tolMax` sont des limites absolues (lues comme écarts au nominal si `tolMax` < nominal) ; photos envoyées à `POST /api/inspections/{id}/attachments` (non décrit par le contrat : un refus passe « à revoir » sans bloquer la file).
 - **Limites** : la liste serveur `GET /api/inspections` (contrôles A_FAIRE) et `proposedDecision` ne sont pas encore lues ; la taille ISO 2859 n'est connue hors ligne que si le plan la porte.
 
+## M4 — instruments de mesure (`lib/core/m4/`, `lib/features/instruments/`)
+- **Scan** (bouton « Vérifier un instrument ») : QR `essor://instrument/<id>` → fiche (code, désignation, statut, échéance J-n, site, emplacement, EMT) ; refus en évidence si `bloque`, `en_etalonnage`, `reforme` ou étalonnage échu.
+- **Cache** à chaque cycle : `GET /api/instruments` (liste ou page `{content}`) ; au scan, `GET /api/instruments/{id}` si le réseau est là (statut frais), cache sinon. L'échéance est revérifiée à chaque usage avec l'horloge du téléphone : un instrument en cache devient échu hors ligne (échéance du jour encore valable).
+- **Contrôle M3b** : si `instrumentRequis`, choix par scan ou par liste (seuls les instruments en service et non échus) ; plus de champ libre. Le résultat envoie `instrumentId` (lien M4) et `instrument` (code). Un 409 serveur (instrument bloqué entre-temps) passe « à revoir » par la file M2.
+- **Hypothèses** : noms de champs lus avec variantes (`status|statut`, `nextCalibrationDate|nextDueDate|prochaineEcheance`, `location|emplacement`). `docs/api-exemples/instrument.json` n'était pas publié par le back : le test qui le lit est sauté tant qu'il manque ; les tests utilisent des données à la forme du contrat.
+
 ## Captures
 `SCREENSHOT_DIR=<dossier> FLUTTER_ROOT=<sdk> flutter test test/widget/m3_flow_test.dart` écrit `mes-audits.png`, `audit-question-hors-ligne.png` et `documents-hors-ligne.png`.
 
