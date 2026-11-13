@@ -28,6 +28,11 @@ import '../fakes.dart';
 final shotDir = Platform.environment['SCREENSHOT_DIR'];
 const shotKey = Key('shotRoot');
 
+/// Étiquette GS1-128 fournisseur : SSCC, DLC, lot fournisseur.
+const lotLabel =
+    ']C100106141411234567897172612311'
+    '0ACX4471';
+
 class Harness {
   Harness(this.container, this.server, this.online, this.db);
   final ProviderContainer container;
@@ -68,6 +73,7 @@ Future<Harness> pumpM2(WidgetTester tester, {bool online = false}) async {
         return File(path).existsSync();
       }),
       qrScannerProvider.overrideWithValue((_) async => 'essor://zone/L2'),
+      lotScannerProvider.overrideWithValue((_) async => lotLabel),
       apiClientFactoryProvider.overrideWith(
         (ref) =>
             (s) => ApiClient(
@@ -104,6 +110,44 @@ Future<void> settle(WidgetTester tester) async {
     await tester.pump(const Duration(milliseconds: 50));
   }
   await tester.pumpAndSettle();
+}
+
+/// Attend un état (et non une durée) : pompe jusqu'à ce que [done] soit vrai,
+/// avec un plafond large pour rester sûr sous charge.
+Future<void> settleUntil(
+  WidgetTester tester,
+  FutureOr<bool> Function() done, {
+  int maxRounds = 400,
+}) async {
+  for (var i = 0; i < maxRounds; i++) {
+    if (await tester.runAsync(() async => await done()) ?? false) {
+      await tester.pumpAndSettle();
+      return;
+    }
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 5)),
+    );
+    await tester.pump(const Duration(milliseconds: 50));
+  }
+  fail('État attendu non atteint après $maxRounds tours');
+}
+
+/// File vide (aucune opération en attente) et synchro au repos.
+Future<void> settleSynced(WidgetTester tester, Harness h, {int pending = 0}) =>
+    settleUntil(
+      tester,
+      () async =>
+          await h.db.watchPendingCount().first == pending &&
+          !h.container.read(syncServiceProvider).isRunning,
+    );
+
+/// Prise de photo : la compression est un vrai calcul, on attend le compteur.
+Future<void> tapPhoto(WidgetTester tester, String key, int count) async {
+  await tap(tester, key);
+  await settleUntil(
+    tester,
+    () => find.text('Photo ($count)').evaluate().isNotEmpty,
+  );
 }
 
 Future<void> tap(WidgetTester tester, String key) async {
@@ -189,8 +233,8 @@ void main() {
     await tap(tester, 'reportNext');
 
     expect(find.text('Étape 3 sur 3'), findsOneWidget);
-    await tap(tester, 'takePhoto');
-    await tap(tester, 'takePhoto');
+    await tapPhoto(tester, 'takePhoto', 1);
+    await tapPhoto(tester, 'takePhoto', 2);
     expect(find.text('Photo (2)'), findsOneWidget);
     await tester.enterText(
       find.byKey(const Key('reportDescription')),
@@ -208,8 +252,12 @@ void main() {
     // Retour du réseau : tout part, dans l'ordre.
     h.server.online = true;
     h.online.add(true);
-    await settle(tester);
-    await settle(tester);
+    await settleUntil(tester, () => h.server.attachments.length == 2);
+    await settleSynced(tester, h);
+    await settleUntil(
+      tester,
+      () => find.text('Synchronisé').evaluate().isNotEmpty,
+    );
 
     expect(h.server.created, hasLength(1));
     final body = h.server.created.single;

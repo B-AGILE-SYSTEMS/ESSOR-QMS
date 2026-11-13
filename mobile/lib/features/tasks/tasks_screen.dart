@@ -156,6 +156,10 @@ class OperationsScreen extends ConsumerWidget {
     'attachment.upload': 'Photo',
     'audit.answer': 'Réponse d\'audit',
     'document.ack': 'Accusé de lecture',
+    'inspection.create': 'Contrôle de lot',
+    'inspection.results': 'Résultats de contrôle',
+    'inspection.photo': 'Photo de contrôle',
+    'inspection.decision': 'Décision de contrôle',
   };
 
   @override

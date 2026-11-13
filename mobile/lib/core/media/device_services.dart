@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'package:essor_mobile/core/m3b/gs1.dart';
 import 'package:essor_mobile/core/media/image_compress.dart';
 import 'package:essor_mobile/core/sync/operations.dart';
 import 'package:essor_mobile/features/scan/scan_screen.dart';
@@ -27,6 +28,21 @@ final qrScannerProvider = Provider<QrScanner>(
   (ref) =>
       (context) => Navigator.of(context)
           .push<String>(MaterialPageRoute(builder: (_) => const ScanScreen())),
+);
+
+/// Lecture d'un code lot (GS1-128 ou QR `essor://lot/<id>`).
+final lotScannerProvider = Provider<QrScanner>(
+  (ref) =>
+      (context) => Navigator.of(context).push<String>(
+        MaterialPageRoute(
+          builder: (_) => ScanScreen(
+            title: 'Scanner un lot',
+            hint: 'Visez l\'étiquette GS1-128 ou le QR du lot.',
+            rejected: 'Ce code n\'identifie pas un lot.',
+            accept: (raw) => parseLotScan(raw) != null,
+          ),
+        ),
+      ),
 );
 
 /// Répertoire des photos en attente d'envoi.
