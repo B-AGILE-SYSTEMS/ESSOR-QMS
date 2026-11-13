@@ -33,3 +33,10 @@ Démo : la norme ISO 45001 est importée (fichier Excel) ; un audit interne de l
 - Paramétrage → Référentiels : import avec simulation et rapport d'erreurs, arbre des exigences, vue d'une exigence avec ses liens.
 - Audits : programme annuel (calendrier), fiche audit (générer et éditer la grille, exécuter sur web, constats, NC créées), téléchargement du rapport PDF.
 - Documents : liste, fiche (versions, workflow, destinataires, accusés de lecture), visionneuse PDF intégrée, téléversement d'une nouvelle version.
+
+## Précisions (13/11/2026, issues du mobile)
+- `GET /api/audits/{id}/checklist` → `[{id, requirementId, requirementCode, question, result, comment}]`.
+- `GET /api/documents/{id}/versions/{v}/file` (Content-Disposition, nosniff).
+- `GET /api/documents` : chaque élément porte `currentVersion {id, number, fileName}` ou null.
+- Transitions AUDIT : `demarrer` (PLANIFIE→EN_COURS), `rediger_rapport` (EN_COURS→RAPPORT), `cloturer` (RAPPORT→CLOTURE).
+- `GET /api/audits` accepte `year`, `status` (liste séparée par virgules), `auditor=me`.
