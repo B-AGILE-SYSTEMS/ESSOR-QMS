@@ -9,6 +9,8 @@ abstract final class OpKind {
   static const create = 'record.create';
   static const transition = 'record.transition';
   static const attachment = 'attachment.upload';
+  static const auditAnswer = 'audit.answer';
+  static const documentAck = 'document.ack';
 }
 
 const _uuid = Uuid();
@@ -83,6 +85,33 @@ class OperationQueue {
       'recordClientId': ?recordClientId,
       'path': path,
     }),
+    idempotencyKey: newUuid(),
+  );
+
+  /// Réponse à une question d'audit (M3).
+  Future<void> auditAnswer({
+    required String auditId,
+    required String questionId,
+    required String result,
+    String? comment,
+  }) => _db.enqueue(
+    OpKind.auditAnswer,
+    jsonEncode({
+      'auditId': auditId,
+      'questionId': questionId,
+      'result': result,
+      'comment': ?comment,
+    }),
+    idempotencyKey: newUuid(),
+  );
+
+  /// Accusé de lecture d'une version de document (M3).
+  Future<void> documentAck({
+    required String documentId,
+    required String version,
+  }) => _db.enqueue(
+    OpKind.documentAck,
+    jsonEncode({'documentId': documentId, 'version': version}),
     idempotencyKey: newUuid(),
   );
 }

@@ -19,6 +19,7 @@ import 'package:essor_mobile/core/media/device_services.dart';
 import 'package:essor_mobile/core/providers.dart';
 import 'package:essor_mobile/core/sync/sync_database.dart';
 import 'package:essor_mobile/core/widgets/terrain.dart';
+import 'package:essor_mobile/features/documents/documents_screen.dart';
 
 import '../fake_server.dart';
 import '../fakes.dart';
@@ -60,6 +61,12 @@ Future<Harness> pumpM2(WidgetTester tester, {bool online = false}) async {
       }),
       photoTakerProvider.overrideWithValue(() async => photo),
       photoDirProvider.overrideWith((ref) async => photoDir!),
+      documentsDirProvider.overrideWith((ref) async => photoDir!),
+      clockProvider.overrideWithValue(() => DateTime(2026, 11, 13)),
+      fileOpenerProvider.overrideWithValue((path) async {
+        server.opened.add(path);
+        return File(path).existsSync();
+      }),
       qrScannerProvider.overrideWithValue((_) async => 'essor://zone/L2'),
       apiClientFactoryProvider.overrideWith(
         (ref) =>

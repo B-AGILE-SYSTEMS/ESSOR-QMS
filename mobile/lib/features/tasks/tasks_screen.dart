@@ -154,6 +154,8 @@ class OperationsScreen extends ConsumerWidget {
     'record.create': 'Nouvelle fiche',
     'record.transition': 'Changement de statut',
     'attachment.upload': 'Photo',
+    'audit.answer': 'Réponse d\'audit',
+    'document.ack': 'Accusé de lecture',
   };
 
   @override
