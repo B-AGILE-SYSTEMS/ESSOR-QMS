@@ -138,6 +138,10 @@ export interface DashboardSummary {
   ncToQualify: number;
   actionsOverdue: number;
   ncCostMonth: number;
+  /** M4 : taux de conformité réglementaire (%), étalonnages sous 15 jours et échus. */
+  regulatoryCompliance?: number | null;
+  calibrationsDue15?: number | null;
+  calibrationsOverdue?: number | null;
 }
 
 export interface AppNotification {

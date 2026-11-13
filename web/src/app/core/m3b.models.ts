@@ -261,7 +261,7 @@ export function samplingLabel(s: Sampling | null | undefined): string {
 
 /* ===== Contrôles ===== */
 
-export interface InspectionResult { characteristic: string; values: (number | string)[]; ok: boolean; instrument?: string | null }
+export interface InspectionResult { characteristic: string; values: (number | string)[]; ok: boolean; instrument?: string | null; instrumentId?: string }
 export interface Inspection {
   plan?: ControlPlan | null;
   id: string; lotId: string; lotNumero?: string | null; controlPlanId: string; planVersion?: number | null; point: FlowPoint | string;

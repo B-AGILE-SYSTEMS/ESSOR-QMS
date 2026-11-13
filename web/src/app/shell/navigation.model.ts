@@ -30,7 +30,8 @@ export const NAV_FAMILIES: NavFamily[] = [
     label: 'Pilotage',
     items: [
       { label: 'Indicateurs', path: '/indicateurs' },
-      { label: 'Risques & conformité', path: '/risques' },
+      { label: 'Risques', path: '/risques' },
+      { label: 'Veille réglementaire', path: '/veille' },
     ],
   },
   {
@@ -39,12 +40,15 @@ export const NAV_FAMILIES: NavFamily[] = [
       { label: 'Équipements', path: '/equipements' },
       { label: 'Documents', path: '/documents' },
       { label: 'Lots & traçabilité', path: '/lots' },
+      { label: 'Clients & fournisseurs', path: '/partenaires' },
     ],
   },
   {
     label: 'Administration',
     items: [
       { label: 'Référentiels', path: '/parametrage/referentiels', role: ['ADMIN', 'QUALITY_MANAGER'] },
+      { label: 'Échelles de risque', path: '/parametrage/echelles-risque', role: ['ADMIN', 'QUALITY_MANAGER'] },
+      { label: "Grilles d'évaluation", path: '/parametrage/grilles-evaluation', role: ['ADMIN', 'QUALITY_MANAGER'] },
       { label: 'Plans de contrôle', path: '/parametrage/plans-controle', role: ['ADMIN', 'QUALITY_MANAGER'] },
       { label: 'Données de base & connecteurs', path: '/parametrage/donnees-base', role: 'ADMIN' },
       { label: 'Workflows', path: '/parametrage/workflows', role: 'ADMIN' },
