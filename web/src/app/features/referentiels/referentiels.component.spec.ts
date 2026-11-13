@@ -32,10 +32,10 @@ const TREE = [{ id: 'r8', code: '8', title: 'Fonctionnement', auditable: false, 
   { id: 'r812', code: '8.1.2', title: 'Élimination des dangers', auditable: true, children: [] }] }];
 const DOC: QmsRecord = {
   id: 'd1', reference: 'DOC-1', type: 'DOCUMENT', status: 'DIFFUSE', statusLabel: 'Diffusé', title: 'Consignation', description: null,
-  data: { destinataires: { roles: ['OPERATEUR'], siteIds: ['s1'] }, verifierRoles: ['QUALITE'], approverRoles: [] },
+  data: { recipients: { roles: ['OPERATEUR'], siteIds: ['s1'] }, verifierRoles: ['QUALITE'], approverRoles: [] },
   createdBy: 'u', children: [], availableTransitions: [],
 };
-const V1 = { number: '1', status: 'DIFFUSE', fileName: 'pr.pdf', contentType: 'application/pdf', size: 4, createdAt: '2026-11-12T08:00:00Z', current: true };
+const V1 = { number: 1, status: 'DIFFUSE', fileName: 'pr.pdf', contentType: 'application/pdf', size: 4, createdAt: '2026-11-12T08:00:00Z', inForce: true };
 
 describe('Écrans M3', () => {
   let http: HttpTestingController;
@@ -63,8 +63,8 @@ describe('Écrans M3', () => {
     (el.querySelector('[aria-label="Déplier 8"]') as HTMLButtonElement).click();
     f.detectChanges();
     (Array.from(el.querySelectorAll<HTMLButtonElement>('.lbl')).find((b) => b.textContent!.includes('8.1.2'))!).click();
-    (await req(http, '/api/requirements/r812')).flush({ ...TREE[0].children[0], standardCode: 'ISO45001', text: 'Prévenir.',
-      documents: [{ id: 'd1', reference: 'PR-QHSE-07', title: 'Consignation' }], records: [{ id: 'nc-1', reference: 'NC-1', title: 'Écart', type: 'NC' }],
+    (await req(http, '/api/requirements/r812')).flush({ ...TREE[0].children[0], text: 'Prévenir.',
+      standard: STD, documents: [{ id: 'd1', reference: 'PR-QHSE-07', title: 'Consignation' }], records: [{ id: 'nc-1', reference: 'NC-1', title: 'Écart', type: 'NC' }],
       findings: [{ auditId: 'a1', auditReference: 'AUD-1', result: 'ecart_majeur', comment: 'Absent' }] });
     await settle(f);
     expect(el.querySelector('.det')!.textContent).toContain('PR-QHSE-07');
@@ -114,14 +114,14 @@ describe('Écrans M3', () => {
     f.componentRef.setInput('docId', 'd1');
     f.detectChanges();
     await f.whenStable();
-    (await req(http, '/api/documents/d1/versions')).flush([{ ...V1, number: '2', status: 'APPROBATION', current: false }, V1]);
+    (await req(http, '/api/documents/d1')).flush({ document: { id: 'd1' }, versions: [V1, { ...V1, number: 2, status: 'APPROBATION', inForce: false }] });
     await settle(f);
     const el = f.nativeElement as HTMLElement;
     expect(el.querySelector('iframe')!.getAttribute('src')).toBe('/api/documents/d1/versions/1/file');
     (Array.from(el.querySelectorAll<HTMLButtonElement>('button')).find((b) => b.textContent === 'Approuver et diffuser')!).click();
     (await req(http, '/api/documents/d1/versions/2/transitions/approuver')).flush(null);
     await f.whenStable();
-    (await req(http, '/api/documents/d1/versions')).flush([V1]);
+    (await req(http, '/api/documents/d1')).flush({ document: { id: 'd1' }, versions: [V1] });
     await settle(f);
   });
 
@@ -133,9 +133,9 @@ describe('Écrans M3', () => {
     f.componentRef.setInput('record', DOC);
     f.detectChanges();
     await f.whenStable();
-    (await req(http, '/api/documents/d1/versions')).flush([V1]);
+    (await req(http, '/api/documents/d1')).flush({ document: { id: 'd1' }, versions: [V1] });
     await f.whenStable();
-    (await req(http, '/api/documents/d1/versions/1/acks')).flush({ read: [], pending: [{ userId: 'sbennani', displayName: 'Salma Bennani' }] });
+    (await req(http, '/api/documents/d1/versions/1/acks')).flush({ version: 1, acknowledged: [], pending: [{ userId: 'u2', name: 'Salma Bennani' }] });
     await settle(f);
     const el = f.nativeElement as HTMLElement;
     expect(el.textContent).toContain('Kénitra');
@@ -143,7 +143,7 @@ describe('Écrans M3', () => {
     (el.querySelector('button.pri') as HTMLButtonElement).click();
     (await req(http, '/api/documents/d1/versions/1/ack')).flush(null);
     await f.whenStable();
-    (await req(http, '/api/documents/d1/versions/1/acks')).flush({ read: [{ userId: 'sbennani', displayName: 'Salma Bennani', at: null }], pending: [] });
+    (await req(http, '/api/documents/d1/versions/1/acks')).flush({ version: 1, acknowledged: [{ userId: 'u2', name: 'Salma Bennani', ackedAt: null }], pending: [] });
     await settle(f);
     expect(el.querySelector('.bar')!.textContent).toContain('1/1');
     expect(el.querySelector('button.pri')).toBeNull();
@@ -151,8 +151,9 @@ describe('Écrans M3', () => {
 
   it('exigences d’une fiche : coche et enregistre les liens', async () => {
     const f = TestBed.createComponent(RecordRequirementsComponent);
-    f.componentRef.setInput('record', { ...DOC, requirements: [{ id: 'r8', code: '8', title: 'Fonctionnement' }] } as QmsRecord);
+    f.componentRef.setInput('record', DOC);
     f.detectChanges();
+    (await req(http, '/api/records/d1/requirements')).flush([{ id: 'r8', code: '8', title: 'Fonctionnement' }]);
     (await req(http, '/api/standards')).flush([STD]);
     await f.whenStable();
     (await req(http, '/api/standards/s1/requirements')).flush(TREE);

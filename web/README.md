@@ -52,16 +52,19 @@ En déploiement : `docker compose --profile web up -d` depuis `deploy/` ; le Ngi
     simulation `?dryRun=true` obligatoire avant l'import réel (tout ou rien), rapport `{created, updated, errors[line, message]}`,
     modèle téléchargeable, arbre des exigences repliable, vue d'une exigence avec `{documents, records, findings}`.
   - `features/fiches/record-requirements` : onglet « Exigences » (NC, incidents, documents) → `PUT /api/records/{id}/requirements`.
-  - `features/audits` : programme annuel en calendrier (`GET /api/audits?year=&auditor=me`), planification (fiche AUDIT, `data.plannedDate|perimetre|auditeurs|audites|standardIds`),
+  - `features/audits` : programme annuel en calendrier (`GET /api/audits?year=&auditor=me`), planification (fiche AUDIT, auditeurs choisis parmi les utilisateurs),
     onglet « Grille d'audit » : génération, édition et suppression de questions (`PATCH|DELETE /api/audits/{id}/questions/{qid}`), exécution
     (`PUT …/answers/{qid}` avec `Idempotency-Key` et `closed`), taux de conformité par chapitre, constats, NC créées, rapport `report.pdf`.
-  - `features/documents` : liste (`currentVersion.number`), création (`POST /api/documents`, `data.verifierRoles|approverRoles|destinataires`),
+  - `features/documents` : liste (`currentVersion.number`), création (`POST /api/documents`, rôles vérificateurs/approbateurs, destinataires),
     onglet « Versions » (téléversement PDF/DOCX/XLSX ≤ 20 Mo + note, transitions par NUMÉRO de version
     `POST …/versions/{n}/transitions/{code}`, visionneuse PDF intégrée `…/versions/{n}/file`), onglet « Diffusion & lecture » (accusés).
-- Hypothèses de format M3 (non fixées par le contrat, lues de façon tolérante) : listes en tableau ou `{items}` ; arbre des exigences
-  imbriqué (`children`) ou plat (`parentId`) ; `GET /api/audits/{id}` porte la grille dans `questions` ; une réponse renvoie la question
-  avec `ncId|ncReference` ; `GET …/versions` → `[{number, status, fileName, contentType, current, availableTransitions?}]` (à défaut,
-  transitions déduites du statut) ; `GET …/acks` → `{read:[{userId, displayName, at}], pending:[…]}` ; liens d'une fiche dans `requirements`.
+- Formats M3 suivis : ceux du back-end livré (`backend/…/records/StandardService|AuditService|DocumentService`), normalisés dans
+  `core/m3.service.ts` : arbre `RequirementNode{position, children}`, détail `{standard, documents, records, findings}`, liens d'une fiche
+  `GET /api/records/{id}/requirements` ; programme `ProgramItem{datePrevue, auditeurs:[userId]}` ; grille dans `GET /api/audits/{id}`
+  (`questions[{text|question, closed, ncId, ncReference}]`) ; documents `DocumentSummary{code, docType, currentVersion{id, number, fileName}}`,
+  versions dans `GET /api/documents/{id}` (`VersionView{number, inForce, availableTransitions}`), accusés `{acknowledged, pending}` de
+  `{userId, name, ackedAt}`. Données de fiche : AUDIT `data.datePrevue|perimetre|auditeurs|audites|standardIds`, DOCUMENT
+  `data.code|docType|processus|recipients|verifierRoles|approverRoles|reviewDate`.
 - `e2e/` : parcours NC complet, paramétrage, incidents et pièces jointes (contrôle de signature, Idempotency-Key, `sync/changes`), M3
   (import ISO 45001 avec simulation et erreur, audit jusqu'au rapport PDF, cycle d'un document jusqu'à l'accusé de lecture), API simulée
   en mémoire (`page.route`, `mock-api.ts` + `mock-api-m3.ts`), écran 1440 px.

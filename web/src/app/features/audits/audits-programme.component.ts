@@ -7,6 +7,8 @@ import { formatDate, statusTone } from '../../core/labels';
 import { AuditSummary, Standard, plannedDateOf, standardLabel } from '../../core/m3.models';
 import { AuditsService, StandardsService } from '../../core/m3.service';
 import { RecordsService } from '../../core/records.service';
+import { UserRef } from '../../core/api.models';
+import { UserPickerComponent } from '../nc/user-picker.component';
 
 const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
@@ -24,7 +26,7 @@ export function byMonth(list: AuditSummary[]): AuditSummary[][] {
 /** Audits : programme annuel en calendrier et planification d'un audit (fiche AUDIT). */
 @Component({
   selector: 'eq-audits-programme',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, UserPickerComponent],
   template: `
     <div class="ph">
       <div><span class="ref">Terrain</span><h2>Programme d'audits {{ year() }}</h2></div>
@@ -43,7 +45,7 @@ export function byMonth(list: AuditSummary[]): AuditSummary[][] {
           @for (s of auth.me()?.sites ?? []; track s.id) { <option [value]="s.id">{{ s.name }}</option> }</select></label>
         <label class="field"><span>Date prévue</span><input type="date" name="date" [(ngModel)]="draft.plannedDate" required /></label>
         <label class="field"><span>Périmètre</span><input name="perimetre" [(ngModel)]="draft.perimetre" /></label>
-        <label class="field"><span>Auditeur(s)</span><input name="auditeurs" [(ngModel)]="draft.auditeurs" placeholder="Noms séparés par des virgules" /></label>
+        <div class="field"><span>Auditeur(s) : {{ auditorNames() || '—' }}</span><eq-user-picker (picked)="addAuditor($event)" /></div>
         <label class="field"><span>Audités</span><input name="audites" [(ngModel)]="draft.audites" /></label>
         <fieldset class="field stds"><legend>Référentiel(s)</legend>
           @for (s of standards(); track s.id) {
@@ -101,7 +103,13 @@ export class AuditsProgrammeComponent {
   protected readonly mine = signal(false);
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
-  protected draft = { title: '', siteId: '', plannedDate: '', perimetre: '', auditeurs: '', audites: '', standardIds: [] as string[] };
+  protected draft = { title: '', siteId: '', plannedDate: '', perimetre: '', audites: '', standardIds: [] as string[] };
+  protected readonly auditors = signal<UserRef[]>([]);
+  protected readonly auditorNames = computed(() => this.auditors().map((u) => u.displayName).join(', '));
+
+  protected addAuditor(u: UserRef): void {
+    if (!this.auditors().some((x) => x.id === u.id)) this.auditors.set([...this.auditors(), u]);
+  }
 
   constructor() {
     void this.load();
@@ -136,10 +144,9 @@ export class AuditsProgrammeComponent {
     const d = this.draft;
     this.busy.set(true);
     try {
-      const split = (s: string) => s.split(',').map((x) => x.trim()).filter(Boolean);
       const rec = await this.records.create({
         type: 'AUDIT', siteId: d.siteId, title: d.title.trim(), description: d.perimetre.trim(),
-        data: { plannedDate: d.plannedDate, perimetre: d.perimetre.trim(), auditeurs: split(d.auditeurs), audites: split(d.audites), standardIds: d.standardIds },
+        data: { datePrevue: d.plannedDate, perimetre: d.perimetre.trim(), auditeurs: this.auditors().map((u) => u.id), audites: d.audites.trim(), standardIds: d.standardIds },
       });
       await this.router.navigate(['/audits', rec.id]);
     } catch (e) {

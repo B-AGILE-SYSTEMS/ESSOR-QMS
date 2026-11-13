@@ -155,6 +155,7 @@ test('Document : version, rédaction → vérification → approbation → diffu
   await page.getByRole('button', { name: "J'ai lu et compris la version 1" }).click();
   await expect(page.locator('.bar')).toContainText('1/3');
   await expect(page.locator('.cols')).toContainText('✓ Salma Bennani');
+  await expect(page.locator('.kv')).toContainText('QUALITY_MANAGER');
   await expect(page.getByRole('button', { name: /J'ai lu et compris/ })).toHaveCount(0);
   if (SHOTS) await page.screenshot({ path: `${SHOTS}/m3-3-fiche-document-accuses.png`, fullPage: true });
 
@@ -164,4 +165,22 @@ test('Document : version, rédaction → vérification → approbation → diffu
   await page.getByRole('tab', { name: 'Versions' }).click();
   await expect(page.locator('tbody tr').first()).toContainText('en vigueur');
   await expect(page.locator('iframe[title="Visionneuse PR-QHSE-07-v1.pdf"]')).toHaveAttribute('src', '/api/documents/document-1/versions/1/file');
+});
+
+test('Document : création par POST /api/documents (CreateDocument)', async ({ page }) => {
+  const api = new MockApiM3();
+  await api.install(page);
+  await page.goto('/documents');
+  await page.getByRole('button', { name: '＋ Nouveau document' }).click();
+  const form = page.getByRole('form', { name: 'Nouveau document' });
+  await form.getByLabel('Code').fill('IT-LOG-02');
+  await form.getByLabel('Titre').fill('Chargement des remorques');
+  await form.getByLabel('Rôles destinataires').fill('OPERATEUR, CHEF_EQUIPE');
+  await form.getByRole('button', { name: 'Créer' }).click();
+  await expect(page).toHaveURL(/\/documents\/document-2$/);
+  expect(api.lastCreateDocument).toEqual(expect.objectContaining({
+    code: 'IT-LOG-02', docType: 'procedure', recipients: { roles: ['OPERATEUR', 'CHEF_EQUIPE'], siteIds: [] },
+    verifierRoles: ['QUALITY_MANAGER'], approverRoles: ['ADMIN'],
+  }));
+  await expect(page.getByRole('heading', { name: 'Chargement des remorques' })).toBeVisible();
 });

@@ -3,7 +3,7 @@ import { LABELS, MockApi, PREFIX, Rec, USERS, WORKFLOWS } from './mock-api';
 
 /**
  * API simulée M3 (docs/pilotage/cartes/M3-contrat.md) : référentiels, audits, gestion documentaire.
- * Étend l'API M1/M2. Formes de réponse non fixées par le contrat : voir web/README.md (« Hypothèses de format M3 »).
+ * Étend l'API M1/M2. Formes de réponse alignées sur le back-end livré (backend/…/records : StandardService, AuditService, DocumentService).
  */
 export const AUDIT_WORKFLOW = {
   initial: 'PLANIFIE',
@@ -31,6 +31,10 @@ export const DOCUMENT_WORKFLOW = {
   // Le workflow documentaire porte sur les versions : POST /api/documents/{id}/versions/{n}/transitions/{code}.
   transitions: [] as typeof AUDIT_WORKFLOW.transitions,
 };
+const VERSION_LABELS: Record<string, string> = {
+  soumettre: 'Soumettre à vérification', verifier: 'Vérifier', refuser_verification: 'Refuser (vérification)',
+  approuver: 'Approuver et diffuser', refuser_approbation: 'Refuser (approbation)', archiver: 'Archiver',
+};
 const VERSION_TR: Record<string, { from: string; to: string }> = {
   soumettre: { from: 'REDACTION', to: 'VERIFICATION' }, verifier: { from: 'VERIFICATION', to: 'APPROBATION' },
   refuser_verification: { from: 'VERIFICATION', to: 'REDACTION' }, approuver: { from: 'APPROBATION', to: 'DIFFUSE' },
@@ -55,8 +59,8 @@ type Version = { id: string; docId: string; number: string; status: string; note
 
 const PDF = Buffer.from('%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n'
   + '3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 300 120]>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n');
-/** Destinataires simulés (rôle OPERATEUR). Salma Bennani est l'utilisateur connecté (username sbennani). */
-const RECIPIENTS = [{ userId: 'sbennani', displayName: 'Salma Bennani' }, { userId: 'u1', displayName: 'Karim Tazi' }, { userId: 'u3', displayName: 'Omar Fassi' }];
+/** Destinataires simulés (rôle OPERATEUR). Salma Bennani (u2) est l'utilisateur connecté. */
+const RECIPIENTS = [{ userId: 'u2', displayName: 'Salma Bennani' }, { userId: 'u1', displayName: 'Karim Tazi' }, { userId: 'u3', displayName: 'Omar Fassi' }];
 const GAPS = ['ecart_mineur', 'ecart_majeur'];
 
 export class MockApiM3 extends MockApi {
@@ -67,6 +71,7 @@ export class MockApiM3 extends MockApi {
   links = new Map<string, string[]>();
   imports: { dryRun: boolean; fileName: string }[] = [];
   lastImportFields: string[] = [];
+  lastCreateDocument: Record<string, unknown> | null = null;
 
   constructor() {
     super();
@@ -77,13 +82,13 @@ export class MockApiM3 extends MockApi {
       ['8.7', 'Maîtrise des éléments de sortie non conformes', 'Identifier et traiter les produits non conformes.', '8', 'oui'],
     ]);
     const audit = this.create({ type: 'AUDIT', siteId: 's1', title: 'Audit interne ISO 45001 — Entrepôt Nord', description: 'Quais et préparation',
-      data: { plannedDate: '2026-11-21', perimetre: 'Quais et préparation', auditeurs: ['Salma Bennani'], audites: ['Karim Tazi'], standardIds: [] } }, undefined, 'u2');
+      data: { datePrevue: '2026-11-21', perimetre: 'Quais et préparation', auditeurs: ['u2'], audites: 'Karim Tazi', standardIds: [] } }, undefined, 'u2');
     void audit;
     this.create({ type: 'AUDIT', siteId: 's2', title: 'Audit fournisseur transport', description: '',
-      data: { plannedDate: '2026-03-12', perimetre: 'Sous-traitance', auditeurs: ['Karim Tazi'], audites: [], standardIds: ['std-1'] } }, 'CLOTURE', 'u1');
+      data: { datePrevue: '2026-03-12', perimetre: 'Sous-traitance', auditeurs: ['u1'], audites: '', standardIds: ['std-1'] } }, 'CLOTURE', 'u1');
     this.create({ type: 'DOCUMENT', siteId: 's1', title: 'Consignation des énergies', description: '',
       data: { code: 'PR-QHSE-07', docType: 'procedure', processus: 'Maintenance', reviewDate: '2027-11-30',
-        destinataires: { roles: ['OPERATEUR'], siteIds: ['s1'] }, verifierRoles: ['QUALITE'], approverRoles: ['DIRECTION'] } }, undefined, 'u2');
+        recipients: { roles: ['OPERATEUR'], siteIds: ['s1'] }, verifierRoles: ['QUALITY_MANAGER'], approverRoles: ['ADMIN'] } }, undefined, 'u2');
   }
 
   /** Import de lignes code;titre;texte;parent;auditable. Renvoie le rapport du contrat. */
@@ -129,15 +134,6 @@ export class MockApiM3 extends MockApi {
     return [...own, ...super.missing(r, requires.filter((f) => !['grille', 'reponses'].includes(f)))];
   }
 
-  override full(r: Rec) {
-    const ids = this.links.get(r.id) ?? [];
-    return {
-      ...super.full(r),
-      requirements: ids.map((id) => this.requirements.find((q) => q.id === id)!).map((q) => ({
-        id: q.id, code: q.code, title: q.title, standardCode: this.standards.find((s) => s.id === q.standardId)?.code })),
-    };
-  }
-
   private createNc(q: Question, audit: Rec): void {
     const nc = this.create({ type: 'NC', siteId: audit.siteId, title: `Écart audit ${audit.reference} §${q.requirementCode}`,
       description: q.comment, severity: q.result === 'ecart_majeur' ? 'majeure' : 'mineure',
@@ -147,14 +143,37 @@ export class MockApiM3 extends MockApi {
     q.ncReference = nc.reference;
   }
 
+  /** Question du serveur : `text`, avec l'alias `question` (AuditService.Question). */
   private qOut(q: Question) {
-    const { auditId: _a, ...o } = q;
-    return o;
+    const { auditId: _a, order, ...o } = q;
+    return { ...o, text: q.question, position: order };
   }
 
+  /** VersionView du serveur : `number` entier, `inForce`, `availableTransitions`. */
   private vOut(v: Version) {
-    const { body: _b, acks: _a, docId: _d, ...o } = v;
-    return { ...o, statusLabel: LABELS[v.status] };
+    const { body: _b, acks: _a, docId: _d, current, number, ...o } = v;
+    return { ...o, number: Number(number), inForce: current, statusLabel: LABELS[v.status],
+      availableTransitions: Object.entries(VERSION_TR).filter(([, t]) => t.from === v.status)
+        .map(([code]) => ({ code, label: VERSION_LABELS[code], missing: [] as string[] })) };
+  }
+
+  private docSummary(r: Rec) {
+    const cur = this.versions.find((v) => v.docId === r.id && v.current);
+    const list = this.versions.filter((v) => v.docId === r.id);
+    return { id: r.id, reference: r.reference, code: r.data['code'], title: r.title, docType: r.data['docType'], processus: r.data['processus'],
+      status: r.status, statusLabel: LABELS[r.status], currentVersion: cur ? { id: cur.id, number: Number(cur.number), fileName: cur.fileName } : null,
+      latestVersion: list.length || null, reviewDate: r.data['reviewDate'] ?? null, updatedAt: r.createdAt };
+  }
+
+  private docView(r: Rec) {
+    return { document: this.docSummary(r), ownerId: r.ownerId, ownerName: r.ownerName, recipients: r.data['recipients'],
+      verifierRoles: r.data['verifierRoles'], approverRoles: r.data['approverRoles'], requirements: [],
+      versions: this.versions.filter((v) => v.docId === r.id).map((v) => this.vOut(v)) };
+  }
+
+  private acksOut(v: Version) {
+    return { version: Number(v.number), acknowledged: v.acks.map((a) => ({ userId: a.userId, name: a.displayName, ackedAt: a.at })),
+      pending: RECIPIENTS.filter((u) => !v.acks.some((a) => a.userId === u.userId)).map((u) => ({ userId: u.userId, name: u.displayName })) };
   }
 
   /** Effets de bord des transitions AUDIT / DOCUMENT avant leur application par l'API M1. */
@@ -195,17 +214,23 @@ export class MockApiM3 extends MockApi {
     if ((mm = p.match(/^\/api\/standards\/([^/]+)\/requirements$/))) {
       const all = this.requirements.filter((r) => r.standardId === mm![1]);
       const tree = (parent: string | null): unknown[] => all.filter((r) => r.parentId === parent).sort((a, b) => a.order - b.order)
-        .map(({ standardId: _s, ...r }) => ({ ...r, children: tree(r.id) }));
+        .map(({ standardId: _s, order, parentId: _p, ...r }) => ({ ...r, position: order, children: tree(r.id) }));
       return json(tree(null));
     }
     if ((mm = p.match(/^\/api\/requirements\/([^/]+)$/))) {
       const r = this.requirements.find((x) => x.id === mm![1]);
       if (!r) return json({ error: 'introuvable', message: 'Exigence introuvable.' }, 404);
       const linked = (type: string) => this.records.filter((x) => x.type === type && (this.links.get(x.id) ?? []).includes(r.id))
-        .map((x) => ({ id: x.id, reference: x.reference, title: x.title, type: x.type, statusLabel: LABELS[x.status] }));
-      return json({ ...r, standardCode: this.standards.find((s) => s.id === r.standardId)?.code, documents: linked('DOCUMENT'), records: [...linked('NC'), ...linked('INCIDENT')],
+        .map((x) => ({ id: x.id, reference: x.reference, type: x.type, status: x.status, title: x.title }));
+      const { standardId, order: _o, parentId: _p, ...rest } = r;
+      return json({ ...rest, standard: this.standards.find((s) => s.id === standardId), documents: linked('DOCUMENT'), records: [...linked('NC'), ...linked('INCIDENT')],
         findings: this.questions.filter((q) => q.requirementId === r.id && q.result && q.result !== 'conforme').map((q) => ({
-          auditId: q.auditId, auditReference: this.records.find((x) => x.id === q.auditId)?.reference, result: q.result, comment: q.comment })) });
+          auditId: q.auditId, auditReference: this.records.find((x) => x.id === q.auditId)?.reference, questionId: q.id, result: q.result,
+          comment: q.comment, ncId: q.ncId })) });
+    }
+    if ((mm = p.match(/^\/api\/records\/([^/]+)\/requirements$/)) && m === 'GET') {
+      return json((this.links.get(mm[1]) ?? []).map((id) => this.requirements.find((q) => q.id === id)!).map((q) => ({
+        id: q.id, code: q.code, title: q.title, standardId: q.standardId, standardCode: this.standards.find((s) => s.id === q.standardId)?.code })));
     }
     if ((mm = p.match(/^\/api\/records\/([^/]+)\/requirements$/)) && m === 'PUT') {
       this.links.set(mm[1], body());
@@ -215,9 +240,10 @@ export class MockApiM3 extends MockApi {
       const y = url.searchParams.get('year') ?? '';
       const st = (url.searchParams.get('status') ?? '').split(',').filter(Boolean);
       const mine = url.searchParams.get('auditor') === 'me';
-      return json(this.records.filter((r) => r.type === 'AUDIT' && String(r.data['plannedDate'] ?? '').startsWith(y)
-        && (!st.length || st.includes(r.status)) && (!mine || (r.data['auditeurs'] as string[]).includes('Salma Bennani')))
-        .map((r) => ({ ...this.summary(r), plannedDate: r.data['plannedDate'] })));
+      return json(this.records.filter((r) => r.type === 'AUDIT' && String(r.data['datePrevue'] ?? '').startsWith(y)
+        && (!st.length || st.includes(r.status)) && (!mine || r.ownerId === 'u2' || (r.data['auditeurs'] as string[]).includes('u2')))
+        .map((r) => ({ id: r.id, reference: r.reference, title: r.title, status: r.status, statusLabel: LABELS[r.status], siteId: r.siteId,
+          siteName: r.siteName, datePrevue: r.data['datePrevue'], standardIds: r.data['standardIds'], auditeurs: r.data['auditeurs'] })));
     }
     if ((mm = p.match(/^\/api\/audits\/([^/]+)$/)) && m === 'GET') {
       const audit = this.records.find((x) => x.id === mm![1] && x.type === 'AUDIT');
@@ -244,7 +270,7 @@ export class MockApiM3 extends MockApi {
       }
       const q = this.questions.find((x) => x.auditId === audit.id && x.id === rest.split('/')[1]);
       if (!q) return json({ error: 'introuvable', message: 'Question introuvable.' }, 404);
-      if (rest.startsWith('questions/') && m === 'PATCH') { q.question = body().question; return json(this.qOut(q)); }
+      if (rest.startsWith('questions/') && m === 'PATCH') { q.question = body().text; return json(this.qOut(q)); }
       if (rest.startsWith('questions/') && m === 'DELETE') { this.questions = this.questions.filter((x) => x !== q); return route.fulfill({ status: 204 }); }
       if (rest.startsWith('answers/') && m === 'PUT') {
         if (audit.status !== 'EN_COURS') return json({ error: 'audit_non_en_cours', message: "L'audit n'est pas en cours." }, 409);
@@ -253,20 +279,27 @@ export class MockApiM3 extends MockApi {
         return json(this.qOut(q));
       }
     }
-    if (p === '/api/documents') {
+    if (p === '/api/documents' && m === 'GET') {
       const st = url.searchParams.get('status'); const ty = url.searchParams.get('type'); const q = (url.searchParams.get('q') ?? '').toLowerCase();
       return json(this.records.filter((r) => r.type === 'DOCUMENT' && (!st || r.status === st) && (!ty || r.data['docType'] === ty)
-        && (!q || `${r.data['code']} ${r.title}`.toLowerCase().includes(q))).map((r) => {
-          const cur = this.versions.find((v) => v.docId === r.id && v.current);
-          return { ...this.summary(r), data: r.data, currentVersion: cur ? { id: cur.id, number: cur.number, fileName: cur.fileName } : null };
-        }));
+        && (!q || `${r.data['code']} ${r.title}`.toLowerCase().includes(q))).map((r) => this.docSummary(r)));
     }
-    if (p === '/api/documents' && m === 'POST') return json(this.full(this.create({ ...body(), type: 'DOCUMENT' }, undefined, 'u2')), 201);
+    if (p === '/api/documents' && m === 'POST') {
+      const b = body();
+      this.lastCreateDocument = b;
+      const r = this.create({ type: 'DOCUMENT', siteId: b.siteId, title: b.title, description: null, data: { code: b.code, docType: b.docType,
+        processus: b.processus, recipients: b.recipients, verifierRoles: b.verifierRoles, approverRoles: b.approverRoles, reviewDate: b.reviewDate } },
+      'REDACTION', 'u2');
+      return json(this.docView(r), 201);
+    }
+    if ((mm = p.match(/^\/api\/documents\/([^/]+)$/)) && m === 'GET') {
+      const doc = this.records.find((x) => x.id === mm![1] && x.type === 'DOCUMENT');
+      return doc ? json(this.docView(doc)) : json({ error: 'introuvable', message: 'Document introuvable.' }, 404);
+    }
     if ((mm = p.match(/^\/api\/documents\/([^/]+)\/versions(?:\/([^/]+)(\/file|\/ack|\/acks|\/transitions\/[^/]+))?$/))) {
       const doc = this.records.find((x) => x.id === mm![1] && x.type === 'DOCUMENT');
       if (!doc) return json({ error: 'introuvable', message: 'Document introuvable.' }, 404);
       const list = this.versions.filter((v) => v.docId === doc.id);
-      if (!mm[2] && m === 'GET') return json([...list].reverse().map((v) => this.vOut(v)));
       if (!mm[2] && m === 'POST') {
         if (list.some((v) => ['REDACTION', 'VERIFICATION', 'APPROBATION'].includes(v.status))) {
           return json({ error: 'version_en_cours', message: 'Une version est déjà en circuit de validation.' }, 409);
@@ -296,13 +329,10 @@ export class MockApiM3 extends MockApi {
       if (mm[3] === '/file') return route.fulfill({ status: 200, body: v.body, headers: { 'content-type': v.contentType, 'content-disposition': `inline; filename="${v.fileName}"`, 'x-content-type-options': 'nosniff' } });
       if (mm[3] === '/ack' && m === 'POST') {
         if (v.status !== 'DIFFUSE') return json({ error: 'non_diffuse', message: "Version non diffusée." }, 409);
-        if (!v.acks.some((a) => a.userId === 'sbennani')) v.acks.push({ userId: 'sbennani', displayName: 'Salma Bennani', at: this.now() });
-        return json(null, 201);
+        if (!v.acks.some((a) => a.userId === 'u2')) v.acks.push({ userId: 'u2', displayName: 'Salma Bennani', at: this.now() });
+        return json(this.acksOut(v));
       }
-      if (mm[3] === '/acks') {
-        const read = v.acks;
-        return json({ read, pending: RECIPIENTS.filter((u) => !read.some((a) => a.userId === u.userId)) });
-      }
+      if (mm[3] === '/acks') return json(this.acksOut(v));
     }
     const tm = p.match(/^\/api\/records\/([^/]+)\/transitions\/(.+)$/);
     if (tm && m === 'POST') {

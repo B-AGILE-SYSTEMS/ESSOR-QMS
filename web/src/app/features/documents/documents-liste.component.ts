@@ -29,6 +29,8 @@ export const DOC_STATUSES = [
           @for (t of types; track t) { <option [value]="t">{{ typeLabel[t] }}</option> }</select></label>
         <label class="field"><span>Processus</span><input name="processus" [(ngModel)]="draft.processus" /></label>
         <label class="field"><span>Rôles destinataires</span><input name="roles" [(ngModel)]="draft.roles" placeholder="OPERATEUR, CHEF_EQUIPE" /></label>
+        <label class="field"><span>Rôles vérificateurs</span><input name="verif" [(ngModel)]="draft.verifierRoles" /></label>
+        <label class="field"><span>Rôles approbateurs</span><input name="appro" [(ngModel)]="draft.approverRoles" /></label>
         <label class="field"><span>Date de revue</span><input type="date" name="review" [(ngModel)]="draft.reviewDate" /></label>
         <button type="submit" class="btn pri" [disabled]="busy() || !draft.code.trim() || !draft.title.trim()">Créer</button>
       </form>
@@ -84,7 +86,9 @@ export class DocumentsListeComponent {
   protected readonly creating = signal(false);
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
-  protected draft = { code: '', title: '', docType: 'procedure' as DocType, processus: '', roles: '', reviewDate: '' };
+  protected draft = {
+    code: '', title: '', docType: 'procedure' as DocType, processus: '', roles: '', reviewDate: '', verifierRoles: 'QUALITY_MANAGER', approverRoles: 'ADMIN',
+  };
 
   constructor() {
     void this.load();
@@ -120,11 +124,11 @@ export class DocumentsListeComponent {
     const siteId = this.auth.me()?.sites[0]?.id ?? '';
     this.busy.set(true);
     try {
-      const roles = d.roles.split(',').map((x) => x.trim()).filter(Boolean);
+      const roles = split(d.roles);
       const rec = await this.docs.create({
-        siteId, title: d.title.trim(), description: '',
-        data: { code: d.code.trim(), docType: d.docType, processus: d.processus.trim(), reviewDate: d.reviewDate || null,
-          destinataires: { roles, siteIds: [] }, verifierRoles: ['QUALITE'], approverRoles: ['DIRECTION'] },
+        code: d.code.trim(), title: d.title.trim(), docType: d.docType, processus: d.processus.trim(), siteId: siteId || null,
+        recipients: { roles, siteIds: [] }, verifierRoles: split(d.verifierRoles), approverRoles: split(d.approverRoles),
+        reviewDate: d.reviewDate || null,
       });
       await this.router.navigate(['/documents', rec.id]);
     } catch (e) {
@@ -133,6 +137,10 @@ export class DocumentsListeComponent {
       this.busy.set(false);
     }
   }
+}
+
+function split(s: string): string[] {
+  return s.split(',').map((x) => x.trim()).filter(Boolean);
 }
 
 /** Ton visuel d'un statut documentaire. */

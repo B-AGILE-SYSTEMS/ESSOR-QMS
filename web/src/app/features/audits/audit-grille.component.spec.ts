@@ -109,7 +109,7 @@ describe('Utilitaires M3 des écrans', () => {
     const base = { reference: '', type: 'AUDIT', status: '', statusLabel: '', title: '' };
     const m = byMonth([
       { ...base, id: 'b', plannedDate: '2026-11-21' }, { ...base, id: 'a', plannedDate: '2026-11-03' },
-      { ...base, id: 'c', data: { plannedDate: '2026-03-12' } }, { ...base, id: 'x' },
+      { ...base, id: 'c', datePrevue: '2026-03-12' }, { ...base, id: 'x' },
     ]);
     expect(m[10].map((a) => a.id)).toEqual(['a', 'b']);
     expect(m[2].map((a) => a.id)).toEqual(['c']);

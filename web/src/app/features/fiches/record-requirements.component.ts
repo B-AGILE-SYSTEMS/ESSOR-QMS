@@ -1,11 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { QmsRecord } from '../../core/api.models';
 import { errorMessage } from '../../core/api-error';
-import { Requirement, Standard, buildTree, standardLabel } from '../../core/m3.models';
+import { Requirement, RequirementRef, Standard, buildTree, standardLabel } from '../../core/m3.models';
 import { StandardsService } from '../../core/m3.service';
 
-/** Exigence liée à une fiche, telle que renvoyée dans `requirements` de la fiche (lecture tolérante). */
-export interface LinkedRequirement { id: string; code: string; title: string; standardCode?: string | null }
+type LinkedRequirement = RequirementRef;
 
 export function flatten(nodes: Requirement[], depth = 0): (Requirement & { depth: number })[] {
   return nodes.flatMap((n) => [{ ...n, depth }, ...flatten(n.children ?? [], depth + 1)]);
@@ -66,8 +65,10 @@ export class RecordRequirementsComponent {
     effect(() => {
       const rec = this.record();
       untracked(() => {
-        const cur = ((rec as QmsRecord & { requirements?: LinkedRequirement[] }).requirements ?? []);
-        this.picked.set(new Map(cur.map((r) => [r.id, r])));
+        this.api.linked(rec.id).then(
+          (cur) => this.picked.set(new Map(cur.map((r) => [r.id, r]))),
+          (e) => this.error.set(errorMessage(e, 'Impossible de charger les exigences liées.')),
+        );
       });
     });
     this.api.list().then((l) => {

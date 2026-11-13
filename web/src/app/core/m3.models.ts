@@ -19,6 +19,8 @@ export interface Requirement {
   text?: string | null;
   parentId?: string | null;
   order?: number | null;
+  /** Nom côté serveur de l'ordre d'affichage. */
+  position?: number | null;
   auditable: boolean;
   children?: Requirement[];
 }
@@ -42,6 +44,15 @@ export interface RecordLink {
   statusLabel?: string | null;
 }
 
+/** Exigence liée à une fiche (`GET /api/records/{id}/requirements`). */
+export interface RequirementRef {
+  id: string;
+  code: string;
+  title: string;
+  standardId?: string | null;
+  standardCode?: string | null;
+}
+
 /** Constat d'audit rattaché à une exigence. */
 export interface FindingLink {
   auditId: string;
@@ -53,6 +64,7 @@ export interface FindingLink {
 export interface RequirementDetail extends Requirement {
   standardId?: string | null;
   standardCode?: string | null;
+  standard?: { id: string; code: string; title?: string; version?: string | null } | null;
   documents?: RecordLink[];
   /** Fiches liées (NC, incidents…). */
   records?: RecordLink[];
@@ -74,7 +86,9 @@ export interface AuditQuestion {
   requirementId?: string | null;
   requirementCode?: string | null;
   requirementTitle?: string | null;
+  /** Libellé (`question`, alias de `text` côté serveur). */
   question: string;
+  text?: string;
   order?: number | null;
   result?: AnswerResult | null;
   comment?: string | null;
@@ -100,9 +114,10 @@ export interface Answer {
   closed?: boolean;
 }
 
-/** Audit du programme annuel (fiche AUDIT ; date prévue en tête ou dans `data.plannedDate`). */
+/** Audit du programme annuel (`datePrevue` du serveur, recopiée dans `plannedDate`). */
 export interface AuditSummary extends RecordSummary {
   plannedDate?: string | null;
+  datePrevue?: string | null;
 }
 
 export const DOC_TYPES = ['procedure', 'instruction', 'formulaire', 'enregistrement'] as const;
@@ -122,7 +137,46 @@ export interface CurrentVersion {
 }
 
 export interface DocumentSummary extends RecordSummary {
+  code?: string | null;
+  docType?: string | null;
+  processus?: string | null;
+  reviewDate?: string | null;
   currentVersion?: CurrentVersion | null;
+}
+
+/** Version telle que renvoyée par le serveur (`number` entier, `inForce`). */
+export interface ServerVersion extends Omit<DocVersion, 'number' | 'current'> {
+  number: number | string;
+  inForce?: boolean;
+  current?: boolean;
+}
+
+/** `GET /api/documents/{id}` et `POST /api/documents`. */
+export interface DocumentView {
+  document: DocumentSummary;
+  versions?: ServerVersion[];
+}
+
+/** Accusés côté serveur : `{version, acknowledged, pending}` de `{userId, name, ackedAt}`. */
+export interface ServerAcks {
+  version?: number;
+  acknowledged?: { userId: string; name: string; ackedAt?: string | null }[];
+  pending?: { userId: string; name: string }[];
+}
+
+export function toVersion(v: ServerVersion): DocVersion {
+  return { ...v, number: String(v.number), current: v.current ?? v.inForce ?? false };
+}
+
+export function toAcks(a: ServerAcks): AckStatus {
+  return {
+    read: (a.acknowledged ?? []).map((r) => ({ userId: r.userId, displayName: r.name, at: r.ackedAt ?? null })),
+    pending: (a.pending ?? []).map((r) => ({ userId: r.userId, displayName: r.name })),
+  };
+}
+
+export function toQuestion(q: AuditQuestion): AuditQuestion {
+  return { ...q, question: q.question ?? q.text ?? '' };
 }
 
 export interface DocVersion {
@@ -194,7 +248,7 @@ export function buildTree(nodes: Requirement[]): Requirement[] {
 
 function sortTree(nodes: Requirement[]): Requirement[] {
   return [...nodes]
-    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || a.code.localeCompare(b.code, 'fr', { numeric: true }))
+    .sort((a, b) => (a.order ?? a.position ?? 0) - (b.order ?? b.position ?? 0) || a.code.localeCompare(b.code, 'fr', { numeric: true }))
     .map((n) => ({ ...n, children: sortTree(n.children ?? []) }));
 }
 
@@ -229,7 +283,7 @@ export function isGap(r: AnswerResult | null | undefined): boolean {
 }
 
 export function plannedDateOf(a: AuditSummary): string | null {
-  return a.plannedDate ?? (a.data?.['plannedDate'] as string | undefined) ?? a.dueDate ?? null;
+  return a.plannedDate ?? a.datePrevue ?? (a.data?.['datePrevue'] as string | undefined) ?? a.dueDate ?? null;
 }
 
 /** Libellé d'un référentiel (« ISO 45001:2018 »). */

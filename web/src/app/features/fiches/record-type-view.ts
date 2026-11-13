@@ -61,9 +61,8 @@ export const AUDIT_VIEW: RecordTypeView = {
   tabs: ['description', 'grille', 'pieces', 'historique'],
   startTab: { EN_COURS: 'grille', RAPPORT: 'grille', CLOTURE: 'grille' },
   dataFields: [
-    { key: 'plannedDate', label: 'Date prévue' },
+    { key: 'datePrevue', label: 'Date prévue' },
     { key: 'perimetre', label: 'Périmètre' },
-    { key: 'auditeurs', label: 'Auditeur(s)' },
     { key: 'audites', label: 'Audités' },
   ],
 };
@@ -90,7 +89,7 @@ export function dataValue(key: string, v: unknown): string {
   if (typeof v === 'boolean') return v ? 'Oui' : 'Non';
   if (key === 'categorie' && typeof v === 'string') return INCIDENT_CATEGORIES[v] ?? v;
   if (key === 'docType' && typeof v === 'string') return DOC_TYPES_FR[v] ?? v;
-  if ((key === 'plannedDate' || key === 'reviewDate') && typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v)) {
+  if ((key === 'datePrevue' || key === 'reviewDate') && typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v)) {
     return `${v.slice(8, 10)}/${v.slice(5, 7)}/${v.slice(0, 4)}`;
   }
   if (Array.isArray(v)) return v.map(String).join(', ') || '—';

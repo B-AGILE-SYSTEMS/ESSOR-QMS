@@ -60,7 +60,7 @@ export class DocAcksComponent {
   protected readonly error = signal<string | null>(null);
   protected readonly dt = formatDateTime;
 
-  private readonly dest = computed(() => (this.record().data['destinataires'] ?? {}) as { roles?: string[]; siteIds?: string[] });
+  private readonly dest = computed(() => (this.record().data['recipients'] ?? this.record().data['destinataires'] ?? {}) as { roles?: string[]; siteIds?: string[] });
   protected readonly roles = computed(() => this.dest().roles ?? []);
   protected readonly sites = computed(() => {
     const all = this.auth.me()?.sites ?? [];

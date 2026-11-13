@@ -46,7 +46,7 @@ describe('Modèles M3', () => {
     expect(itemsOf([1])).toEqual([1]);
     expect(itemsOf({ items: [2] })).toEqual([2]);
     expect(itemsOf(null)).toEqual([]);
-    expect(plannedDateOf({ id: 'a', reference: '', type: 'AUDIT', status: '', statusLabel: '', title: '', data: { plannedDate: '2026-11-21' } }))
+    expect(plannedDateOf({ id: 'a', reference: '', type: 'AUDIT', status: '', statusLabel: '', title: '', data: { datePrevue: '2026-11-21' } }))
       .toBe('2026-11-21');
     expect(standardLabel({ id: 's', code: 'X', title: 'ISO 45001', version: '2018' })).toBe('ISO 45001:2018');
     expect(standardLabel({ id: 's', code: 'X', title: 'Interne' })).toBe('Interne');
@@ -73,8 +73,11 @@ describe('Services M3', () => {
     http.expectOne('/api/standards/s%201/requirements').flush([]);
     expect(await r).toEqual([]);
     const d = s.requirement('r1');
-    http.expectOne('/api/requirements/r1').flush({ id: 'r1' });
-    await d;
+    http.expectOne('/api/requirements/r1').flush({ id: 'r1', standard: { id: 's1', code: 'ISO45001' } });
+    expect((await d).standardCode).toBe('ISO45001');
+    const lk = s.linked('nc-1');
+    http.expectOne('/api/records/nc-1/requirements').flush([{ id: 'r1', code: '8.1', title: 'T' }]);
+    expect((await lk).length).toBe(1);
     const file = new File(['code;titre'], 'iso.csv', { type: 'text/csv' });
     const imp = s.import(file, { code: 'ISO45001', title: 'ISO 45001', version: '2018' }, true);
     const req = http.expectOne((x) => x.url === '/api/standards/import');
@@ -105,8 +108,8 @@ describe('Services M3', () => {
     expect(pr.request.params.get('year')).toBe('2026');
     expect(pr.request.params.get('auditor')).toBe('me');
     expect(pr.request.params.get('status')).toBe('PLANIFIE,EN_COURS');
-    pr.flush([]);
-    await p;
+    pr.flush([{ id: 'a', datePrevue: '2026-11-21' }]);
+    expect((await p)[0].plannedDate).toBe('2026-11-21');
     const c = a.checklist('a1');
     http.expectOne('/api/audits/a1').flush({ id: 'a1', questions: [{ id: 'q1', question: 'Q' }] });
     expect((await c)[0].id).toBe('q1');
@@ -123,8 +126,9 @@ describe('Services M3', () => {
     const e = a.editQuestion('a1', 'q1', 'Nouvelle');
     const er = http.expectOne('/api/audits/a1/questions/q1');
     expect(er.request.method).toBe('PATCH');
-    er.flush({ id: 'q1', question: 'Nouvelle' });
-    await e;
+    expect(er.request.body).toEqual({ text: 'Nouvelle' });
+    er.flush({ id: 'q1', text: 'Nouvelle' });
+    expect((await e).question).toBe('Nouvelle');
     const del = a.deleteQuestion('a1', 'q1');
     const dr = http.expectOne('/api/audits/a1/questions/q1');
     expect(dr.request.method).toBe('DELETE');
@@ -146,16 +150,23 @@ describe('Services M3', () => {
     const lr = http.expectOne((x) => x.url === '/api/documents');
     expect(lr.request.params.get('status')).toBe('DIFFUSE');
     expect(lr.request.params.has('type')).toBeFalse();
-    lr.flush([{ id: 'd1', currentVersion: { id: 'v9', number: 2, fileName: 'a.pdf' } }]);
-    expect((await l)[0].currentVersion!.number).toBe(2);
-    const c = d.create({ siteId: 's1', title: 'T', description: '', data: {} });
+    lr.flush([{ id: 'd1', code: 'PR-1', docType: 'procedure', currentVersion: { id: 'v9', number: 2, fileName: 'a.pdf' } }]);
+    const docs = await l;
+    expect(docs[0].currentVersion!.number).toBe(2);
+    expect(docs[0].data!['code']).toBe('PR-1');
+    const c = d.create({ code: 'PR-1', title: 'T', docType: 'procedure', processus: '', siteId: 's1',
+      recipients: { roles: ['OPERATEUR'], siteIds: [] }, verifierRoles: ['QUALITY_MANAGER'], approverRoles: ['ADMIN'], reviewDate: null });
     const cr = http.expectOne('/api/documents');
     expect(cr.request.method).toBe('POST');
-    cr.flush({ id: 'd2' });
+    expect(cr.request.body.recipients.roles).toEqual(['OPERATEUR']);
+    cr.flush({ document: { id: 'd2' }, versions: [] });
     expect((await c).id).toBe('d2');
     const v = d.versions('d1');
-    http.expectOne('/api/documents/d1/versions').flush([]);
-    await v;
+    http.expectOne('/api/documents/d1').flush({ document: { id: 'd1' }, versions: [
+      { number: 1, status: 'PERIME', inForce: false, fileName: 'a.pdf', contentType: 'application/pdf', size: 1, createdAt: '' },
+      { number: 2, status: 'DIFFUSE', inForce: true, fileName: 'b.pdf', contentType: 'application/pdf', size: 1, createdAt: '' }] });
+    const vs = await v;
+    expect(vs.map((x) => [x.number, x.current])).toEqual([['2', true], ['1', false]]);
     const up = d.addVersion('d1', new File(['%PDF'], 'v.pdf', { type: 'application/pdf' }), 'note');
     const ur = http.expectOne('/api/documents/d1/versions');
     expect((ur.request.body as FormData).get('note')).toBe('note');
@@ -168,8 +179,9 @@ describe('Services M3', () => {
     http.expectOne('/api/documents/d1/versions/2/ack').flush(null);
     await ack;
     const acks = d.acks('d1', '2');
-    http.expectOne('/api/documents/d1/versions/2/acks').flush({ read: [], pending: [] });
-    await acks;
+    http.expectOne('/api/documents/d1/versions/2/acks').flush({ version: 2,
+      acknowledged: [{ userId: 'u2', name: 'Salma', ackedAt: '2026-11-12T08:00:00Z' }], pending: [{ userId: 'u1', name: 'Karim' }] });
+    expect(await acks).toEqual({ read: [{ userId: 'u2', displayName: 'Salma', at: '2026-11-12T08:00:00Z' }], pending: [{ userId: 'u1', displayName: 'Karim' }] });
     expect(versionFileUrl('d1', '2')).toBe('/api/documents/d1/versions/2/file');
   });
 });

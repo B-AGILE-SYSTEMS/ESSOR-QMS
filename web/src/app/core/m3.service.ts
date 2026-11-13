@@ -3,8 +3,22 @@ import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { Page } from './api.models';
 import {
-  AckStatus, Answer, AuditDetail, AuditQuestion, AuditSummary, DocVersion, DocumentSummary, ImportReport, Requirement, RequirementDetail, Standard, itemsOf,
+  AckStatus, Answer, AuditDetail, AuditQuestion, AuditSummary, DocVersion, DocumentSummary, DocumentView, ImportReport, Requirement,
+  RequirementDetail, RequirementRef, ServerAcks, Standard, itemsOf, toAcks, toQuestion, toVersion,
 } from './m3.models';
+
+/** Corps de `POST /api/documents` (CreateDocument côté serveur). */
+export interface NewDocument {
+  code: string;
+  title: string;
+  docType: string;
+  processus: string;
+  siteId: string | null;
+  recipients: { roles: string[]; siteIds: string[] };
+  verifierRoles: string[];
+  approverRoles: string[];
+  reviewDate: string | null;
+}
 import { newIdempotencyKey } from './records.service';
 
 const enc = encodeURIComponent;
@@ -19,12 +33,17 @@ export class StandardsService {
     return itemsOf(await firstValueFrom(this.http.get<List<Standard>>('/api/standards')));
   }
 
+  async linked(recordId: string): Promise<RequirementRef[]> {
+    return itemsOf(await firstValueFrom(this.http.get<List<RequirementRef>>(`/api/records/${enc(recordId)}/requirements`)));
+  }
+
   async requirements(standardId: string): Promise<Requirement[]> {
     return itemsOf(await firstValueFrom(this.http.get<List<Requirement>>(`/api/standards/${enc(standardId)}/requirements`)));
   }
 
-  requirement(id: string): Promise<RequirementDetail> {
-    return firstValueFrom(this.http.get<RequirementDetail>(`/api/requirements/${enc(id)}`));
+  async requirement(id: string): Promise<RequirementDetail> {
+    const d = await firstValueFrom(this.http.get<RequirementDetail>(`/api/requirements/${enc(id)}`));
+    return { ...d, standardCode: d.standardCode ?? d.standard?.code ?? null };
   }
 
   /** Import xlsx/csv (champ `file`) + `standardCode`, `standardTitle`, `standardVersion`. Tout ou rien. */
@@ -56,38 +75,39 @@ export class AuditsService {
     const params: Record<string, string> = { year: String(year) };
     if (opts.status?.length) params['status'] = opts.status.join(',');
     if (opts.mine) params['auditor'] = 'me';
-    return itemsOf(await firstValueFrom(this.http.get<List<AuditSummary>>('/api/audits', { params })));
+    const list = itemsOf(await firstValueFrom(this.http.get<List<AuditSummary>>('/api/audits', { params })));
+    return list.map((a) => ({ ...a, plannedDate: a.plannedDate ?? a.datePrevue ?? null }));
   }
 
   /** Grille de l'audit, lue dans `GET /api/audits/{id}` (`questions`). */
   async checklist(auditId: string): Promise<AuditQuestion[]> {
     const a = await firstValueFrom(this.http.get<AuditDetail>(`/api/audits/${enc(auditId)}`));
-    return a.questions ?? a.checklist ?? [];
+    return (a.questions ?? a.checklist ?? []).map(toQuestion);
   }
 
   async generate(auditId: string, standardIds: string[], requirementIds?: string[]): Promise<AuditQuestion[]> {
     const body = requirementIds?.length ? { standardIds, requirementIds } : { standardIds };
     return itemsOf(
       await firstValueFrom(this.http.post<List<AuditQuestion>>(`/api/audits/${enc(auditId)}/checklist/generate`, body)),
-    );
+    ).map(toQuestion);
   }
 
-  editQuestion(auditId: string, questionId: string, question: string): Promise<AuditQuestion> {
-    return firstValueFrom(
-      this.http.patch<AuditQuestion>(`/api/audits/${enc(auditId)}/questions/${enc(questionId)}`, { question }),
-    );
+  async editQuestion(auditId: string, questionId: string, text: string): Promise<AuditQuestion> {
+    return toQuestion(await firstValueFrom(
+      this.http.patch<AuditQuestion>(`/api/audits/${enc(auditId)}/questions/${enc(questionId)}`, { text }),
+    ));
   }
 
   deleteQuestion(auditId: string, questionId: string): Promise<unknown> {
     return firstValueFrom(this.http.delete(`/api/audits/${enc(auditId)}/questions/${enc(questionId)}`));
   }
 
-  answer(auditId: string, questionId: string, a: Answer, key: string = newIdempotencyKey()): Promise<AuditQuestion> {
-    return firstValueFrom(
+  async answer(auditId: string, questionId: string, a: Answer, key: string = newIdempotencyKey()): Promise<AuditQuestion> {
+    return toQuestion(await firstValueFrom(
       this.http.put<AuditQuestion>(`/api/audits/${enc(auditId)}/answers/${enc(questionId)}`, a, {
         headers: { 'Idempotency-Key': key },
       }),
-    );
+    ));
   }
 }
 
@@ -103,19 +123,27 @@ export class DocumentsService {
   async list(f: { status?: string; type?: string; q?: string }): Promise<DocumentSummary[]> {
     const params: Record<string, string> = {};
     for (const [k, v] of Object.entries(f)) if (v) params[k] = v;
-    return itemsOf(await firstValueFrom(this.http.get<List<DocumentSummary>>('/api/documents', { params })));
+    const list = itemsOf(await firstValueFrom(this.http.get<List<DocumentSummary>>('/api/documents', { params })));
+    return list.map((d) => ({
+      ...d,
+      data: { code: d.code, docType: d.docType, processus: d.processus, reviewDate: d.reviewDate, ...(d.data ?? {}) },
+    }));
   }
 
-  create(body: { siteId: string; title: string; description: string; data: Record<string, unknown> }): Promise<{ id: string }> {
-    return firstValueFrom(this.http.post<{ id: string }>('/api/documents', body));
+  /** `POST /api/documents` (CreateDocument) → DocumentView ; renvoie l'id du document. */
+  async create(body: NewDocument): Promise<{ id: string }> {
+    const v = await firstValueFrom(this.http.post<DocumentView>('/api/documents', body));
+    return { id: v.document.id };
   }
 
   versionTransition(docId: string, n: string, code: string): Promise<unknown> {
     return firstValueFrom(this.http.post(`/api/documents/${enc(docId)}/versions/${enc(n)}/transitions/${enc(code)}`, {}));
   }
 
+  /** Versions lues dans `GET /api/documents/{id}`, la plus récente d'abord. */
   async versions(docId: string): Promise<DocVersion[]> {
-    return itemsOf(await firstValueFrom(this.http.get<List<DocVersion>>(`/api/documents/${enc(docId)}/versions`)));
+    const v = await firstValueFrom(this.http.get<DocumentView>(`/api/documents/${enc(docId)}`));
+    return (v.versions ?? []).map(toVersion).sort((a, b) => Number(b.number) - Number(a.number));
   }
 
   addVersion(docId: string, file: File, note: string): Promise<DocVersion> {
@@ -129,8 +157,8 @@ export class DocumentsService {
     return firstValueFrom(this.http.post(`/api/documents/${enc(docId)}/versions/${enc(version)}/ack`, {}));
   }
 
-  acks(docId: string, version: string): Promise<AckStatus> {
-    return firstValueFrom(this.http.get<AckStatus>(`/api/documents/${enc(docId)}/versions/${enc(version)}/acks`));
+  async acks(docId: string, version: string): Promise<AckStatus> {
+    return toAcks(await firstValueFrom(this.http.get<ServerAcks>(`/api/documents/${enc(docId)}/versions/${enc(version)}/acks`)));
   }
 }
 
