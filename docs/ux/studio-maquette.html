@@ -1,0 +1,410 @@
+<title>Studio de personnalisation</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;600;700&family=Source+Sans+3:wght@400;600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --pg-bg:#e9ebee;--pg-fg:#14181d;--pg-mut:#4a5360;--pg-line:#c3c8cf;--pg-panel:#f7f8f9;--pg-acc:#0f5f8a;--pg-warn:#8a4b00;--pg-warn-bg:#fff4e0;--pg-crit:#a8231b;--pg-crit-bg:#fdecea;--pg-ok:#1f6e36;--pg-ok-bg:#e7f5ec;
+  --sans:"Archivo","Segoe UI",Roboto,Arial,sans-serif;--mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--pg-bg:#0d1014;--pg-fg:#e8ebef;--pg-mut:#9aa3ae;--pg-line:#2b323b;--pg-panel:#151a20;--pg-acc:#6cb6e6;--pg-warn:#f0b35a;--pg-warn-bg:#2a2010;--pg-crit:#ff8a80;--pg-crit-bg:#2c1513;--pg-ok:#6fd291;--pg-ok-bg:#12261a;}}
+:root[data-theme="dark"]{--pg-bg:#0d1014;--pg-fg:#e8ebef;--pg-mut:#9aa3ae;--pg-line:#2b323b;--pg-panel:#151a20;--pg-acc:#6cb6e6;--pg-warn:#f0b35a;--pg-warn-bg:#2a2010;--pg-crit:#ff8a80;--pg-crit-bg:#2c1513;--pg-ok:#6fd291;--pg-ok-bg:#12261a;}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--pg-bg);color:var(--pg-fg);font:15px/1.5 var(--sans);overflow-x:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+.mono{font-family:var(--mono)}
+.gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+:focus-visible{outline:2px solid var(--pg-acc);outline-offset:2px}
+
+/* barre de présentation */
+.ctl{position:sticky;top:0;z-index:50;background:var(--pg-panel);border-bottom:1px solid var(--pg-line)}
+.ctl-in{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;padding-top:10px;padding-bottom:10px;max-width:1480px;margin:0 auto}
+.ctl h1{font-size:15px;margin:0;font-weight:800;letter-spacing:.01em}
+.ctl h1 small{font:500 12px var(--mono);color:var(--pg-mut);margin-left:8px}
+.tabs{display:flex;gap:4px;flex-wrap:wrap}
+.tab{border:1px solid var(--pg-line);background:transparent;padding:8px 12px;min-height:40px;cursor:pointer;font-weight:600;font-size:14px}
+.tab[aria-selected="true"]{background:var(--pg-fg);color:var(--pg-bg);border-color:var(--pg-fg)}
+.sp{flex:1}
+.wrap{max-width:1480px;margin:0 auto;padding-top:18px;padding-bottom:40px}
+.view[hidden]{display:none}
+.lede{color:var(--pg-mut);margin:0 0 16px;max-width:880px;font-size:14px}
+
+/* ===== Studio ===== */
+.studio{display:grid;grid-template-columns:400px minmax(0,1fr);gap:18px;align-items:start}
+@media(max-width:1080px){.studio{grid-template-columns:1fr}}
+.panel{background:var(--pg-panel);border:1px solid var(--pg-line);min-width:0}
+.studio>*{min-width:0}
+.ph{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--pg-line);flex-wrap:wrap}
+.ph b{font-size:14px}
+.pill{font:600 11px/1 var(--mono);text-transform:uppercase;letter-spacing:.05em;padding:4px 7px;border:1px solid currentColor}
+.pill.draft{color:var(--pg-warn)}.pill.pub{color:var(--pg-ok)}
+.stabs{display:flex;overflow-x:auto;border-bottom:1px solid var(--pg-line)}
+.stab{flex:0 0 auto;border:0;border-bottom:3px solid transparent;background:none;padding:10px 12px;min-height:44px;cursor:pointer;font-size:13px;font-weight:600;color:var(--pg-mut)}
+.stab[aria-selected="true"]{color:var(--pg-fg);border-bottom-color:var(--pg-acc)}
+.sec{padding:14px;display:none}
+.sec.on{display:block}
+.fld{margin:0 0 14px}
+.fld>label,.fld>.lbl{display:block;font-size:13px;font-weight:700;margin:0 0 6px}
+.hint{font-size:12px;color:var(--pg-mut);margin:4px 0 0}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+input[type=text],select{border:1px solid var(--pg-line);background:var(--pg-bg);padding:8px 10px;min-height:40px;width:100%}
+input[type=color]{width:48px;height:40px;border:1px solid var(--pg-line);padding:2px;background:var(--pg-bg);cursor:pointer}
+input[type=range]{width:100%}
+.seg{display:flex;border:1px solid var(--pg-line)}
+.seg button{flex:1;border:0;background:none;padding:8px 6px;min-height:40px;cursor:pointer;font-size:13px;font-weight:600}
+.seg button+button{border-left:1px solid var(--pg-line)}
+.seg button[aria-pressed="true"]{background:var(--pg-fg);color:var(--pg-bg)}
+.sw{width:30px;height:30px;border:1px solid var(--pg-line);cursor:pointer;padding:0}
+.sw[aria-pressed="true"]{outline:2px solid var(--pg-fg);outline-offset:2px}
+.guard{font-size:13px;padding:8px 10px;border-left:4px solid;margin-top:8px}
+.guard.ok{background:var(--pg-ok-bg);border-color:var(--pg-ok);color:var(--pg-ok)}
+.guard.bad{background:var(--pg-crit-bg);border-color:var(--pg-crit);color:var(--pg-crit)}
+.guard button{margin-top:6px}
+.sbtn{border:1px solid var(--pg-line);background:var(--pg-bg);padding:8px 12px;min-height:40px;cursor:pointer;font-weight:600;font-size:13px}
+.sbtn.pri{background:var(--pg-fg);color:var(--pg-bg);border-color:var(--pg-fg)}
+.sbtn:disabled{opacity:.5;cursor:not-allowed}
+.list{list-style:none;margin:0;padding:0;border:1px solid var(--pg-line)}
+.list li{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--pg-line);min-height:44px;font-size:14px}
+.list li:last-child{border-bottom:0}
+.list li .nm{flex:1;min-width:0}
+.list li .tag{font:500 11px var(--mono);color:var(--pg-mut)}
+.ib{border:1px solid var(--pg-line);background:var(--pg-bg);min-width:36px;min-height:36px;cursor:pointer;font-size:13px}
+.voc{display:grid;grid-template-columns:1fr 1fr;gap:6px 8px;align-items:center;font-size:13px}
+.voc .orig{color:var(--pg-mut)}
+.lock{font-size:12px;color:var(--pg-mut);border:1px dashed var(--pg-line);padding:8px 10px;margin-top:12px}
+.foot{display:flex;gap:8px;flex-wrap:wrap;padding:12px 14px;border-top:1px solid var(--pg-line);position:sticky;bottom:0;background:var(--pg-panel)}
+.hist{font-size:13px}
+.hist li{display:grid;grid-template-columns:auto 1fr auto;gap:8px}
+textarea.json{width:100%;min-height:150px;font:12px/1.4 var(--mono);border:1px solid var(--pg-line);background:var(--pg-bg);padding:8px}
+.toast{font-size:13px;margin-top:8px;min-height:20px;color:var(--pg-ok)}
+
+/* ===== Aperçu : l'application ESSOR, pilotée par les variables ===== */
+.pvh{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;font-size:13px;color:var(--pg-mut)}
+.pvh .seg{background:var(--pg-panel)}
+.app{
+  --acc:#c2410c;--acc-ink:#fff;--acc2:#1f5fa8;--r:0px;--pad:12px;--fs:15px;--row:44px;--font:"Archivo";
+  --bg:#eef0f2;--surf:#fff;--surf2:#f5f6f7;--ink:#12161b;--ink2:#47505c;--line:#d5d9de;--line2:#aab1ba;--crit:#b3261e;--warn:#9a5b00;--ok:#1f7a3a;--rail:#161b21;--rail-ink:#c9d0d8;
+  font-family:var(--font),"Segoe UI",Arial,sans-serif;font-size:var(--fs);color:var(--ink);background:var(--bg);
+  border:1px solid var(--pg-line);display:grid;grid-template-columns:210px minmax(0,1fr);min-height:620px;overflow:hidden;line-height:1.45
+}
+.app.dark{--bg:#0f1317;--surf:#171c22;--surf2:#1d232a;--ink:#e9edf1;--ink2:#a2acb7;--line:#2a323b;--line2:#3d4752;--crit:#ff6b5f;--warn:#f0a433;--ok:#4cc277;--rail:#0a0d10}
+.app.narrow{grid-template-columns:1fr;max-width:400px}
+.app.narrow .rail{display:none}
+.rail{background:var(--rail);color:var(--rail-ink);padding:12px 0}
+.brand{display:flex;gap:8px;align-items:center;padding:0 12px 12px;border-bottom:1px solid #ffffff1a;margin-bottom:8px}
+.logo{width:34px;height:34px;display:grid;place-items:center;background:var(--acc);color:var(--acc-ink);font-weight:800;font-size:13px;border-radius:var(--r)}
+.brand b{color:#fff;font-size:13px;display:block;line-height:1.2}
+.brand small{font-size:11px;opacity:.8}
+.grp{font:600 10px var(--mono);letter-spacing:.12em;text-transform:uppercase;padding:10px 12px 4px;opacity:.75}
+.nav a{display:block;padding:calc(var(--pad)*.6) 12px;color:var(--rail-ink);text-decoration:none;font-size:13px;border-left:3px solid transparent}
+.nav a.cur{background:#ffffff14;color:#fff;border-left-color:var(--acc)}
+.nav a.hid{display:none}
+.main{min-width:0;display:flex;flex-direction:column}
+.top{display:flex;gap:8px;align-items:center;padding:8px var(--pad);background:var(--surf);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.srch{flex:1;min-width:120px;border:1px solid var(--line2);padding:7px 10px;color:var(--ink2);font-size:13px;border-radius:var(--r);background:var(--surf2)}
+.abtn{background:var(--acc);color:var(--acc-ink);border:1px solid var(--acc);padding:0 14px;min-height:var(--row);font-weight:700;font-size:14px;border-radius:var(--r);cursor:pointer}
+.bbtn{background:var(--surf);color:var(--ink);border:1px solid var(--line2);padding:0 14px;min-height:var(--row);font-weight:600;font-size:14px;border-radius:var(--r);cursor:pointer}
+.content{padding:calc(var(--pad)*1.4) calc(var(--pad)*1.4);display:grid;gap:var(--pad)}
+[hidden]{display:none!important}
+.crumb{font-size:12px;color:var(--ink2)}
+.h{font-size:calc(var(--fs)*1.5);font-weight:800;margin:0}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--pad)}
+.kpi{background:var(--surf);border:1px solid var(--line);border-top:3px solid var(--acc2);padding:var(--pad);border-radius:var(--r)}
+.kpi .v{font:600 calc(var(--fs)*1.7)/1 var(--mono)}
+.kpi .l{font-size:12px;color:var(--ink2);text-transform:uppercase;letter-spacing:.06em}
+.card{background:var(--surf);border:1px solid var(--line);border-radius:var(--r)}
+.card h3{margin:0;padding:var(--pad);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);border-bottom:1px solid var(--line)}
+.frm{padding:var(--pad);display:grid;gap:var(--pad)}
+.f label{display:block;font-weight:600;font-size:13px;margin-bottom:4px}
+.f .in{border:1px solid var(--line2);background:var(--surf);min-height:var(--row);padding:8px 10px;border-radius:var(--r);color:var(--ink2);font-size:14px}
+.f .help{font-size:12px;color:var(--ink2);margin-top:3px}
+.f.new{animation:flash 1.2s}
+@keyframes flash{from{box-shadow:0 0 0 3px var(--acc)}to{box-shadow:0 0 0 0 transparent}}
+.req{color:var(--crit)}
+.rowx{display:flex;gap:8px;flex-wrap:wrap}
+.chipx{border:1px solid var(--line2);padding:6px 10px;font-size:13px;border-radius:var(--r);min-height:36px;display:inline-flex;align-items:center}
+.chipx.on{background:var(--ink);color:var(--surf)}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;font:600 11px var(--mono);text-transform:uppercase;color:var(--ink2);padding:8px var(--pad);border-bottom:1px solid var(--line)}
+.tbl td{padding:calc(var(--pad)*.7) var(--pad);border-bottom:1px solid var(--line)}
+.st{font:600 11px var(--mono);text-transform:uppercase;padding:3px 6px;border:1px solid var(--acc2);color:var(--acc2)}
+.late{color:var(--crit);font-weight:700}
+@media(max-width:700px){.app{grid-template-columns:1fr}.rail{display:none}.kpis{grid-template-columns:1fr}.tbl .hide-s{display:none}}
+
+/* ===== Écrans corrigés ===== */
+.fix{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:18px}
+.fixc{background:var(--pg-panel);border:1px solid var(--pg-line)}
+.fixc header{padding:12px 14px;border-bottom:1px solid var(--pg-line)}
+.fixc header h2{margin:0;font-size:16px}
+.fixc header p{margin:4px 0 0;font-size:13px;color:var(--pg-mut)}
+.fixc .body{padding:14px}
+.fixc .app{display:block;min-height:0}
+.mcard{display:block;background:var(--surf);border:1px solid var(--line);border-left:4px solid var(--line2);padding:10px 12px;margin-bottom:8px;min-height:64px}
+.mcard.crit{border-left-color:var(--crit)}.mcard.maj{border-left-color:var(--warn)}
+.mcard .t{font-weight:700;font-size:14px}
+.mcard .m{font:12px var(--mono);color:var(--ink2);display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
+.empty{text-align:center;padding:24px 12px;border:1px dashed var(--line2);background:var(--surf)}
+.empty p{margin:4px 0 12px;color:var(--ink2);font-size:14px}
+.actbar{position:sticky;bottom:0;display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--surf);border:1px solid var(--line);border-top:3px solid var(--acc);padding:10px 12px}
+.miss{font-size:13px;color:var(--crit)}
+.miss a{color:var(--crit);font-weight:700}
+.ann{counter-reset:a;list-style:none;padding:0;margin:12px 0 0;font-size:13px}
+.ann li{counter-increment:a;padding-left:28px;position:relative;margin-bottom:6px}
+.ann li::before{content:counter(a);position:absolute;left:0;top:0;width:20px;height:20px;border-radius:50%;background:var(--pg-fg);color:var(--pg-bg);font:600 11px/20px var(--mono);text-align:center}
+.filt{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+.sheet{border:1px solid var(--line);background:var(--surf);padding:12px}
+</style>
+
+<div class="ctl"><div class="ctl-in gut">
+  <h1>ESSOR QMS <small>Studio de personnalisation · maquette</small></h1>
+  <div class="tabs" role="tablist" aria-label="Vues de la maquette">
+    <button class="tab" role="tab" aria-selected="true" data-v="v-studio">Studio</button>
+    <button class="tab" role="tab" aria-selected="false" data-v="v-fix">Écrans corrigés</button>
+  </div>
+  <span class="sp"></span>
+  <div class="seg" role="group" aria-label="Thème de la page"><button type="button" data-pt="light" aria-pressed="false">Clair</button><button type="button" data-pt="dark" aria-pressed="false">Sombre</button></div>
+</div></div>
+
+<main class="wrap gut">
+<section id="v-studio" class="view">
+  <p class="lede">Paramétrage → Studio (rôle ADMIN). Chaque réglage modifie l'aperçu en direct, à droite. La charte ESSOR reste le socle : structure, états, focus et tailles de cible ne sont pas modifiables ; chaque valeur libre passe par un garde-fou.</p>
+  <div class="studio">
+    <div class="panel" aria-label="Réglages">
+      <div class="ph"><b>Configuration du site Atlas</b><span class="pill draft" id="state">Brouillon v8</span><span class="sp"></span><span class="mono" style="font-size:12px;color:var(--pg-mut)" id="chg">0 modification</span></div>
+      <div class="stabs" role="tablist" aria-label="Sections du Studio">
+        <button class="stab" role="tab" aria-selected="true" data-s="s-id">Identité</button>
+        <button class="stab" role="tab" aria-selected="false" data-s="s-voc">Vocabulaire</button>
+        <button class="stab" role="tab" aria-selected="false" data-s="s-nav">Navigation</button>
+        <button class="stab" role="tab" aria-selected="false" data-s="s-frm">Formulaires</button>
+        <button class="stab" role="tab" aria-selected="false" data-s="s-gov">Versions</button>
+      </div>
+
+      <div class="sec on" id="s-id">
+        <div class="fld"><label for="appname">Nom affiché de l'application</label><input type="text" id="appname" value="Atlas Logistique &amp; Industrie" maxlength="40"><p class="hint">40 caractères au plus ; « ESSOR QMS » reste en mention secondaire.</p></div>
+        <div class="fld"><span class="lbl">Couleur principale</span>
+          <div class="row" id="sw1"></div>
+          <div class="row" style="margin-top:8px"><input type="color" id="c1" value="#c2410c" aria-label="Couleur principale personnalisée"><span class="mono" id="c1v">#c2410c</span></div>
+          <div id="g1" class="guard ok" role="status"></div>
+        </div>
+        <div class="fld"><span class="lbl">Couleur secondaire (indicateurs, statuts)</span>
+          <div class="row"><input type="color" id="c2" value="#1f5fa8" aria-label="Couleur secondaire"><span class="mono" id="c2v">#1f5fa8</span></div>
+          <div id="g2" class="guard ok" role="status"></div>
+        </div>
+        <div class="fld"><label for="font">Police (embarquée, sans CDN)</label>
+          <select id="font"><option value="Archivo">Archivo — charte ESSOR</option><option value="IBM Plex Sans">IBM Plex Sans</option><option value="Source Sans 3">Source Sans 3</option><option value="Atkinson Hyperlegible">Atkinson Hyperlegible (basse vision)</option></select>
+          <p class="hint">Liste fermée : polices libres, auditées pour le français, l'arabe à venir et les chiffres tabulaires.</p></div>
+        <div class="fld"><span class="lbl">Densité</span>
+          <div class="seg" role="group" aria-label="Densité"><button type="button" data-d="compacte" aria-pressed="false">Compacte</button><button type="button" data-d="standard" aria-pressed="true">Standard</button><button type="button" data-d="confortable" aria-pressed="false">Confortable</button></div>
+          <p class="hint" id="dh">Cibles 44 px. La densité compacte n'est jamais appliquée sur tablette ni mobile.</p></div>
+        <div class="fld"><label for="rad">Arrondis : <span id="radv">0</span> px</label><input type="range" id="rad" min="0" max="8" value="0"><p class="hint">Borné de 0 à 8 px.</p></div>
+        <div class="fld"><span class="lbl">Thème par défaut</span>
+          <div class="seg" role="group" aria-label="Thème par défaut"><button type="button" data-t="clair" aria-pressed="true">Clair</button><button type="button" data-t="sombre" aria-pressed="false">Sombre</button><button type="button" data-t="terrain" aria-pressed="false">Terrain</button></div>
+          <label class="row" style="margin-top:8px;font-size:13px"><input type="checkbox" checked> Chaque utilisateur peut choisir son thème</label></div>
+        <div class="lock">Verrouillé par la charte : structure des écrans, couleurs d'état (critique, alerte, succès), anneau de focus, taille minimale du texte (14 px), cibles tactiles (44 px), thème Terrain.</div>
+      </div>
+
+      <div class="sec" id="s-voc">
+        <p class="hint" style="margin:0 0 10px">Le terme saisi remplace le libellé partout : menus, titres, boutons, PDF, e-mails, mobile. Genre et pluriel sont demandés pour accorder les phrases.</p>
+        <div class="voc" id="voc"></div>
+        <div class="fld" style="margin-top:12px"><label for="lang">Langue</label><select id="lang"><option>Français (fr-MA)</option><option disabled>Arabe (ar-MA) — prévu</option><option disabled>Anglais (en) — prévu</option></select></div>
+      </div>
+
+      <div class="sec" id="s-nav">
+        <div class="fld"><label for="role">Rôle concerné</label><select id="role"><option>Opérateur</option><option selected>Responsable qualité</option><option>Administrateur</option></select></div>
+        <ul class="list" id="navl"></ul>
+        <p class="hint">Masquer un menu ne retire aucun droit : l'accès reste contrôlé côté serveur. « Mes actions » et « Paramétrage » (ADMIN) ne peuvent pas être masqués.</p>
+        <div class="fld" style="margin-top:12px"><label for="home">Page d'accueil du rôle</label><select id="home"><option>Mes actions</option><option>Tableau de bord</option><option>Non-conformités</option></select></div>
+      </div>
+
+      <div class="sec" id="s-frm">
+        <div class="fld"><label for="ftype">Type de fiche</label><select id="ftype"><option>Non-conformité — déclaration</option><option>Incident — déclaration</option><option>Action</option></select></div>
+        <ul class="list" id="fl"></ul>
+        <div class="card" style="margin-top:12px;border:1px solid var(--pg-line);padding:12px;background:var(--pg-bg)">
+          <b style="font-size:13px">Ajouter un champ personnalisé</b>
+          <div class="fld" style="margin-top:8px"><label for="nf-l">Libellé</label><input type="text" id="nf-l" value="N° de quai" maxlength="40"></div>
+          <div class="row"><select id="nf-t" aria-label="Type du champ" style="flex:1"><option value="text">Texte</option><option value="list">Liste</option><option value="date">Date</option><option value="number">Nombre</option><option value="check">Case à cocher</option></select>
+          <label class="row" style="font-size:13px"><input type="checkbox" id="nf-r"> Obligatoire</label></div>
+          <div class="fld" style="margin-top:8px"><label for="nf-h">Aide contextuelle</label><input type="text" id="nf-h" value="Numéro peint au sol, ex. Q4"></div>
+          <button class="sbtn pri" type="button" id="nf-add">Ajouter au formulaire</button>
+          <p class="hint" id="nf-msg"></p>
+        </div>
+        <p class="hint">Les champs exigés par le workflow (titre, site) restent obligatoires et ne peuvent pas être masqués.</p>
+      </div>
+
+      <div class="sec" id="s-gov">
+        <ul class="list hist" id="hist"></ul>
+        <div class="row" style="margin-top:12px"><button class="sbtn" type="button" id="exp">Exporter (JSON)</button><button class="sbtn" type="button" id="reset">Revenir à la charte ESSOR</button></div>
+        <textarea class="json" id="json" aria-label="Configuration exportée" readonly hidden></textarea>
+        <p class="toast" id="gmsg" role="status"></p>
+      </div>
+
+      <div class="foot"><button class="sbtn" type="button" id="discard">Annuler le brouillon</button><span class="sp"></span><button class="sbtn pri" type="button" id="pub">Publier</button></div>
+    </div>
+
+    <div>
+      <div class="pvh"><b style="color:var(--pg-fg)">Aperçu en direct</b><span class="sp"></span>
+        <div class="seg" role="group" aria-label="Format d'aperçu"><button type="button" data-w="pc" aria-pressed="true">Poste</button><button type="button" data-w="mob" aria-pressed="false">Mobile</button></div>
+        <div class="seg" role="group" aria-label="Écran d'aperçu"><button type="button" data-p="home" aria-pressed="true">Accueil</button><button type="button" data-p="form" aria-pressed="false">Formulaire</button></div>
+      </div>
+      <div class="app" id="app">
+        <aside class="rail"><div class="brand"><span class="logo" id="lg">AL</span><div><b id="bn">Atlas Logistique &amp; Industrie</b><small>ESSOR QMS</small></div></div><nav class="nav" id="nav"></nav></aside>
+        <div class="main">
+          <div class="top"><span class="srch">Rechercher…</span><button class="abtn" type="button" id="cta">+ Déclarer une NC</button></div>
+          <div class="content" id="pv-home">
+            <div class="crumb">Mon travail</div>
+            <h2 class="h">Mes actions</h2>
+            <div class="kpis"><div class="kpi"><div class="l">En retard</div><div class="v">1</div></div><div class="kpi"><div class="l" data-term="nc" data-form="plural">Non-conformités</div><div class="v">10</div></div><div class="kpi"><div class="l">À valider</div><div class="v">2</div></div></div>
+            <div class="card"><h3>À faire maintenant</h3><table class="tbl"><thead><tr><th>Échéance</th><th>Fiche</th><th class="hide-s">Statut</th></tr></thead><tbody>
+              <tr><td class="late mono">12/11</td><td>Intégrer les butoirs au plan de maintenance</td><td class="hide-s"><span class="st" data-term="ac">Action corrective</span></td></tr>
+              <tr><td class="mono">18/11</td><td>Garde-corps quai 4 déformé</td><td class="hide-s"><span class="st" data-term="nc">Non-conformité</span></td></tr>
+              <tr><td class="mono">22/11</td><td>Fuite hydraulique chariot CH-07</td><td class="hide-s"><span class="st" data-term="nc">Non-conformité</span></td></tr></tbody></table></div>
+          </div>
+          <div class="content" id="pv-form" hidden>
+            <div class="crumb" data-term="nc" data-form="plural">Non-conformités</div>
+            <h2 class="h">Déclarer : <span data-term="nc" data-form="lower">non-conformité</span></h2>
+            <div class="card"><div class="frm" id="pvf"></div></div>
+            <div class="rowx"><button class="abtn" type="button">Enregistrer la déclaration</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="v-fix" class="view" hidden>
+  <p class="lede">Trois écrans corrigés d'après l'audit. Les numéros renvoient aux corrections de la spécification.</p>
+  <div class="fix">
+    <article class="fixc"><header><h2>Liste NC sur tablette et mobile</h2><p>Avant : tableau à 7 colonnes écrasé, en-tête de 300 px, filtres validés par un bouton.</p></header><div class="body">
+      <div class="app" style="max-width:400px"><div class="main">
+        <div class="top"><span class="logo">AL</span><b style="flex:1;font-size:14px">Non-conformités</b><button class="bbtn" type="button" aria-label="Rechercher">⌕</button></div>
+        <div class="content">
+          <div class="filt" role="group" aria-label="Filtres rapides"><span class="chipx on">Ouvertes · 10</span><span class="chipx">Critiques · 1</span><span class="chipx">Mon site</span><span class="chipx">+ Filtre</span></div>
+          <a class="mcard crit" href="#v-fix"><div class="t">Température chambre froide C2 hors plage</div><div class="m"><span>NC-2026-0002</span><span>Entrepôt Nord</span><span>Critique</span><span>Déclarée</span></div></a>
+          <a class="mcard maj" href="#v-fix"><div class="t">Fuite hydraulique chariot CH-07</div><div class="m"><span>NC-2026-0004</span><span>Casablanca</span><span>Analyse · 22/11</span></div></a>
+          <a class="mcard maj" href="#v-fix"><div class="t">Étiquetage lot erroné — palette Renault</div><div class="m"><span>NC-2026-0001</span><span>Kénitra</span><span>Sans responsable</span></div></a>
+          <button class="abtn" type="button" style="width:100%">+ Déclarer une NC</button>
+        </div></div></div>
+      <ol class="ann"><li>Cartes lisibles à la place du tableau sous 900 px ; gravité portée par la bordure et le texte.</li><li>Filtres en puces appliqués immédiatement, compteurs inclus.</li><li>En-tête réduit à une ligne ; un seul bouton « Déclarer ».</li></ol>
+    </div></article>
+
+    <article class="fixc"><header><h2>Fiche NC : barre de décision</h2><p>Avant : bouton désactivé pâle, motif en petit rouge, pas de lien vers le champ manquant.</p></header><div class="body">
+      <div class="app"><div class="main"><div class="content">
+        <div class="crumb mono">NC-2026-0004 · Casablanca · Salma Bennani</div>
+        <h2 class="h" style="font-size:20px">Fuite hydraulique chariot CH-07</h2>
+        <div class="sheet"><div class="f"><label for="cr">Cause racine <span class="req">*</span></label><div class="in" id="cr" style="border-color:var(--crit)">&nbsp;</div><div class="help" style="color:var(--crit)">Requis pour valider l'analyse.</div></div></div>
+        <div class="actbar"><span class="miss">1 élément manque : <a href="#cr">Cause racine</a></span><span style="flex:1"></span><button class="bbtn" type="button">Enregistrer</button><button class="abtn" type="button" aria-describedby="cr">Valider l'analyse</button></div>
+      </div></div></div>
+      <ol class="ann"><li>Bouton toujours lisible ; au clic, le focus va au champ manquant au lieu d'un bouton désactivé muet.</li><li>Brouillon enregistré automatiquement ; « Enregistrer » confirme sans quitter l'onglet.</li><li>Barre collante en bas, cibles de 44 px, utilisable au pouce sur tablette.</li></ol>
+    </div></article>
+
+    <article class="fixc"><header><h2>États vides et accès refusé</h2><p>Avant : « Aucune fiche. » sans issue ; un lien interdit renvoie sans message vers Mes actions.</p></header><div class="body">
+      <div class="app"><div class="main"><div class="content">
+        <div class="empty"><b>Aucune non-conformité ne correspond à « zzzzz »</b><p>Filtres actifs : Étape = Toutes · Site = Tous</p><div class="rowx" style="justify-content:center"><button class="bbtn" type="button">Effacer la recherche</button><button class="abtn" type="button">+ Déclarer une NC</button></div></div>
+        <div class="empty" style="border-style:solid;border-left:4px solid var(--warn)"><b>Accès réservé aux responsables qualité</b><p>« Plans de contrôle » demande le rôle Responsable qualité. Demandez l'accès à votre administrateur.</p><div class="rowx" style="justify-content:center"><button class="bbtn" type="button">Retour à Mes actions</button></div></div>
+      </div></div></div>
+      <ol class="ann"><li>Chaque état vide dit pourquoi et propose l'action suivante.</li><li>Page 403 explicite au lieu d'une redirection silencieuse.</li></ol>
+    </div></article>
+  </div>
+</section>
+</main>
+
+<script>
+(function(){
+  const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+  const CHARTE={name:"Atlas Logistique & Industrie",c1:"#c2410c",c2:"#1f5fa8",font:"Archivo",density:"standard",radius:0,theme:"clair",
+    terms:{nc:{s:"Non-conformité",p:"Non-conformités"},ac:{s:"Action corrective",p:"Actions correctives"},inc:{s:"Incident",p:"Incidents"},aud:{s:"Audit",p:"Audits"}},
+    nav:[["Mes actions","Mon travail",true,true],["Non-conformités","Terrain",true,false,"nc"],["Incidents & sécurité","Terrain",true,false],["Audits & inspections","Terrain",true,false],["Contrôles","Terrain",true,false],["Indicateurs","Pilotage",true,false],["Documents","Ressources",true,false],["Lots & traçabilité","Ressources",true,false],["Paramétrage","Administration",true,true]],
+    fields:[["Que s'est-il passé ?","text",true,true,"Une phrase : quoi, où."],["Description","text",false,false,""],["Type","list",false,false,""],["Gravité","list",false,false,""],["Site","list",true,true,""],["Zone / lieu","text",false,false,""],["Constaté le","date",false,false,""]]};
+  const clone=o=>JSON.parse(JSON.stringify(o));
+  let cfg=clone(CHARTE), pub=clone(CHARTE), ver=7;
+  const hist=[["v7","Publiée","Karim T. · 02/11"],["v6","Vocabulaire : Plan d'action","Karim T. · 18/10"],["v5","Logo foncé ajouté","Nadia E. · 03/10"]];
+  const PRESETS=[["#c2410c","Orange sécurité"],["#0b6e99","Bleu acier"],["#2f7d32","Vert process"],["#b42318","Rouge signal"],["#f5c400","Jaune balisage"]];
+
+  function lum(h){const n=parseInt(h.slice(1),16),c=[n>>16,n>>8&255,n&255].map(v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)});return .2126*c[0]+.7152*c[1]+.0722*c[2]}
+  function ratio(a,b){const x=lum(a),y=lum(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05)}
+  function darken(h){let n=parseInt(h.slice(1),16),r=n>>16,g=n>>8&255,b=n&255;for(let i=0;i<40&&ratio(hex(r,g,b),"#ffffff")<4.5;i++){r=Math.round(r*.92);g=Math.round(g*.92);b=Math.round(b*.92)}return hex(r,g,b)}
+  function hex(r,g,b){return "#"+[r,g,b].map(v=>v.toString(16).padStart(2,"0")).join("")}
+  const ink=c=>ratio(c,"#ffffff")>=ratio(c,"#12161b")?"#ffffff":"#12161b";
+
+  function guard(el,c,bg,label,key){
+    const ti=ink(c), r1=ratio(c,ti), r2=ratio(c,bg);
+    const okBtn=r1>=4.5, okBg=r2>=3;
+    if(okBtn&&okBg){el.className="guard ok";el.textContent="Contraste "+r1.toFixed(1)+":1 avec le texte du bouton, "+r2.toFixed(1)+":1 avec le fond : conforme WCAG AA.";return true}
+    el.className="guard bad";el.innerHTML="";
+    const p=document.createElement("div");p.textContent="Contraste insuffisant : "+r2.toFixed(1)+":1 sur le fond (3:1 minimum pour "+label+"). Publication bloquée.";el.appendChild(p);
+    const b=document.createElement("button");b.className="sbtn";b.type="button";const fx=darken(c);b.textContent="Appliquer la variante accessible "+fx;b.onclick=()=>{cfg[key]=fx;$("#"+key).value=fx;render()};el.appendChild(b);return false;
+  }
+  function term(k,form){const t=cfg.terms[k];if(form==="plural")return t.p;if(form==="lower")return t.s.toLowerCase();return t.s}
+
+  function render(){
+    const app=$("#app"), dark=cfg.theme==="sombre";
+    app.classList.toggle("dark",dark);
+    const bg=dark?"#0f1317":"#eef0f2";
+    app.style.setProperty("--acc",cfg.c1);app.style.setProperty("--acc-ink",ink(cfg.c1));app.style.setProperty("--acc2",cfg.c2);
+    app.style.setProperty("--font",'"'+cfg.font+'"');app.style.setProperty("--r",cfg.radius+"px");
+    const D={compacte:["8px","14px","40px"],standard:["12px","15px","44px"],confortable:["16px","16px","48px"]}[cfg.density];
+    app.style.setProperty("--pad",D[0]);app.style.setProperty("--fs",D[1]);app.style.setProperty("--row",D[2]);
+    $("#bn").textContent=cfg.name;$("#lg").textContent=cfg.name.split(/\s+/).filter(w=>/^[A-Za-zÀ-ÿ]/.test(w)).slice(0,2).map(w=>w[0]).join("").toUpperCase();
+    $("#c1v").textContent=cfg.c1;$("#c2v").textContent=cfg.c2;$("#radv").textContent=cfg.radius;
+    const a=guard($("#g1"),cfg.c1,bg,"un élément d'interface","c1"), b=guard($("#g2"),cfg.c2,bg,"un indicateur","c2");
+    $("#pub").disabled=!(a&&b);
+    $$("#sw1 .sw").forEach(s=>s.setAttribute("aria-pressed",s.dataset.c===cfg.c1));
+    $$("[data-d]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.d===cfg.density));
+    $$("[data-t]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.t===cfg.theme));
+    $("#dh").textContent=cfg.density==="compacte"?"Compacte : cibles 40 px sur poste, remontées à 44 px sur tablette et mobile.":"Cibles "+D[2]+". La densité compacte n'est jamais appliquée sur tablette ni mobile.";
+    $$("[data-term]").forEach(e=>e.textContent=term(e.dataset.term,e.dataset.form));
+    $("#cta").textContent="+ Déclarer : "+term("nc","lower");
+    // nav preview
+    const nav=$("#nav");nav.innerHTML="";let g="";
+    cfg.nav.forEach((n,i)=>{if(!n[2])return;if(n[1]!==g){g=n[1];const d=document.createElement("div");d.className="grp";d.textContent=g;nav.appendChild(d)}const l=document.createElement("a");l.href="#v-studio";l.textContent=n[4]?term(n[4],"plural"):n[0];if(i===0)l.className="cur";nav.appendChild(l)});
+    // nav list
+    const nl=$("#navl");nl.innerHTML="";
+    cfg.nav.forEach((n,i)=>{const li=document.createElement("li");li.innerHTML='<span class="nm"></span><span class="tag"></span>';li.querySelector(".nm").textContent=n[4]?term(n[4],"plural"):n[0];li.querySelector(".tag").textContent=n[1];
+      const up=btn("↑","Monter "+n[0],()=>{if(i>1&&!cfg.nav[i-1][3]){[cfg.nav[i-1],cfg.nav[i]]=[cfg.nav[i],cfg.nav[i-1]];render()}});up.disabled=n[3]||i<2;
+      const v=btn(n[2]?"Visible":"Masqué",(n[2]?"Masquer ":"Afficher ")+n[0],()=>{n[2]=!n[2];render()});v.setAttribute("aria-pressed",String(n[2]));v.style.minWidth="76px";if(n[3]){v.disabled=true;v.textContent="Fixe"}
+      li.append(up,v);nl.appendChild(li)});
+    // vocabulary
+    const vo=$("#voc");if(!vo.dataset.done){vo.dataset.done=1;vo.innerHTML='<b>Terme ESSOR</b><b>Terme du client</b>';Object.keys(cfg.terms).forEach(k=>{const o=document.createElement("span");o.className="orig";o.textContent=CHARTE.terms[k].s;const i=document.createElement("input");i.type="text";i.maxLength=30;i.id="t-"+k;i.setAttribute("aria-label","Remplacer "+CHARTE.terms[k].s);i.value=cfg.terms[k].s;i.oninput=()=>{const v=i.value.trim()||CHARTE.terms[k].s;cfg.terms[k]={s:v,p:v.endsWith("s")?v:v.replace(/^(\S+)/,"$1s")};render()};vo.append(o,i)})}
+    else Object.keys(cfg.terms).forEach(k=>{const i=$("#t-"+k);if(document.activeElement!==i)i.value=cfg.terms[k].s});
+    // fields
+    const fl=$("#fl");fl.innerHTML="";const pf=$("#pvf");pf.innerHTML="";
+    cfg.fields.forEach((f,i)=>{const li=document.createElement("li");li.innerHTML='<span class="nm"></span><span class="tag"></span>';li.querySelector(".nm").textContent=f[0]+(f[2]?" *":"");li.querySelector(".tag").textContent=f[1];
+      const up=btn("↑","Monter "+f[0],()=>{if(i>0){[cfg.fields[i-1],cfg.fields[i]]=[cfg.fields[i],cfg.fields[i-1]];render()}});up.disabled=i===0;
+      const v=btn(f[5]===false?"Masqué":"Visible",(f[5]===false?"Afficher ":"Masquer ")+f[0],()=>{f[5]=f[5]===false;render()});v.style.minWidth="76px";if(f[3]){v.disabled=true;v.textContent="Requis"}
+      li.append(up,v);fl.appendChild(li);
+      if(f[5]===false)return;const d=document.createElement("div");d.className="f"+(f[6]?" new":"");f[6]=false;d.innerHTML='<label></label><div class="in"></div>';d.querySelector("label").innerHTML="";d.querySelector("label").textContent=f[0];if(f[2]){const s=document.createElement("span");s.className="req";s.textContent=" *";d.querySelector("label").appendChild(s)}
+      d.querySelector(".in").textContent={text:"",list:"Choisir…",date:"jj/mm/aaaa",number:"0",check:"☐ Oui"}[f[1]]||"";
+      if(f[4]){const h=document.createElement("div");h.className="help";h.textContent=f[4];d.appendChild(h)}pf.appendChild(d)});
+    // history
+    const hl=$("#hist");hl.innerHTML="";hist.forEach((h,i)=>{const li=document.createElement("li");li.innerHTML='<span class="mono"></span><span></span>';li.children[0].textContent=h[0];li.children[1].textContent=h[1]+" — "+h[2];if(i>0){li.appendChild(btn("Restaurer","Restaurer "+h[0],()=>{$("#gmsg").textContent=h[0]+" chargée en brouillon : vérifiez l'aperçu puis publiez."}))}else{const s=document.createElement("span");s.className="pill pub";s.textContent="En ligne";li.appendChild(s)}hl.appendChild(li)});
+    const n=diff();$("#chg").textContent=n+" modification"+(n>1?"s":"");$("#state").textContent=n?"Brouillon v"+(ver+1):"Publiée v"+ver;$("#state").className="pill "+(n?"draft":"pub");
+    if(!$("#json").hidden)$("#json").value=JSON.stringify(exportCfg(),null,2);
+  }
+  function diff(){let n=0;["name","c1","c2","font","density","radius","theme"].forEach(k=>{if(cfg[k]!==pub[k])n++});Object.keys(cfg.terms).forEach(k=>{if(cfg.terms[k].s!==pub.terms[k].s)n++});if(JSON.stringify(cfg.nav)!==JSON.stringify(pub.nav))n++;if(JSON.stringify(cfg.fields.map(f=>f.slice(0,6)))!==JSON.stringify(pub.fields.map(f=>f.slice(0,6))))n++;return n}
+  function exportCfg(){return {schemaVersion:1,tenant:"atlas",version:ver+(diff()?1:0),identity:{appName:cfg.name,primary:cfg.c1,secondary:cfg.c2,font:cfg.font,density:cfg.density,radius:cfg.radius,defaultTheme:cfg.theme},vocabulary:{"fr-MA":Object.fromEntries(Object.entries(cfg.terms).map(([k,v])=>[k,{singular:v.s,plural:v.p}]))},navigation:{QUALITY_MANAGER:cfg.nav.filter(n=>n[2]).map(n=>n[0])},forms:{"NC.declaration":cfg.fields.map(f=>({label:f[0],type:f[1],required:f[2],visible:f[5]!==false}))}}}
+  function btn(t,l,f){const b=document.createElement("button");b.type="button";b.className="ib";b.textContent=t;b.setAttribute("aria-label",l);b.onclick=f;return b}
+
+  PRESETS.forEach(([c,l])=>{const s=document.createElement("button");s.type="button";s.className="sw";s.style.background=c;s.dataset.c=c;s.title=l;s.setAttribute("aria-label",l);s.onclick=()=>{cfg.c1=c;$("#c1").value=c;render()};$("#sw1").appendChild(s)});
+  $("#c1").oninput=e=>{cfg.c1=e.target.value;render()};$("#c2").oninput=e=>{cfg.c2=e.target.value;render()};
+  $("#appname").oninput=e=>{cfg.name=e.target.value.trim()||CHARTE.name;render()};
+  $("#font").onchange=e=>{cfg.font=e.target.value;render()};
+  $("#rad").oninput=e=>{cfg.radius=Math.max(0,Math.min(8,+e.target.value));render()};
+  $$("[data-d]").forEach(b=>b.onclick=()=>{cfg.density=b.dataset.d;render()});
+  $$("[data-t]").forEach(b=>b.onclick=()=>{cfg.theme=b.dataset.t;render()});
+  $("#nf-add").onclick=()=>{const l=$("#nf-l").value.trim();if(!l){$("#nf-msg").textContent="Donnez un libellé au champ.";return}if(cfg.fields.some(f=>f[0].toLowerCase()===l.toLowerCase())){$("#nf-msg").textContent="Un champ porte déjà ce libellé.";return}if(cfg.fields.length>=20){$("#nf-msg").textContent="20 champs au plus par formulaire.";return}
+    cfg.fields.push([l,$("#nf-t").value,$("#nf-r").checked,false,$("#nf-h").value.trim(),true,true]);$("#nf-msg").textContent="Champ « "+l+" » ajouté en fin de formulaire.";show("form");render()};
+  $("#pub").onclick=()=>{if(!diff()){$("#gmsg").textContent="Rien à publier.";return}ver++;hist.unshift(["v"+ver,"Publiée ("+diff()+" modif.)","vous · maintenant"]);hist[1][1]=hist[1][1].replace("Publiée","Ancienne version");pub=clone(cfg);$("#gmsg").textContent="Version "+ver+" publiée pour tous les utilisateurs.";render()};
+  $("#discard").onclick=()=>{cfg=clone(pub);syncInputs();render()};
+  $("#reset").onclick=()=>{cfg=clone(CHARTE);syncInputs();$("#gmsg").textContent="Charte ESSOR chargée en brouillon. Publiez pour l'appliquer.";render()};
+  $("#exp").onclick=()=>{const j=$("#json");j.hidden=!j.hidden;render()};
+  function syncInputs(){$("#c1").value=cfg.c1;$("#c2").value=cfg.c2;$("#font").value=cfg.font;$("#rad").value=cfg.radius;$("#appname").value=cfg.name}
+  function show(p){$("#pv-home").hidden=p!=="home";$("#pv-form").hidden=p!=="form";$$("[data-p]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.p===p))}
+  $$("[data-p]").forEach(b=>b.onclick=()=>show(b.dataset.p));
+  $$("[data-w]").forEach(b=>b.onclick=()=>{$("#app").classList.toggle("narrow",b.dataset.w==="mob");$$("[data-w]").forEach(x=>x.setAttribute("aria-pressed",x===b))});
+  $$(".stab").forEach(t=>t.onclick=()=>{$$(".stab").forEach(x=>x.setAttribute("aria-selected",x===t));$$(".sec").forEach(s=>s.classList.toggle("on",s.id===t.dataset.s));if(t.dataset.s==="s-frm")show("form");if(t.dataset.s==="s-nav"||t.dataset.s==="s-id")show("home")});
+  $$(".tab").forEach(t=>t.onclick=()=>{$$(".tab").forEach(x=>x.setAttribute("aria-selected",x===t));$$(".view").forEach(v=>v.hidden=v.id!==t.dataset.v)});
+  $$("[data-pt]").forEach(b=>b.onclick=()=>{document.documentElement.setAttribute("data-theme",b.dataset.pt);$$("[data-pt]").forEach(x=>x.setAttribute("aria-pressed",x===b))});
+  render();
+})();
+</script>
