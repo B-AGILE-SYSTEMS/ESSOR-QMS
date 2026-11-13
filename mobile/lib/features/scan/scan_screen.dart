@@ -5,7 +5,19 @@ import 'package:essor_mobile/core/scan/qr_location.dart';
 
 /// Caméra plein écran : renvoie le premier QR de lieu ESSOR reconnu.
 class ScanScreen extends StatefulWidget {
-  const ScanScreen({super.key});
+  const ScanScreen({
+    super.key,
+    this.title = 'Scanner une zone ou un site',
+    this.hint = 'Visez le QR code affiché dans la zone.',
+    this.rejected = 'Ce QR code n\'est pas un lieu ESSOR.',
+    this.accept = _isLocation,
+  });
+  final String title;
+  final String hint;
+  final String rejected;
+  final bool Function(String? raw) accept;
+
+  static bool _isLocation(String? raw) => parseQrLocation(raw) != null;
 
   @override
   State<ScanScreen> createState() => _ScanScreenState();
@@ -19,7 +31,7 @@ class _ScanScreenState extends State<ScanScreen> {
     if (_done) return;
     for (final b in capture.barcodes) {
       final raw = b.rawValue;
-      if (parseQrLocation(raw) != null) {
+      if (widget.accept(raw)) {
         _done = true;
         Navigator.of(context).pop(raw);
         return;
@@ -31,7 +43,7 @@ class _ScanScreenState extends State<ScanScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Scanner une zone ou un site')),
+      appBar: AppBar(title: Text(widget.title)),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -39,9 +51,7 @@ class _ScanScreenState extends State<ScanScreen> {
           Padding(
             padding: const EdgeInsets.all(16),
             child: Text(
-              _rejected == null
-                  ? 'Visez le QR code affiché dans la zone.'
-                  : 'Ce QR code n\'est pas un lieu ESSOR.',
+              _rejected == null ? widget.hint : widget.rejected,
               style: const TextStyle(fontSize: 18),
             ),
           ),

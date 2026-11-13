@@ -18,6 +18,7 @@ import 'package:essor_mobile/core/m3/audits_repository.dart';
 import 'package:essor_mobile/core/m3/documents_repository.dart';
 import 'package:essor_mobile/core/m3/m3_api.dart';
 import 'package:essor_mobile/core/m3/models.dart';
+import 'package:essor_mobile/core/m3b/controls_repository.dart';
 import 'package:essor_mobile/core/sync/sync_database.dart';
 import 'package:essor_mobile/core/sync/api_uploader.dart';
 import 'package:essor_mobile/core/sync/operations.dart';
@@ -108,6 +109,13 @@ final documentsRepositoryProvider = Provider<DocumentsRepository>(
   ),
 );
 
+final controlsRepositoryProvider = Provider<ControlsRepository>(
+  (ref) => ControlsRepository(
+    ref.watch(syncDatabaseProvider),
+    ref.watch(operationQueueProvider),
+  ),
+);
+
 final auditsProvider = StreamProvider<List<AuditSummary>>(
   (ref) => ref.watch(auditsRepositoryProvider).watch(),
 );
@@ -140,6 +148,7 @@ Future<void> runSyncCycle(Ref ref) async {
   final audits = ref.read(auditsRepositoryProvider);
   final docs = ref.read(documentsRepositoryProvider);
   final docsDir = ref.read(documentsDirProvider.future);
+  final controls = ref.read(controlsRepositoryProvider);
   await sync.syncNow();
   if (api == null) return;
   try {
@@ -159,6 +168,11 @@ Future<void> runSyncCycle(Ref ref) async {
     await docs.refresh(m3, await docsDir);
   } on DioException {
     // Documents en cache conservés.
+  }
+  try {
+    await controls.refresh(M3bApi(api.dio));
+  } on DioException {
+    // Lots et plans en cache conservés.
   }
 }
 

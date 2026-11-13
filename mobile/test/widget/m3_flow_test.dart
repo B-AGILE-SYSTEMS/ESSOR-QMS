@@ -4,7 +4,17 @@ import 'package:material_ui/material_ui.dart';
 import 'package:essor_mobile/core/widgets/terrain.dart';
 
 import 'm2_flow_test.dart'
-    show Harness, pumpM2, settle, tap, shot, loadFonts, shotDir, expectTargets;
+    show
+        Harness,
+        pumpM2,
+        settle,
+        settleSynced,
+        tap,
+        tapPhoto,
+        shot,
+        loadFonts,
+        shotDir,
+        expectTargets;
 
 Future<void> goOffline(Harness h, WidgetTester tester) async {
   h.server.online = false;
@@ -12,11 +22,11 @@ Future<void> goOffline(Harness h, WidgetTester tester) async {
   await settle(tester);
 }
 
-Future<void> goOnline(Harness h, WidgetTester tester) async {
+Future<void> goOnline(Harness h, WidgetTester tester, {int pending = 0}) async {
   h.server.online = true;
   h.online.add(true);
   await settle(tester);
-  await settle(tester);
+  await settleSynced(tester, h, pending: pending);
 }
 
 void main() {
@@ -62,7 +72,7 @@ void main() {
       find.byKey(const Key('answerComment')),
       'Palettes dans l\'allée B',
     );
-    await tap(tester, 'answerPhoto');
+    await tapPhoto(tester, 'answerPhoto', 1);
     expect(find.text('Photo (1)'), findsOneWidget);
     await shot(tester, 'audit-question-hors-ligne');
     await tap(tester, 'auditNext');
@@ -101,7 +111,7 @@ void main() {
 
     // Le réseau revient puis tombe après la première réponse.
     h.server.cutAfterWrites = 1;
-    await goOnline(h, tester);
+    await goOnline(h, tester, pending: 1);
     expect(h.server.answers.keys, ['q1']);
     expect(await tester.runAsync(() => h.db.watchPendingCount().first), 1);
 

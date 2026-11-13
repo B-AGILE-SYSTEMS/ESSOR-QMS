@@ -11,6 +11,10 @@ abstract final class OpKind {
   static const attachment = 'attachment.upload';
   static const auditAnswer = 'audit.answer';
   static const documentAck = 'document.ack';
+  static const inspectionCreate = 'inspection.create';
+  static const inspectionResults = 'inspection.results';
+  static const inspectionPhoto = 'inspection.photo';
+  static const inspectionDecision = 'inspection.decision';
 }
 
 const _uuid = Uuid();
@@ -112,6 +116,58 @@ class OperationQueue {
   }) => _db.enqueue(
     OpKind.documentAck,
     jsonEncode({'documentId': documentId, 'version': version}),
+    idempotencyKey: newUuid(),
+  );
+
+  /// Création d'un contrôle de lot (M3b) ; renvoie son `clientId`.
+  Future<String> inspectionCreate({
+    required String lotId,
+    required String controlPlanId,
+    required String point,
+  }) async {
+    final clientId = newUuid();
+    await _db.enqueue(
+      OpKind.inspectionCreate,
+      jsonEncode({
+        'clientId': clientId,
+        'lotId': lotId,
+        'controlPlanId': controlPlanId,
+        'point': point,
+      }),
+      idempotencyKey: newUuid(),
+    );
+    return clientId;
+  }
+
+  Future<void> inspectionResults({
+    required String inspectionClientId,
+    required List<Map<String, dynamic>> results,
+  }) => _db.enqueue(
+    OpKind.inspectionResults,
+    jsonEncode({'inspectionClientId': inspectionClientId, 'results': results}),
+    idempotencyKey: newUuid(),
+  );
+
+  Future<void> inspectionPhoto({
+    required String inspectionClientId,
+    required String path,
+  }) => _db.enqueue(
+    OpKind.inspectionPhoto,
+    jsonEncode({'inspectionClientId': inspectionClientId, 'path': path}),
+    idempotencyKey: newUuid(),
+  );
+
+  Future<void> inspectionDecision({
+    required String inspectionClientId,
+    required String decision,
+    String? comment,
+  }) => _db.enqueue(
+    OpKind.inspectionDecision,
+    jsonEncode({
+      'inspectionClientId': inspectionClientId,
+      'decision': decision,
+      'comment': ?comment,
+    }),
     idempotencyKey: newUuid(),
   );
 }
