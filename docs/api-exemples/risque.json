@@ -1,0 +1,73 @@
+{
+  "id" : "987af6ea-751a-4eda-8fec-716e130be9fd",
+  "reference" : "RSK-0004",
+  "type" : "sst",
+  "site" : {
+    "id" : "70083350-c534-45df-948a-2e9f59952719",
+    "code" : "SIEGE",
+    "name" : "Siège"
+  },
+  "scaleId" : "dc020ddd-b0a0-419d-a813-03262024df62",
+  "scaleCode" : "DEFAUT",
+  "workUnit" : "Atelier cuisson",
+  "process" : "Production",
+  "hazard" : "Brûlure four-b80fa099",
+  "situation" : "Intervention sur four en marche",
+  "existingMeasures" : "Gants anti-chaleur",
+  "gross" : {
+    "ratings" : {
+      "gravite" : 4,
+      "probabilite" : 3,
+      "maitrise" : 2
+    },
+    "score" : 12,
+    "level" : "critique",
+    "levelLabel" : "Critique",
+    "color" : "#C62828"
+  },
+  "residual" : {
+    "ratings" : {
+      "gravite" : 4,
+      "probabilite" : 1
+    },
+    "score" : 4,
+    "level" : "moyen",
+    "levelLabel" : "Moyen",
+    "color" : "#F9A825"
+  },
+  "reassessmentDate" : "2027-06-30",
+  "actions" : [ {
+    "id" : "1b2c6606-68db-4f58-adc5-da539503b933",
+    "reference" : "ACT-2026-0001",
+    "title" : "Installer un capot de protection",
+    "status" : "A_FAIRE",
+    "ownerId" : "a1df4e8b-dcf6-4202-8fbe-7a8e4b5243d6",
+    "ownerName" : "Nom m4.qualite",
+    "dueDate" : "2027-01-15"
+  } ],
+  "requirements" : [ ],
+  "createdAt" : "2026-11-13T15:25:33.174457Z",
+  "updatedAt" : "2026-11-13T15:25:33.349042Z",
+  "history" : [ {
+    "at" : "2026-11-13T15:25:33.174457Z",
+    "kind" : "gross",
+    "ratings" : {
+      "gravite" : 4,
+      "maitrise" : 2,
+      "probabilite" : 3
+    },
+    "score" : 12,
+    "level" : "critique",
+    "author" : "Nom m4.qualite"
+  }, {
+    "at" : "2026-11-13T15:25:33.349042Z",
+    "kind" : "residual",
+    "ratings" : {
+      "gravite" : 4,
+      "probabilite" : 1
+    },
+    "score" : 4,
+    "level" : "moyen",
+    "author" : "Nom m4.qualite"
+  } ]
+}

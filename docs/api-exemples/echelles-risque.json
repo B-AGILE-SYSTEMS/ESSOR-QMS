@@ -1,0 +1,78 @@
+[ {
+  "id" : "dc020ddd-b0a0-419d-a813-03262024df62",
+  "code" : "DEFAUT",
+  "label" : "Gravité × probabilité (4 × 4)",
+  "dimensions" : [ {
+    "code" : "gravite",
+    "label" : "Gravité",
+    "inFormula" : true,
+    "levels" : [ {
+      "value" : 1,
+      "label" : "Bénigne"
+    }, {
+      "value" : 2,
+      "label" : "Sérieuse"
+    }, {
+      "value" : 3,
+      "label" : "Grave"
+    }, {
+      "value" : 4,
+      "label" : "Très grave"
+    } ]
+  }, {
+    "code" : "probabilite",
+    "label" : "Probabilité",
+    "inFormula" : true,
+    "levels" : [ {
+      "value" : 1,
+      "label" : "Rare"
+    }, {
+      "value" : 2,
+      "label" : "Possible"
+    }, {
+      "value" : 3,
+      "label" : "Probable"
+    }, {
+      "value" : 4,
+      "label" : "Fréquente"
+    } ]
+  }, {
+    "code" : "maitrise",
+    "label" : "Maîtrise",
+    "inFormula" : false,
+    "levels" : [ {
+      "value" : 1,
+      "label" : "Faible"
+    }, {
+      "value" : 2,
+      "label" : "Modérée"
+    }, {
+      "value" : 3,
+      "label" : "Forte"
+    }, {
+      "value" : 4,
+      "label" : "Très forte"
+    } ]
+  } ],
+  "thresholds" : [ {
+    "level" : "faible",
+    "label" : "Faible",
+    "min" : 1,
+    "color" : "#2E7D32"
+  }, {
+    "level" : "moyen",
+    "label" : "Moyen",
+    "min" : 4,
+    "color" : "#F9A825"
+  }, {
+    "level" : "eleve",
+    "label" : "Élevé",
+    "min" : 8,
+    "color" : "#EF6C00"
+  }, {
+    "level" : "critique",
+    "label" : "Critique",
+    "min" : 12,
+    "color" : "#C62828"
+  } ]
+} ]
