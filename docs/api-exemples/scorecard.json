@@ -1,0 +1,82 @@
+{
+  "partner" : {
+    "id" : "fcc192b5-9ad4-4859-96cf-c295dcf6a42e",
+    "code" : "FOU-66dc36a5",
+    "name" : "Nom FOU-66dc36a5",
+    "type" : "fournisseur"
+  },
+  "history" : [ {
+    "evaluationId" : "ca4356c6-b746-4d97-8592-69b96cc00274",
+    "grid" : {
+      "code" : "FOURNISSEUR",
+      "label" : "Évaluation fournisseur trimestrielle",
+      "id" : "00000000-0000-0000-0000-00000000e601"
+    },
+    "period" : "2026-T4",
+    "globalScore" : 32.5,
+    "class" : "C",
+    "indicators" : {
+      "ncCount" : 1,
+      "lotsRefused" : 1,
+      "lotsReceived" : 2,
+      "lateDeliveries" : 1,
+      "lotsDerogation" : 0,
+      "lotsRefusedPct" : 50.0
+    }
+  } ],
+  "latest" : {
+    "id" : "ca4356c6-b746-4d97-8592-69b96cc00274",
+    "partner" : {
+      "code" : "FOU-66dc36a5",
+      "name" : "Nom FOU-66dc36a5",
+      "id" : "fcc192b5-9ad4-4859-96cf-c295dcf6a42e",
+      "type" : "fournisseur"
+    },
+    "grid" : {
+      "code" : "FOURNISSEUR",
+      "label" : "Évaluation fournisseur trimestrielle",
+      "id" : "00000000-0000-0000-0000-00000000e601"
+    },
+    "campaignId" : null,
+    "period" : "2026-T4",
+    "periodStart" : "2026-10-01",
+    "periodEnd" : "2026-12-31",
+    "status" : "terminee",
+    "scores" : {
+      "nc" : 3.0,
+      "retards" : 2.0,
+      "reactivite" : 1.0,
+      "lots_refuses" : 0.0,
+      "qualite_service" : 1.0
+    },
+    "indicators" : {
+      "ncCount" : 1,
+      "lotsRefused" : 1,
+      "lotsReceived" : 2,
+      "lateDeliveries" : 1,
+      "lotsDerogation" : 0,
+      "lotsRefusedPct" : 50.0
+    },
+    "globalScore" : 32.5,
+    "class" : "C",
+    "comment" : "Trimestre difficile",
+    "action" : {
+      "reference" : "ACT-2026-0015",
+      "id" : "8d59231e-a5a2-41f4-96fd-f6dd9dc868ee",
+      "status" : "A_FAIRE"
+    },
+    "evaluatedBy" : "Nom m4.qualite",
+    "evaluatedAt" : "2026-11-13T15:35:32.518785Z"
+  },
+  "currentPeriod" : {
+    "period" : "2026-T4",
+    "indicators" : {
+      "ncCount" : 1,
+      "lotsReceived" : 2,
+      "lotsRefused" : 1,
+      "lotsRefusedPct" : 50.0,
+      "lotsDerogation" : 0,
+      "lateDeliveries" : 1
+    }
+  }
+}

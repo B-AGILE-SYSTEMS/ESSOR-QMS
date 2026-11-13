@@ -1,0 +1,19 @@
+{
+  "rate" : 66.7,
+  "sites" : [ {
+    "site" : {
+      "code" : "SIEGE",
+      "id" : "f0fee262-a8f6-4bbd-9717-44260445c3f7",
+      "name" : "Siège"
+    },
+    "applicable" : 3,
+    "evaluated" : 3,
+    "notEvaluated" : 0,
+    "conforme" : 2,
+    "partiel" : 0,
+    "nonConforme" : 1,
+    "na" : 0,
+    "overdue" : 1,
+    "rate" : 66.7
+  } ]
+}

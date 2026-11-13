@@ -1,0 +1,222 @@
+{
+  "scale" : {
+    "code" : "DEFAUT",
+    "label" : "Gravité × probabilité (4 × 4)",
+    "id" : "00000000-0000-0000-0000-00000000e401"
+  },
+  "basis" : "gross",
+  "rows" : {
+    "code" : "gravite",
+    "label" : "Gravité",
+    "inFormula" : true,
+    "levels" : [ {
+      "value" : 1,
+      "label" : "Bénigne"
+    }, {
+      "value" : 2,
+      "label" : "Sérieuse"
+    }, {
+      "value" : 3,
+      "label" : "Grave"
+    }, {
+      "value" : 4,
+      "label" : "Très grave"
+    } ]
+  },
+  "columns" : {
+    "code" : "probabilite",
+    "label" : "Probabilité",
+    "inFormula" : true,
+    "levels" : [ {
+      "value" : 1,
+      "label" : "Rare"
+    }, {
+      "value" : 2,
+      "label" : "Possible"
+    }, {
+      "value" : 3,
+      "label" : "Probable"
+    }, {
+      "value" : 4,
+      "label" : "Fréquente"
+    } ]
+  },
+  "thresholds" : [ {
+    "level" : "faible",
+    "label" : "Faible",
+    "min" : 1,
+    "color" : "#2E7D32"
+  }, {
+    "level" : "moyen",
+    "label" : "Moyen",
+    "min" : 4,
+    "color" : "#F9A825"
+  }, {
+    "level" : "eleve",
+    "label" : "Élevé",
+    "min" : 8,
+    "color" : "#EF6C00"
+  }, {
+    "level" : "critique",
+    "label" : "Critique",
+    "min" : 12,
+    "color" : "#C62828"
+  } ],
+  "cells" : [ {
+    "row" : 4,
+    "col" : 1,
+    "score" : 4,
+    "level" : "moyen",
+    "color" : "#F9A825",
+    "count" : 0,
+    "risks" : [ ]
+  }, {
+    "row" : 4,
+    "col" : 2,
+    "score" : 8,
+    "level" : "eleve",
+    "color" : "#EF6C00",
+    "count" : 0,
+    "risks" : [ ]
+  }, {
+    "row" : 4,
+    "col" : 3,
+    "score" : 12,
+    "level" : "critique",
+    "color" : "#C62828",
+    "count" : 1,
+    "risks" : [ {
+      "id" : "934d2123-96b3-47db-a5f4-9cc12c639b52",
+      "reference" : "RSK-0010",
+      "hazard" : "Brûlure four-d8975738",
+      "type" : "sst",
+      "score" : 12,
+      "level" : "critique"
+    } ]
+  }, {
+    "row" : 4,
+    "col" : 4,
+    "score" : 16,
+    "level" : "critique",
+    "color" : "#C62828",
+    "count" : 0,
+    "risks" : [ ]
+  }, {
+    "row" : 3,
+    "col" : 1,
+    "score" : 3,
+    "level" : "faible",
+    "color" : "#2E7D32",
+    "count" : 0,
+    "risks" : [ ]
+  }, {
+    "row" : 3,
+    "col" : 2,
+    "score" : 6,
+    "level" : "moyen",
+    "color" : "#F9A825",
+    "count" : 0,
+    "risks" : [ ]
+  }, {
+    "row" : 3,
+    "col" : 3,
+    "score" : 9,
+    "level" : "eleve",
+    "color" : "#EF6C00",
+    "count" : 0,
+    "risks" : [ ]
+  }, {
+    "row" : 3,
+    "col" : 4,
+    "score" : 12,
+    "level" : "critique",
+    "color" : "#C62828",
+    "count" : 0,
+    "risks" : [ ]
+  }, {
+    "row" : 2,
+    "col" : 1,
+    "score" : 2,
+    "level" : "faible",
+    "color" : "#2E7D32",
+    "count" : 0,
+    "risks" : [ ]
+  }, {
+    "row" : 2,
+    "col" : 2,
+    "score" : 4,
+    "level" : "moyen",
+    "color" : "#F9A825",
+    "count" : 1,
+    "risks" : [ {
+      "id" : "8071a0b7-0dda-4dab-8add-5267d7251d49",
+      "reference" : "RSK-0011",
+      "hazard" : "Chute-ad7659b3",
+      "type" : "sst",
+      "score" : 4,
+      "level" : "moyen"
+    } ]
+  }, {
+    "row" : 2,
+    "col" : 3,
+    "score" : 6,
+    "level" : "moyen",
+    "color" : "#F9A825",
+    "count" : 1,
+    "risks" : [ {
+      "id" : "4eb28662-8f51-48d1-a6ef-a654003b7de8",
+      "reference" : "RSK-0009",
+      "hazard" : "Bruit-7290cbe1",
+      "type" : "sst",
+      "score" : 6,
+      "level" : "moyen"
+    } ]
+  }, {
+    "row" : 2,
+    "col" : 4,
+    "score" : 8,
+    "level" : "eleve",
+    "color" : "#EF6C00",
+    "count" : 0,
+    "risks" : [ ]
+  }, {
+    "row" : 1,
+    "col" : 1,
+    "score" : 1,
+    "level" : "faible",
+    "color" : "#2E7D32",
+    "count" : 1,
+    "risks" : [ {
+      "id" : "8052ba35-24b6-4a4c-a4d5-1cc0b82e0444",
+      "reference" : "RSK-0007",
+      "hazard" : "Isolé-f2dd81db",
+      "type" : "sst",
+      "score" : 1,
+      "level" : "faible"
+    } ]
+  }, {
+    "row" : 1,
+    "col" : 2,
+    "score" : 2,
+    "level" : "faible",
+    "color" : "#2E7D32",
+    "count" : 0,
+    "risks" : [ ]
+  }, {
+    "row" : 1,
+    "col" : 3,
+    "score" : 3,
+    "level" : "faible",
+    "color" : "#2E7D32",
+    "count" : 0,
+    "risks" : [ ]
+  }, {
+    "row" : 1,
+    "col" : 4,
+    "score" : 4,
+    "level" : "moyen",
+    "color" : "#F9A825",
+    "count" : 0,
+    "risks" : [ ]
+  } ]
+}

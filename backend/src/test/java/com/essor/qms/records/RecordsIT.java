@@ -250,7 +250,7 @@ class RecordsIT extends AbstractIntegrationTest {
     void reglesDeNotificationAdmin() throws Exception {
         call(get("/api/notification-rules"), TERRAIN, null, 403);
         JsonNode rules = call(get("/api/notification-rules"), ADMIN, null, 200);
-        assertThat(rules.size()).isEqualTo(12); // 6 événements (M3 : DOCUMENT_DIFFUSED, REVIEW_DUE) x 2 canaux
+        assertThat(rules.size()).isEqualTo(18); // 9 événements (M3 et M4) x 2 canaux
         assertThat(rules.get(0).has("event") && rules.get(0).has("channel") && rules.get(0).has("enabled")).isTrue();
         JsonNode after = call(put("/api/notification-rules"), ADMIN,
                 "[{\"event\":\"DUE_SOON\",\"channel\":\"EMAIL\",\"enabled\":true}]", 200);

@@ -48,7 +48,7 @@ class LotService {
     }
 
     record CreateLot(UUID articleId, String numero, UUID supplierId, String supplierLot, BigDecimal quantity,
-                     String unit, LocalDate dlc, UUID siteId) {
+                     String unit, LocalDate dlc, UUID siteId, LocalDate expectedDate) {
     }
 
     record StatusChange(String status, String reason, UUID ncId) {
@@ -118,13 +118,13 @@ class LotService {
         }
         UUID id = jdbc.sql("""
                 insert into lot (tenant_id, article_id, numero, supplier_id, supplier_lot, quantity, unit, dlc, site_id,
-                  created_by)
-                values (app_current_tenant(), :a, :n, :sup, :supLot, :q, :u, :dlc, :site, app_current_user())
+                  created_by, expected_date)
+                values (app_current_tenant(), :a, :n, :sup, :supLot, :q, :u, :dlc, :site, app_current_user(), :exp)
                 returning id""")
                 .param("a", in.articleId()).param("n", in.numero().strip()).param("sup", in.supplierId())
                 .param("supLot", blankToNull(in.supplierLot())).param("q", in.quantity())
                 .param("u", in.unit() == null || in.unit().isBlank() ? article.get("unit") : in.unit().strip())
-                .param("dlc", in.dlc()).param("site", in.siteId()).query(UUID.class).single();
+                .param("dlc", in.dlc()).param("site", in.siteId()).param("exp", in.expectedDate()).query(UUID.class).single();
         jdbc.sql("""
                 insert into lot_status_history (tenant_id, lot_id, from_status, to_status, reason, actor_id)
                 values (app_current_tenant(), :id, null, 'EN_ATTENTE', 'Création du lot', app_current_user())""")

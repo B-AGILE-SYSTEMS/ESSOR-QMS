@@ -1,0 +1,68 @@
+{
+  "instrument" : {
+    "id" : "31f9ac52-bc5d-4adc-9157-bbda8e2c5999",
+    "code" : "PAC-fe60e514",
+    "label" : "Pied à coulisse 150 mm",
+    "type" : "pied_a_coulisse",
+    "site" : {
+      "code" : "ENTREPOT-TNG",
+      "id" : "00000000-0000-0000-0000-0000000051a2",
+      "name" : "Entrepôt de Tanger"
+    },
+    "location" : "Labo réception",
+    "serialNumber" : "SN-PAC-fe60e514",
+    "rangeMin" : 0.0,
+    "rangeMax" : 150.0,
+    "unit" : "mm",
+    "resolution" : 0.01,
+    "emt" : 0.03,
+    "periodMonths" : 12,
+    "provider" : "Labo Métrologie Casablanca",
+    "status" : "en_service",
+    "nextDue" : "2027-11-03",
+    "dueState" : "ok",
+    "selectable" : true,
+    "qr" : "essor://instrument/31f9ac52-bc5d-4adc-9157-bbda8e2c5999",
+    "createdAt" : "2026-11-13T15:35:37.033818Z",
+    "updatedAt" : "2026-11-13T15:35:37.041942Z"
+  },
+  "calibrations" : [ {
+    "id" : "a2a068e3-7dbe-4fbf-815c-7b5a42be480b",
+    "instrumentId" : "31f9ac52-bc5d-4adc-9157-bbda8e2c5999",
+    "calibratedOn" : "2026-11-03",
+    "provider" : "Labo Métrologie Casablanca",
+    "internal" : false,
+    "certificateNumber" : "CE-2026-11-03",
+    "points" : [ {
+      "ecart" : 0.01,
+      "mesure" : 10.01,
+      "nominal" : 10.0,
+      "conforme" : true
+    }, {
+      "ecart" : 0.02,
+      "mesure" : 50.02,
+      "nominal" : 50.0,
+      "conforme" : true
+    }, {
+      "ecart" : -0.03,
+      "mesure" : 99.97,
+      "nominal" : 100.0,
+      "conforme" : true
+    } ],
+    "emt" : 0.03,
+    "maxAbsError" : 0.03,
+    "verdict" : "conforme",
+    "nextDue" : "2027-11-03",
+    "ncId" : null,
+    "ncReference" : null,
+    "certificate" : {
+      "contentType" : "application/pdf",
+      "size" : 16,
+      "url" : "/api/calibrations/a2a068e3-7dbe-4fbf-815c-7b5a42be480b/certificate",
+      "fileName" : "certificat.pdf"
+    },
+    "comment" : "Étalonnage annuel",
+    "createdBy" : "Nom m4.terrain",
+    "createdAt" : "2026-11-13T15:35:37.041942Z"
+  } ]
+}

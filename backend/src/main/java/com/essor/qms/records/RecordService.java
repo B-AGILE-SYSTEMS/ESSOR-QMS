@@ -312,6 +312,27 @@ class RecordService {
         return id;
     }
 
+    /** Action sans fiche parente, créée par un autre module (risque, veille, évaluation partenaire). */
+    UUID createStandaloneAction(String title, String description, UUID siteId, UUID ownerId, LocalDate dueDate,
+                                String actionType, Map<String, Object> extra) {
+        UUID owner = ownerId == null ? ExecutionContext.userId() : ownerId;
+        if (owner == null || !store.userExists(owner)) {
+            throw ApiException.badRequest("Responsable inconnu dans ce tenant");
+        }
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("actionType", actionType);
+        if (extra != null) {
+            data.putAll(extra);
+        }
+        UUID id = insert(types.get(ACTION_TYPE), title, description, null, siteId, owner, dueDate, null, data);
+        audit.record("RECORD_CREATED", "record", id.toString(), store.write(Map.of("origine",
+                String.valueOf(data.getOrDefault("origine", "module")))));
+        Row created = load(id, false);
+        events.publishEvent(new RecordAssigned(id, created.reference(), created.title(), owner,
+                ExecutionContext.userId()));
+        return id;
+    }
+
     RecordView transition(UUID id, String code, String comment) {
         Row row = load(id, true);
         if (DOCUMENT_TYPE.equals(row.typeCode())) {

@@ -1,21 +1,21 @@
 {
-  "id" : "6d435f8d-a869-4f9c-8d40-6b9ee2df9675",
+  "id" : "3c232053-a96e-4aff-bd14-fd1dae740547",
   "lot" : {
-    "id" : "ac3f7785-4116-444e-9b72-332ed3042929",
+    "id" : "4efc22a9-0ff2-4bff-b705-e664154a871e",
     "article" : {
-      "id" : "12e85777-22e7-47a3-bb4b-5c02e39f91af",
-      "code" : "ART-3b2352e1",
-      "label" : "Article ART-3b2352e1",
+      "id" : "b583ab2d-8f89-4320-9f53-ec981834781c",
+      "code" : "ART-4ebafce8",
+      "label" : "Article ART-4ebafce8",
       "unit" : "kg",
       "family" : "FAM-T"
     },
-    "numero" : "L-135898f4",
+    "numero" : "L-c48f5225",
     "supplier" : {
-      "id" : "7478a059-a7c9-414d-8aab-d1d7b8177572",
-      "code" : "FOU-4d75ba2f",
-      "name" : "Nom FOU-4d75ba2f"
+      "id" : "b034d950-4a1b-4760-a337-caca3dfdf2f1",
+      "code" : "FOU-1b5e7afb",
+      "name" : "Nom FOU-1b5e7afb"
     },
-    "supplierLot" : "F-L-135898f4",
+    "supplierLot" : "F-L-c48f5225",
     "quantity" : 1000.0,
     "unit" : "kg",
     "dlc" : null,
@@ -25,18 +25,18 @@
       "name" : "Entrepôt de Tanger"
     },
     "qualityStatus" : "EN_ATTENTE",
-    "createdAt" : "2026-11-13T14:26:43.137479Z",
-    "updatedAt" : "2026-11-13T14:26:43.137479Z"
+    "createdAt" : "2026-11-13T15:35:36.430127Z",
+    "updatedAt" : "2026-11-13T15:35:36.430127Z"
   },
   "controlPlan" : {
-    "id" : "fef75444-5676-4004-bd15-e6d8c946bbfe",
-    "code" : "PC-3dd90618",
+    "id" : "6ed76b1d-7b2b-4c80-aba1-aa0bfaede584",
+    "code" : "PC-5d3b1827",
     "version" : 1,
     "label" : "Plan RECEPTION",
     "point" : "RECEPTION",
     "target" : {
       "type" : "article",
-      "id" : "12e85777-22e7-47a3-bb4b-5c02e39f91af",
+      "id" : "b583ab2d-8f89-4320-9f53-ec981834781c",
       "famille" : null
     },
     "characteristics" : [ {
@@ -68,7 +68,7 @@
     },
     "frequency" : null,
     "active" : true,
-    "createdAt" : "2026-11-13T14:26:43.150100Z"
+    "createdAt" : "2026-11-13T15:35:36.440303Z"
   },
   "point" : "RECEPTION",
   "sampling" : {
@@ -89,26 +89,28 @@
     "values" : [ ],
     "ok" : true,
     "instrument" : null,
+    "instrumentId" : null,
     "planVersion" : 1,
     "siteId" : "00000000-0000-0000-0000-0000000051a2",
     "author" : "Nom tb.terrain",
-    "at" : "2026-11-13T14:26:43.172564Z"
+    "at" : "2026-11-13T15:35:36.460051Z"
   }, {
     "characteristic" : "DIAM",
     "values" : [ 10.1, 11.5 ],
     "ok" : false,
     "instrument" : "PAC-01",
+    "instrumentId" : null,
     "planVersion" : 1,
     "siteId" : "00000000-0000-0000-0000-0000000051a2",
     "author" : "Nom tb.terrain",
-    "at" : "2026-11-13T14:26:43.172564Z"
+    "at" : "2026-11-13T15:35:36.460051Z"
   } ],
   "proposedDecision" : "REFUSE",
   "decision" : null,
   "comment" : null,
   "ncId" : null,
   "createdBy" : "Nom tb.terrain",
-  "createdAt" : "2026-11-13T14:26:43.159278Z",
+  "createdAt" : "2026-11-13T15:35:36.449764Z",
   "decidedBy" : null,
   "decidedAt" : null
 }
