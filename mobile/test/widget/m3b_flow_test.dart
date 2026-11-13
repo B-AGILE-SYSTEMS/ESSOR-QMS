@@ -26,7 +26,7 @@ void main() {
     // Le premier cycle de synchro a mis lots et plans en cache.
     await settleUntil(
       tester,
-      () async => await h.db.getCache('m3b.plans') != null,
+      () async => await h.db.getCache('m4.instruments') != null,
     );
     h.server.online = false;
     h.online.add(false);
@@ -53,8 +53,13 @@ void main() {
     await settle(tester);
     expect(find.text('Verdict : Hors tolérance ✕'), findsOneWidget);
     expect(find.text('Hors tolérance'), findsOneWidget);
-    await tester.enterText(find.byKey(const Key('instrument')), 'PAC-0142');
-    await settle(tester);
+    // Liste : seuls les instruments en service et non échus (cache).
+    await tap(tester, 'instrumentPick');
+    expect(find.byKey(const Key('inst-PAC-031')), findsOneWidget);
+    expect(find.byKey(const Key('inst-PAC-042')), findsNothing); // bloqué
+    expect(find.byKey(const Key('inst-PAC-050')), findsNothing); // échu
+    await tap(tester, 'inst-PAC-031');
+    expect(find.text('Instrument : PAC-031'), findsOneWidget);
     await shot(tester, 'controle-mesure-hors-ligne');
     await tap(tester, 'controlNext');
 
@@ -94,7 +99,8 @@ void main() {
         'characteristic': 'DIAM',
         'values': [12.01, 12.05],
         'ok': false,
-        'instrument': 'PAC-0142',
+        'instrument': 'PAC-031',
+        'instrumentId': 'ins-31',
       },
       {
         'characteristic': 'ASP',

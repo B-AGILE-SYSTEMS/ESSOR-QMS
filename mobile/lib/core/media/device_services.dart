@@ -7,6 +7,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'package:essor_mobile/core/m3b/gs1.dart';
+import 'package:essor_mobile/core/m4/instruments.dart';
 import 'package:essor_mobile/core/media/image_compress.dart';
 import 'package:essor_mobile/core/sync/operations.dart';
 import 'package:essor_mobile/features/scan/scan_screen.dart';
@@ -40,6 +41,21 @@ final lotScannerProvider = Provider<QrScanner>(
             hint: 'Visez l\'étiquette GS1-128 ou le QR du lot.',
             rejected: 'Ce code n\'identifie pas un lot.',
             accept: (raw) => parseLotScan(raw) != null,
+          ),
+        ),
+      ),
+);
+
+/// Lecture d'un QR instrument (`essor://instrument/<id>`).
+final instrumentScannerProvider = Provider<QrScanner>(
+  (ref) =>
+      (context) => Navigator.of(context).push<String>(
+        MaterialPageRoute(
+          builder: (_) => ScanScreen(
+            title: 'Scanner un instrument',
+            hint: 'Visez le QR collé sur l\'instrument.',
+            rejected: 'Ce QR code n\'identifie pas un instrument.',
+            accept: (raw) => parseInstrumentQr(raw) != null,
           ),
         ),
       ),
