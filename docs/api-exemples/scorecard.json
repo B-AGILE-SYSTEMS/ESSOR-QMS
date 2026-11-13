@@ -1,16 +1,16 @@
 {
   "partner" : {
-    "id" : "cd355460-d4c9-456e-a953-b7212a9bca86",
-    "code" : "FOU-5329e418",
-    "name" : "Nom FOU-5329e418",
+    "id" : "fcc192b5-9ad4-4859-96cf-c295dcf6a42e",
+    "code" : "FOU-66dc36a5",
+    "name" : "Nom FOU-66dc36a5",
     "type" : "fournisseur"
   },
   "history" : [ {
-    "evaluationId" : "348f2450-95d3-495d-ab1d-e9bee44b5368",
+    "evaluationId" : "ca4356c6-b746-4d97-8592-69b96cc00274",
     "grid" : {
-      "id" : "c7f879b7-1fd1-4d09-8f90-89e786e5266b",
+      "code" : "FOURNISSEUR",
       "label" : "Évaluation fournisseur trimestrielle",
-      "code" : "FOURNISSEUR"
+      "id" : "00000000-0000-0000-0000-00000000e601"
     },
     "period" : "2026-T4",
     "globalScore" : 32.5,
@@ -25,17 +25,17 @@
     }
   } ],
   "latest" : {
-    "id" : "348f2450-95d3-495d-ab1d-e9bee44b5368",
+    "id" : "ca4356c6-b746-4d97-8592-69b96cc00274",
     "partner" : {
-      "type" : "fournisseur",
-      "id" : "cd355460-d4c9-456e-a953-b7212a9bca86",
-      "name" : "Nom FOU-5329e418",
-      "code" : "FOU-5329e418"
+      "code" : "FOU-66dc36a5",
+      "name" : "Nom FOU-66dc36a5",
+      "id" : "fcc192b5-9ad4-4859-96cf-c295dcf6a42e",
+      "type" : "fournisseur"
     },
     "grid" : {
-      "id" : "c7f879b7-1fd1-4d09-8f90-89e786e5266b",
+      "code" : "FOURNISSEUR",
       "label" : "Évaluation fournisseur trimestrielle",
-      "code" : "FOURNISSEUR"
+      "id" : "00000000-0000-0000-0000-00000000e601"
     },
     "campaignId" : null,
     "period" : "2026-T4",
@@ -61,12 +61,12 @@
     "class" : "C",
     "comment" : "Trimestre difficile",
     "action" : {
-      "id" : "710d07be-a7f6-4b30-b264-9afaa7705b04",
-      "reference" : "ACT-2026-0001",
+      "reference" : "ACT-2026-0015",
+      "id" : "8d59231e-a5a2-41f4-96fd-f6dd9dc868ee",
       "status" : "A_FAIRE"
     },
     "evaluatedBy" : "Nom m4.qualite",
-    "evaluatedAt" : "2026-11-13T15:32:10.081070Z"
+    "evaluatedAt" : "2026-11-13T15:35:32.518785Z"
   },
   "currentPeriod" : {
     "period" : "2026-T4",

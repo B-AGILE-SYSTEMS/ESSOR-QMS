@@ -1,17 +1,17 @@
 {
-  "id" : "987af6ea-751a-4eda-8fec-716e130be9fd",
-  "reference" : "RSK-0004",
+  "id" : "934d2123-96b3-47db-a5f4-9cc12c639b52",
+  "reference" : "RSK-0010",
   "type" : "sst",
   "site" : {
-    "id" : "70083350-c534-45df-948a-2e9f59952719",
-    "code" : "SIEGE",
-    "name" : "Siège"
+    "code" : "ENTREPOT-TNG",
+    "id" : "00000000-0000-0000-0000-0000000051a2",
+    "name" : "Entrepôt de Tanger"
   },
-  "scaleId" : "dc020ddd-b0a0-419d-a813-03262024df62",
+  "scaleId" : "00000000-0000-0000-0000-00000000e401",
   "scaleCode" : "DEFAUT",
   "workUnit" : "Atelier cuisson",
   "process" : "Production",
-  "hazard" : "Brûlure four-b80fa099",
+  "hazard" : "Brûlure four-d8975738",
   "situation" : "Intervention sur four en marche",
   "existingMeasures" : "Gants anti-chaleur",
   "gross" : {
@@ -37,19 +37,19 @@
   },
   "reassessmentDate" : "2027-06-30",
   "actions" : [ {
-    "id" : "1b2c6606-68db-4f58-adc5-da539503b933",
-    "reference" : "ACT-2026-0001",
+    "id" : "8b5ad19e-9caa-4248-95a4-021f1067de62",
+    "reference" : "ACT-2026-0014",
     "title" : "Installer un capot de protection",
     "status" : "A_FAIRE",
-    "ownerId" : "a1df4e8b-dcf6-4202-8fbe-7a8e4b5243d6",
+    "ownerId" : "9f593634-e375-4413-ba97-d5de1b340365",
     "ownerName" : "Nom m4.qualite",
     "dueDate" : "2027-01-15"
   } ],
   "requirements" : [ ],
-  "createdAt" : "2026-11-13T15:25:33.174457Z",
-  "updatedAt" : "2026-11-13T15:25:33.349042Z",
+  "createdAt" : "2026-11-13T15:35:31.987730Z",
+  "updatedAt" : "2026-11-13T15:35:32.070643Z",
   "history" : [ {
-    "at" : "2026-11-13T15:25:33.174457Z",
+    "at" : "2026-11-13T15:35:31.987730Z",
     "kind" : "gross",
     "ratings" : {
       "gravite" : 4,
@@ -60,7 +60,7 @@
     "level" : "critique",
     "author" : "Nom m4.qualite"
   }, {
-    "at" : "2026-11-13T15:25:33.349042Z",
+    "at" : "2026-11-13T15:35:32.070643Z",
     "kind" : "residual",
     "ratings" : {
       "gravite" : 4,

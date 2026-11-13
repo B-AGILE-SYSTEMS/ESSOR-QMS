@@ -1,16 +1,16 @@
 {
   "instrument" : {
-    "id" : "17e9270a-4b1b-4488-9185-ddf61a8d4cba",
-    "code" : "PAC-8652e8e6",
+    "id" : "526d0cd3-c0f9-4f38-8f5b-acc40c76f718",
+    "code" : "PAC-b86074e5",
     "label" : "Pied à coulisse 150 mm",
     "type" : "pied_a_coulisse",
     "site" : {
-      "name" : "Siège",
-      "id" : "3e634eef-fae4-40c1-a800-22267f3d0d2d",
-      "code" : "SIEGE"
+      "code" : "ENTREPOT-TNG",
+      "id" : "00000000-0000-0000-0000-0000000051a2",
+      "name" : "Entrepôt de Tanger"
     },
     "location" : "Labo réception",
-    "serialNumber" : "SN-PAC-8652e8e6",
+    "serialNumber" : "SN-PAC-b86074e5",
     "rangeMin" : 0.0,
     "rangeMax" : 150.0,
     "unit" : "mm",
@@ -22,35 +22,35 @@
     "nextDue" : "2027-10-14",
     "dueState" : "ok",
     "selectable" : false,
-    "qr" : "essor://instrument/17e9270a-4b1b-4488-9185-ddf61a8d4cba",
-    "createdAt" : "2026-11-13T15:22:14.724851Z",
-    "updatedAt" : "2026-11-13T15:22:14.988823Z"
+    "qr" : "essor://instrument/526d0cd3-c0f9-4f38-8f5b-acc40c76f718",
+    "createdAt" : "2026-11-13T15:35:36.662600Z",
+    "updatedAt" : "2026-11-13T15:35:36.733937Z"
   },
   "since" : "2026-10-14",
   "lastConformingCalibration" : {
-    "id" : "88625d7d-ad1b-4f3a-8e83-6db9910715b9",
-    "calibratedOn" : "2026-10-14"
+    "calibratedOn" : "2026-10-14",
+    "id" : "f6846537-82b6-43e3-a989-103f3175fa59"
   },
   "inspections" : [ {
-    "id" : "823951e9-bf67-4d09-8f7e-e59e32ed1daa",
+    "id" : "2f8562a6-2b31-4a81-83ae-33144d390e7b",
     "point" : "RECEPTION",
     "decision" : null,
-    "lotId" : "2c2ad710-7797-492b-b9ae-6d1e646baf84",
-    "lotNumero" : "L-d5643037",
-    "articleCode" : "ART-dd728331",
+    "lotId" : "b5c82bef-f9ae-46ba-adc2-6157ec290d67",
+    "lotNumero" : "L-0fdd0101",
+    "articleCode" : "ART-9232f43c",
     "characteristics" : [ "DIAM" ],
-    "measuredAt" : "2026-11-13T15:22:14.919245Z"
+    "measuredAt" : "2026-11-13T15:35:36.722169Z"
   } ],
   "lots" : [ {
-    "id" : "2c2ad710-7797-492b-b9ae-6d1e646baf84",
-    "numero" : "L-d5643037",
+    "id" : "b5c82bef-f9ae-46ba-adc2-6157ec290d67",
+    "numero" : "L-0fdd0101",
     "article" : {
-      "label" : "Article ART-dd728331",
-      "code" : "ART-dd728331"
+      "code" : "ART-9232f43c",
+      "label" : "Article ART-9232f43c"
     },
     "supplier" : {
-      "name" : "Nom FOU-c71672bd",
-      "code" : "FOU-c71672bd"
+      "code" : "FOU-830f2a1f",
+      "name" : "Nom FOU-830f2a1f"
     },
     "qualityStatus" : "EN_ATTENTE",
     "quantity" : 500.0,

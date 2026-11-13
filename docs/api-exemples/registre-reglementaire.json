@@ -1,6 +1,6 @@
 [ {
-  "id" : "164f33a9-b385-4bda-89e5-7fb23e26e61a",
-  "reference" : "Arrêté 93-08-0a8e13d6",
+  "id" : "939e8d74-870e-42bd-8731-cb59d63fc697",
+  "reference" : "Arrêté 93-08-c04c5e39",
   "title" : "Code du travail — protection des salariés",
   "domain" : "sst",
   "jurisdiction" : "Maroc",
@@ -10,27 +10,27 @@
   "sourceUrl" : "https://www.sgg.gov.ma",
   "status" : "en_vigueur",
   "reviewMonths" : 12,
-  "updatedAt" : "2026-11-13T15:29:19.605876Z",
+  "updatedAt" : "2026-11-13T15:34:51.117634Z",
   "siteEvaluation" : {
-    "id" : "840a4ef5-58a3-4c89-bd0b-a2fad754b4c6",
-    "regulationId" : "164f33a9-b385-4bda-89e5-7fb23e26e61a",
+    "id" : "44b2156e-a577-487c-9153-a15e2b90654e",
+    "regulationId" : "939e8d74-870e-42bd-8731-cb59d63fc697",
     "site" : {
-      "id" : "f604a747-2a57-4022-a122-78dc70c32b16",
-      "name" : "Siège",
-      "code" : "SIEGE"
+      "code" : "SIEGE",
+      "id" : "f0fee262-a8f6-4bbd-9717-44260445c3f7",
+      "name" : "Siège"
     },
     "result" : "conforme",
     "evidence" : null,
     "comment" : null,
-    "evaluatedAt" : "2026-11-13T15:29:19.638150Z",
+    "evaluatedAt" : "2026-11-13T15:34:51.149269Z",
     "evaluatedBy" : "Nom m4.qualite",
     "nextDue" : "2026-11-12",
     "overdue" : true,
     "action" : null
   }
 }, {
-  "id" : "87466a96-419e-4955-a052-1ac220c99fa0",
-  "reference" : "Décret 2-12-172-1be74803",
+  "id" : "7c5d169b-6ccc-4222-b1cf-10e6066c5e1e",
+  "reference" : "Décret 2-12-172-5ff026f4",
   "title" : "Code du travail — protection des salariés",
   "domain" : "sst",
   "jurisdiction" : "Maroc",
@@ -40,27 +40,27 @@
   "sourceUrl" : "https://www.sgg.gov.ma",
   "status" : "en_vigueur",
   "reviewMonths" : 12,
-  "updatedAt" : "2026-11-13T15:29:19.770544Z",
+  "updatedAt" : "2026-11-13T15:34:51.235750Z",
   "siteEvaluation" : {
-    "id" : "9739a57a-664c-4ea9-8eef-ee10d8af02d4",
-    "regulationId" : "87466a96-419e-4955-a052-1ac220c99fa0",
+    "id" : "2acb4b8b-51de-44f4-a4d3-9d5de26e9316",
+    "regulationId" : "7c5d169b-6ccc-4222-b1cf-10e6066c5e1e",
     "site" : {
-      "id" : "f604a747-2a57-4022-a122-78dc70c32b16",
-      "name" : "Siège",
-      "code" : "SIEGE"
+      "code" : "SIEGE",
+      "id" : "f0fee262-a8f6-4bbd-9717-44260445c3f7",
+      "name" : "Siège"
     },
     "result" : "conforme",
     "evidence" : null,
     "comment" : null,
-    "evaluatedAt" : "2026-11-13T15:29:19.923468Z",
+    "evaluatedAt" : "2026-11-13T15:34:51.306145Z",
     "evaluatedBy" : "Nom m4.qualite",
     "nextDue" : "2027-11-13",
     "overdue" : false,
     "action" : null
   }
 }, {
-  "id" : "615698eb-8d5f-4449-b982-37ca3a350e60",
-  "reference" : "Loi 65-99 art. 281-2958e3d0",
+  "id" : "86b8d268-db8c-4705-96c6-1c8fa90e90ca",
+  "reference" : "Loi 65-99 art. 281-bf6fe583",
   "title" : "Code du travail — protection des salariés",
   "domain" : "sst",
   "jurisdiction" : "Maroc",
@@ -70,25 +70,25 @@
   "sourceUrl" : "https://www.sgg.gov.ma",
   "status" : "en_vigueur",
   "reviewMonths" : 12,
-  "updatedAt" : "2026-11-13T15:29:19.759566Z",
+  "updatedAt" : "2026-11-13T15:34:51.225294Z",
   "siteEvaluation" : {
-    "id" : "b0efb61a-fcfb-4580-b710-b422f03d7995",
-    "regulationId" : "615698eb-8d5f-4449-b982-37ca3a350e60",
+    "id" : "a67854f2-1b6b-4f47-86a5-28196ee892c7",
+    "regulationId" : "86b8d268-db8c-4705-96c6-1c8fa90e90ca",
     "site" : {
-      "id" : "f604a747-2a57-4022-a122-78dc70c32b16",
-      "name" : "Siège",
-      "code" : "SIEGE"
+      "code" : "SIEGE",
+      "id" : "f0fee262-a8f6-4bbd-9717-44260445c3f7",
+      "name" : "Siège"
     },
     "result" : "non_conforme",
     "evidence" : "Visite du 12/11",
     "comment" : "DUER non mis à jour",
-    "evaluatedAt" : "2026-11-13T15:29:19.841420Z",
+    "evaluatedAt" : "2026-11-13T15:34:51.287093Z",
     "evaluatedBy" : "Nom m4.qualite",
     "nextDue" : "2027-11-13",
     "overdue" : false,
     "action" : {
-      "reference" : "ACT-2026-0001",
-      "id" : "05ee8af7-4d23-4bbd-8190-7231a9b90fc9",
+      "reference" : "ACT-2026-0005",
+      "id" : "67b5e79c-0686-4e3c-a5fb-5ae3c185cde7",
       "status" : "A_FAIRE"
     }
   }

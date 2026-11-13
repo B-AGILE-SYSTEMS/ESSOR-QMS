@@ -1,6 +1,6 @@
 {
-  "id" : "615698eb-8d5f-4449-b982-37ca3a350e60",
-  "reference" : "Loi 65-99 art. 281-2958e3d0",
+  "id" : "86b8d268-db8c-4705-96c6-1c8fa90e90ca",
+  "reference" : "Loi 65-99 art. 281-bf6fe583",
   "title" : "Code du travail — protection des salariés",
   "domain" : "sst",
   "jurisdiction" : "Maroc",
@@ -10,44 +10,44 @@
   "sourceUrl" : "https://www.sgg.gov.ma",
   "status" : "en_vigueur",
   "reviewMonths" : 12,
-  "updatedAt" : "2026-11-13T15:29:19.759566Z",
+  "updatedAt" : "2026-11-13T15:34:51.225294Z",
   "requirements" : [ {
-    "id" : "d417e62f-9dac-4d65-b132-cb0517cbaaff",
+    "id" : "c685ffde-c349-4f11-acf3-f20080df7148",
     "code" : "E1",
     "text" : "Évaluer les risques",
     "position" : 0,
     "applicability" : [ {
-      "siteId" : "f604a747-2a57-4022-a122-78dc70c32b16",
+      "siteId" : "f0fee262-a8f6-4bbd-9717-44260445c3f7",
       "siteCode" : "SIEGE",
       "siteName" : "Siège",
       "applicable" : true,
       "justification" : "Site industriel"
     } ]
   }, {
-    "id" : "65b6302d-5ebe-4fba-90d2-8f540351da78",
+    "id" : "73151121-2272-4167-bbfb-d9f437d14dc8",
     "code" : "E2",
     "text" : "Former les salariés",
     "position" : 1,
     "applicability" : [ ]
   } ],
   "evaluations" : [ {
-    "id" : "b0efb61a-fcfb-4580-b710-b422f03d7995",
-    "regulationId" : "615698eb-8d5f-4449-b982-37ca3a350e60",
+    "id" : "a67854f2-1b6b-4f47-86a5-28196ee892c7",
+    "regulationId" : "86b8d268-db8c-4705-96c6-1c8fa90e90ca",
     "site" : {
-      "id" : "f604a747-2a57-4022-a122-78dc70c32b16",
-      "name" : "Siège",
-      "code" : "SIEGE"
+      "code" : "SIEGE",
+      "id" : "f0fee262-a8f6-4bbd-9717-44260445c3f7",
+      "name" : "Siège"
     },
     "result" : "non_conforme",
     "evidence" : "Visite du 12/11",
     "comment" : "DUER non mis à jour",
-    "evaluatedAt" : "2026-11-13T15:29:19.841420Z",
+    "evaluatedAt" : "2026-11-13T15:34:51.287093Z",
     "evaluatedBy" : "Nom m4.qualite",
     "nextDue" : "2027-11-13",
     "overdue" : false,
     "action" : {
-      "reference" : "ACT-2026-0001",
-      "id" : "05ee8af7-4d23-4bbd-8190-7231a9b90fc9",
+      "reference" : "ACT-2026-0005",
+      "id" : "67b5e79c-0686-4e3c-a5fb-5ae3c185cde7",
       "status" : "A_FAIRE"
     }
   } ]

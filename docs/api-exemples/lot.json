@@ -1,34 +1,34 @@
 {
   "lot" : {
-    "id" : "6f753776-1209-4725-8061-dd10d8009724",
+    "id" : "4efc22a9-0ff2-4bff-b705-e664154a871e",
     "article" : {
-      "id" : "cb01440a-d9e7-478d-b96f-1f1105c3b215",
-      "code" : "ART-a88bda8a",
-      "label" : "Article ART-a88bda8a",
+      "id" : "b583ab2d-8f89-4320-9f53-ec981834781c",
+      "code" : "ART-4ebafce8",
+      "label" : "Article ART-4ebafce8",
       "unit" : "kg",
       "family" : "FAM-T"
     },
-    "numero" : "L-b4f33800",
+    "numero" : "L-c48f5225",
     "supplier" : {
-      "id" : "a64631d7-9f89-484c-94e4-6ba464e04a6b",
-      "code" : "FOU-d5eec72b",
-      "name" : "Nom FOU-d5eec72b"
+      "id" : "b034d950-4a1b-4760-a337-caca3dfdf2f1",
+      "code" : "FOU-1b5e7afb",
+      "name" : "Nom FOU-1b5e7afb"
     },
-    "supplierLot" : "F-L-b4f33800",
+    "supplierLot" : "F-L-c48f5225",
     "quantity" : 1000.0,
     "unit" : "kg",
     "dlc" : null,
     "site" : {
-      "id" : "9487177b-98f3-42b1-b0ed-6b6ab7b3f115",
-      "code" : "SIEGE",
-      "name" : "Siège"
+      "id" : "00000000-0000-0000-0000-0000000051a2",
+      "code" : "ENTREPOT-TNG",
+      "name" : "Entrepôt de Tanger"
     },
     "qualityStatus" : "REFUSE",
-    "createdAt" : "2026-11-13T15:21:50.501323Z",
-    "updatedAt" : "2026-11-13T15:21:50.591607Z"
+    "createdAt" : "2026-11-13T15:35:36.430127Z",
+    "updatedAt" : "2026-11-13T15:35:36.498354Z"
   },
   "history" : [ {
-    "at" : "2026-11-13T15:21:50.501323Z",
+    "at" : "2026-11-13T15:35:36.430127Z",
     "from" : null,
     "to" : "EN_ATTENTE",
     "reason" : "Création du lot",
@@ -36,25 +36,25 @@
     "ncId" : null,
     "inspectionId" : null
   }, {
-    "at" : "2026-11-13T15:21:50.591607Z",
+    "at" : "2026-11-13T15:35:36.498354Z",
     "from" : "EN_ATTENTE",
     "to" : "REFUSE",
-    "reason" : "Contrôle PC-43b2f205 v1 : Diamètre hors tolérance",
+    "reason" : "Contrôle PC-5d3b1827 v1 : Diamètre hors tolérance",
     "author" : "Nom tb.qualite",
-    "ncId" : "8e0e5899-2d1b-4c16-a036-bea302fd08db",
-    "inspectionId" : "cf74aa2e-8cf4-4db4-822b-3dc86c200cb8"
+    "ncId" : "730538d1-b0f4-4dbf-a42a-8c3e39331305",
+    "inspectionId" : "3c232053-a96e-4aff-bd14-fd1dae740547"
   } ],
   "inspections" : [ {
-    "id" : "cf74aa2e-8cf4-4db4-822b-3dc86c200cb8",
+    "id" : "3c232053-a96e-4aff-bd14-fd1dae740547",
     "point" : "RECEPTION",
     "controlPlan" : {
-      "label" : "Plan RECEPTION",
-      "code" : "PC-43b2f205",
-      "version" : 1
+      "code" : "PC-5d3b1827",
+      "version" : 1,
+      "label" : "Plan RECEPTION"
     },
     "decision" : "REFUSE",
-    "createdAt" : "2026-11-13T15:21:50.527440Z",
-    "decidedAt" : "2026-11-13T15:21:50.591607Z",
-    "ncId" : "8e0e5899-2d1b-4c16-a036-bea302fd08db"
+    "createdAt" : "2026-11-13T15:35:36.449764Z",
+    "decidedAt" : "2026-11-13T15:35:36.498354Z",
+    "ncId" : "730538d1-b0f4-4dbf-a42a-8c3e39331305"
   } ]
 }

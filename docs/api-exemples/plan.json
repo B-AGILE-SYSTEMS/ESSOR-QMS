@@ -1,12 +1,12 @@
 {
-  "id" : "6ba3080b-090a-45db-9595-fe906687d5fc",
-  "code" : "PC-43b2f205",
+  "id" : "6ed76b1d-7b2b-4c80-aba1-aa0bfaede584",
+  "code" : "PC-5d3b1827",
   "version" : 1,
   "label" : "Plan RECEPTION",
   "point" : "RECEPTION",
   "target" : {
     "type" : "article",
-    "id" : "cb01440a-d9e7-478d-b96f-1f1105c3b215",
+    "id" : "b583ab2d-8f89-4320-9f53-ec981834781c",
     "famille" : null
   },
   "characteristics" : [ {
@@ -38,5 +38,5 @@
   },
   "frequency" : null,
   "active" : true,
-  "createdAt" : "2026-11-13T15:21:50.514452Z"
+  "createdAt" : "2026-11-13T15:35:36.440303Z"
 }

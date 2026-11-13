@@ -1,8 +1,8 @@
 {
   "scale" : {
-    "id" : "dc020ddd-b0a0-419d-a813-03262024df62",
+    "code" : "DEFAUT",
     "label" : "Gravité × probabilité (4 × 4)",
-    "code" : "DEFAUT"
+    "id" : "00000000-0000-0000-0000-00000000e401"
   },
   "basis" : "gross",
   "rows" : {
@@ -86,9 +86,9 @@
     "color" : "#C62828",
     "count" : 1,
     "risks" : [ {
-      "id" : "987af6ea-751a-4eda-8fec-716e130be9fd",
-      "reference" : "RSK-0004",
-      "hazard" : "Brûlure four-b80fa099",
+      "id" : "934d2123-96b3-47db-a5f4-9cc12c639b52",
+      "reference" : "RSK-0010",
+      "hazard" : "Brûlure four-d8975738",
       "type" : "sst",
       "score" : 12,
       "level" : "critique"
@@ -149,9 +149,9 @@
     "color" : "#F9A825",
     "count" : 1,
     "risks" : [ {
-      "id" : "3954fc5e-7428-44e0-9d0f-835863bd6345",
-      "reference" : "RSK-0005",
-      "hazard" : "Chute-bdff02ce",
+      "id" : "8071a0b7-0dda-4dab-8add-5267d7251d49",
+      "reference" : "RSK-0011",
+      "hazard" : "Chute-ad7659b3",
       "type" : "sst",
       "score" : 4,
       "level" : "moyen"
@@ -164,9 +164,9 @@
     "color" : "#F9A825",
     "count" : 1,
     "risks" : [ {
-      "id" : "48b0cb21-6096-4f4b-b9f1-a522bc2ab232",
-      "reference" : "RSK-0003",
-      "hazard" : "Bruit-e1895e22",
+      "id" : "4eb28662-8f51-48d1-a6ef-a654003b7de8",
+      "reference" : "RSK-0009",
+      "hazard" : "Bruit-7290cbe1",
       "type" : "sst",
       "score" : 6,
       "level" : "moyen"
@@ -187,9 +187,9 @@
     "color" : "#2E7D32",
     "count" : 1,
     "risks" : [ {
-      "id" : "c7204068-664e-4c02-8b1c-88bfa6451cef",
-      "reference" : "RSK-0001",
-      "hazard" : "Isolé-84b20b6d",
+      "id" : "8052ba35-24b6-4a4c-a4d5-1cc0b82e0444",
+      "reference" : "RSK-0007",
+      "hazard" : "Isolé-f2dd81db",
       "type" : "sst",
       "score" : 1,
       "level" : "faible"

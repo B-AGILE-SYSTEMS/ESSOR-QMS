@@ -2,9 +2,9 @@
   "rate" : 66.7,
   "sites" : [ {
     "site" : {
-      "id" : "f604a747-2a57-4022-a122-78dc70c32b16",
-      "name" : "Siège",
-      "code" : "SIEGE"
+      "code" : "SIEGE",
+      "id" : "f0fee262-a8f6-4bbd-9717-44260445c3f7",
+      "name" : "Siège"
     },
     "applicable" : 3,
     "evaluated" : 3,
