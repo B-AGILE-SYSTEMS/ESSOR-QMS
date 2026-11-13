@@ -92,10 +92,17 @@ test('Campagne fournisseur → évaluation trimestrielle (notes + indicateurs) �
   await camp.getByLabel('F-ACIERNORD — Aciers du Nord').check();
   await camp.getByRole('button', { name: 'Créer les évaluations' }).click();
   await expect(page.getByRole('status')).toContainText('1 évaluation(s) à faire créée(s) pour 2026-T4');
+  // relancée sur la même période : aucune évaluation créée, message clair
+  await page.getByRole('button', { name: "+ Campagne d'évaluation" }).click();
+  await camp.getByLabel('Période').fill('2026-T4');
+  await camp.getByLabel('F-ACIERNORD — Aciers du Nord').check();
+  await camp.getByRole('button', { name: 'Créer les évaluations' }).click();
+  await expect(page.getByTestId('campaign-empty')).toContainText('Aucune évaluation créée');
   await page.getByRole('link', { name: 'Aciers du Nord' }).click();
 
   await expect(page.getByRole('heading', { name: 'Scorecard Aciers du Nord' })).toBeVisible();
   await expect(page.getByRole('table', { name: 'Évaluations' })).toContainText('à faire');
+  await expect(page.getByTestId('evaluations-todo')).toContainText('2026-T4');
   const f = page.getByRole('form', { name: 'Évaluation du partenaire' });
   await expect(f.getByLabel('Période évaluée')).toHaveValue('2026-T4');
   await f.getByLabel('Note Qualité produit').fill('3');
@@ -107,6 +114,8 @@ test('Campagne fournisseur → évaluation trimestrielle (notes + indicateurs) �
   const row = page.getByRole('table', { name: 'Évaluations' }).getByRole('row', { name: /2026-T4/ });
   await expect(row).toContainText('12,5 %');
   await expect(row.getByRole('link', { name: /^ACT-2026-/ })).toBeVisible();
+  await expect(page.getByTestId('improvement-plan').getByRole('link', { name: /^ACT-2026-/ })).toBeVisible();
+  await expect(page.getByTestId('evaluations-todo')).toContainText('Aucune évaluation à faire');
   expect(api.evaluations.find((e) => e['period'] === '2026-T4')).toMatchObject({ status: 'terminee', class: 'C', scores: { QUAL: 3, DELAI: 2, REACT: 3 } });
   if (SHOTS) await page.screenshot({ path: `${SHOTS}/scorecard-fournisseur.png`, fullPage: true });
 });

@@ -180,6 +180,12 @@ class KeycloakLoginIT extends AbstractIntegrationTest {
             terrainId = rs.getString(1);
         }
         assertThat(demoAudit.path("data").path("auditeurs").get(0).asText()).isEqualTo(terrainId);
+        // un opérateur terrain ne décide jamais du sort d'un lot : pas de rôle AUDITOR (auditeur désigné suffit)
+        try (var c = ownerConnection(); var st = c.createStatement();
+             var rs = st.executeQuery("select array_to_string(roles, ',') from app_user where username = 'terrain'")) {
+            rs.next();
+            assertThat(rs.getString(1)).isEqualTo("FIELD_USER");
+        }
 
         // sans session : 401
         HttpResponse<String> anonymous = HttpClient.newHttpClient().send(

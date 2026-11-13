@@ -62,6 +62,10 @@ class PartnerEvaluationIT extends M4Support {
 
         JsonNode card = call(get("/api/partners/" + supId + "/scorecard"), LECTEUR, null, 200);
         assertThat(card.path("history").size()).isEqualTo(1);
+        assertThat(card.path("history").get(0).path("id").asText()).isEqualTo(ev.path("id").asText());
+        assertThat(card.path("history").get(0).path("action").path("id").asText())
+                .isEqualTo(ev.path("action").path("id").asText());
+        assertThat(card.path("history").get(0).path("action").path("reference").asText()).startsWith("ACT-");
         assertThat(card.path("currentPeriod").path("indicators").path("ncCount").asLong()).isEqualTo(1);
         ApiExamples.write("scorecard", card);
         assertThat(call(get("/api/partners/" + supId + "/evaluations"), LECTEUR, null, 200).size()).isEqualTo(1);

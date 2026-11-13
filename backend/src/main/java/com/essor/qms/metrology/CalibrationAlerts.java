@@ -43,7 +43,7 @@ class CalibrationAlerts implements DailyTask, DashboardKpis {
             boolean overdue = d.nextDue().isBefore(today);
             String title = overdue ? "Étalonnage échu (" + d.nextDue() + ") : " + d.code() + " " + d.label()
                     : "Étalonnage à faire avant le " + d.nextDue() + " : " + d.code() + " " + d.label();
-            events.publishEvent(new Alert(AlertKind.CALIBRATION_DUE, title, "/ressources/instruments/" + d.id(),
+            events.publishEvent(new Alert(AlertKind.CALIBRATION_DUE, title, "/equipements/" + d.id(),
                     Set.of(), List.of(CurrentUser.QUALITY_MANAGER),
                     (overdue ? "CAL_OVERDUE:" : "CAL_SOON:") + d.id() + ":" + d.nextDue(), null));
         }

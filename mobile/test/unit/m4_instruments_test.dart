@@ -93,9 +93,20 @@ void main() {
       server.online = false;
       expect((await repo.cached()).length, 3);
       expect([for (final i in await repo.usable(today)) i.code], ['PAC-031']);
+      // liste de choix tirée de GET /instruments?selectable=true
+      expect(server.selectableQueries, contains(true));
       expect((await repo.find('PAC-042', null))?.status, 'bloque');
       // Réseau coupé : le cache répond.
       expect((await repo.find('ins-31', api))?.code, 'PAC-031');
+    });
+
+    test('liste de choix serveur, échéance revérifiée hors ligne', () async {
+      await repo.refresh(api);
+      server.online = false;
+      // PAC-050 est rendu par le serveur mais échu à la date locale.
+      final later = today.add(const Duration(days: 30));
+      expect([for (final i in await repo.usable(today)) i.code], ['PAC-031']);
+      expect(await repo.usable(later), isEmpty);
     });
 
     test('en ligne, le statut frais remplace le cache', () async {

@@ -239,7 +239,8 @@ export class MockApiM4 extends MockApiM3b {
     if ((mm = p.match(/^\/api\/evaluation-grids\/([^/]+)$/))) return json({ ...body(), id: mm[1] });
     if (p === '/api/evaluation-campaigns' && m === 'POST') {
       const b = body();
-      const created = (b.partnerIds as string[]).map((pid, k) => ({ id: `pe-c${this.evaluations.length + k + 1}`, partnerId: pid, gridId: b.gridId, period: b.period,
+      const fresh = (b.partnerIds as string[]).filter((pid) => !this.evaluations.some((e) => e['partnerId'] === pid && e['period'] === b.period));
+      const created = fresh.map((pid, k) => ({ id: `pe-c${this.evaluations.length + k + 1}`, partnerId: pid, gridId: b.gridId, period: b.period,
         status: 'a_faire', scores: {}, indicators: {}, globalScore: null, class: null, actions: [] }));
       this.evaluations.push(...created);
       return json({ evaluations: created }, 201);

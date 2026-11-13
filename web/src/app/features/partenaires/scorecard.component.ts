@@ -36,6 +36,17 @@ import { ActionLinksComponent } from '../risques/action-links.component';
         } @empty { <tr><td colspan="9" class="note">Aucune évaluation.</td></tr> }</tbody></table></div>
     </div>
 
+    @if (last()?.actions?.length) {
+      <div class="box pad sec" data-testid="improvement-plan"><h3>Plan de progrès</h3>
+        <p class="note">Classe {{ last()!.cls }} ({{ last()!.period }}) : action d'amélioration ouverte.</p>
+        <eq-action-links [actions]="last()!.actions" empty="—" /></div>
+    }
+
+    <div class="box pad sec" data-testid="evaluations-todo"><h3>Évaluations à faire</h3>
+      <ul class="todo">@for (e of todos(); track e.id) {
+        <li><span class="mono">{{ e.period }}</span> — à saisir ci-dessous</li>
+      } @empty { <li class="note">Aucune évaluation à faire.</li> }</ul></div>
+
     @if (grid(); as g) {
       <form class="box pad sec" (ngSubmit)="save()" aria-label="Évaluation du partenaire">
         <h3>Évaluer — {{ g.label }}</h3>
@@ -53,7 +64,7 @@ import { ActionLinksComponent } from '../risques/action-links.component';
     <p class="sec"><a class="lnk" routerLink="/partenaires">← Clients &amp; fournisseurs</a></p>
   `,
   styles: `
-    h3 { margin: 0 0 10px; font-size: 15px; } .row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0 12px; }
+    h3 { margin: 0 0 10px; font-size: 15px; } .todo { margin: 0; padding-left: 18px; } .row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0 12px; }
     .bars { width: 100%; max-height: 160px; margin-bottom: 12px; text { font: 12px var(--mono); fill: var(--ink2); }
       .b { fill: var(--info); } .b.ok { fill: var(--ok); } .b.warn { fill: var(--warn); } .b.crit { fill: var(--crit); } }
     @media (max-width: 860px) { .row { grid-template-columns: 1fr; } }
@@ -67,6 +78,7 @@ export class ScorecardComponent {
   protected readonly partner = signal<Partner | null>(null);
   protected readonly sc = signal<Scorecard | null>(null);
   protected readonly grid = signal<EvaluationGrid | null>(null);
+  protected readonly todos = signal<PartnerEvaluation[]>([]);
   protected readonly done = computed(() => (this.sc()?.evaluations ?? []).filter((e) => e.score !== null));
   protected readonly last = computed(() => this.done().at(-1) ?? null);
   protected readonly width = computed(() => Math.max(400, 40 + this.done().length * 90));
@@ -82,11 +94,13 @@ export class ScorecardComponent {
   }
   private async load(): Promise<void> {
     try {
-      const [ps, sc, grids] = await Promise.all([this.md.partners(), this.api.scorecard(this.id), this.api.grids()]);
+      const [ps, sc, grids, evals] = await Promise.all([this.md.partners(), this.api.scorecard(this.id), this.api.grids(),
+        this.api.evaluations(this.id)]);
       const p = ps.find((x) => x.id === this.id) ?? null;
       this.partner.set(p);
       this.sc.set(sc);
-      const todo = sc.evaluations.find((e) => e.score === null);
+      this.todos.set(evals.filter((e) => e.status === 'a_faire' || e.score === null));
+      const todo = this.todos()[0];
       if (todo) this.period = todo.period;
       this.grid.set(grids.find((g) => g.id === todo?.gridId) ?? grids.find((g) => g.partnerType === p?.type) ?? grids[0] ?? null);
     } catch (e) {
@@ -102,7 +116,7 @@ export class ScorecardComponent {
     const g = this.grid()!;
     this.busy.set(true);
     try {
-      const todo: PartnerEvaluation | undefined = this.sc()?.evaluations.find((e) => e.score === null && e.period === this.period);
+      const todo: PartnerEvaluation | undefined = this.todos().find((e) => e.score === null && e.period === this.period);
       const scores = Object.fromEntries(g.criteria.map((c) => [c.code, Number(this.scores[c.code])]));
       await this.api.evaluate(this.id, { evaluationId: todo?.id ?? null, gridId: g.id!, period: this.period, scores, comment: this.comment });
       this.scores = {};

@@ -50,7 +50,7 @@ class RegulationAlerts implements DailyTask, DashboardKpis {
             boolean late = d.nextDue().isBefore(today);
             events.publishEvent(new Alert(AlertKind.REGULATION_DUE, (late ? "Réévaluation réglementaire échue : "
                     : "Réévaluation réglementaire avant le " + d.nextDue() + " : ") + d.reference() + " ("
-                    + d.siteCode() + ")", "/pilotage/veille/" + d.regulationId(), Set.of(),
+                    + d.siteCode() + ")", "/veille/" + d.regulationId(), Set.of(),
                     List.of(CurrentUser.QUALITY_MANAGER),
                     (late ? "REG_LATE:" : "REG_SOON:") + d.regulationId() + ":" + d.siteCode() + ":" + d.nextDue(),
                     null));

@@ -26,7 +26,10 @@ import { EvaluationsService } from '../../core/m4.service';
         <button type="submit" class="btn pri" [disabled]="busy() || !gridId || !picked().size">Créer les évaluations</button>
       </form>
     }
-    @if (created().length) { <p class="note" role="status">{{ created().length }} évaluation(s) à faire créée(s) pour {{ period }}.</p> }
+    @if (launched()) {
+      @if (created().length) { <p class="note" role="status">{{ created().length }} évaluation(s) à faire créée(s) pour {{ period }}.</p> }
+      @else { <p class="note" role="status" data-testid="campaign-empty">Aucune évaluation créée : les partenaires choisis ont déjà une évaluation pour {{ period }}.</p> }
+    }
     <div class="chips"><button type="button" class="chip" [attr.aria-pressed]="type() === 'fournisseur'" (click)="type.set('fournisseur')">Fournisseurs</button>
       <button type="button" class="chip" [attr.aria-pressed]="type() === 'client'" (click)="type.set('client')">Clients</button></div>
     <div class="box tw sec"><table aria-label="Partenaires">
@@ -48,6 +51,7 @@ export class PartenairesComponent {
   protected readonly shown = computed(() => this.partners().filter((p) => p.type === this.type()));
   protected readonly picked = signal(new Set<string>());
   protected readonly created = signal<PartnerEvaluation[]>([]);
+  protected readonly launched = signal(false);
   protected readonly showForm = signal(false);
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -80,6 +84,7 @@ export class PartenairesComponent {
     this.busy.set(true);
     try {
       this.created.set(await this.api.campaign({ gridId: this.gridId!, partnerIds: [...this.picked()], period: this.period }));
+      this.launched.set(true);
       this.showForm.set(false);
       this.error.set(null);
     } catch (e) {

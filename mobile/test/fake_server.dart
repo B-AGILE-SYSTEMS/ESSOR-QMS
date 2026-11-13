@@ -126,6 +126,9 @@ class FakeServer {
   // --- M4 (forme du contrat, en attendant docs/api-exemples/instrument.json)
   /// QR renvoyé par le faux scanner d'instrument.
   String? instrumentQr = 'essor://instrument/ins-31';
+
+  /// Appels `GET /instruments` : true si `selectable=true`.
+  final List<bool> selectableQueries = [];
   List<Map<String, Object?>> instruments = [
     {
       'id': 'ins-31',
@@ -156,7 +159,18 @@ class FakeServer {
 
   (int, Object?)? _m3b(RequestOptions o) {
     final p = o.path;
-    if (p == '/instruments') return (200, {'content': instruments});
+    if (p == '/instruments') {
+      selectableQueries.add(o.queryParameters['selectable'] == 'true');
+      // selectable=true : le serveur ne garde que les instruments en service
+      // (son échéance du jour est revérifiée hors ligne par le mobile).
+      final list = o.queryParameters['selectable'] == 'true'
+          ? [
+              for (final i in instruments)
+                if (i['status'] == 'en_service') i,
+            ]
+          : instruments;
+      return (200, {'content': list});
+    }
     final ins = RegExp(r'^/instruments/([^/]+)$').firstMatch(p);
     if (ins != null) {
       final hit = instruments.where((i) => i['id'] == ins.group(1));

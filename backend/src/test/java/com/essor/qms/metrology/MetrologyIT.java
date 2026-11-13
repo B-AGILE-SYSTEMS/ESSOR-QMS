@@ -94,6 +94,13 @@ class MetrologyIT extends M4Support {
                 "DIAM", "values", List.of(10.0, 10.1), "instrumentId", id)), 200);
         assertThat(res.path("results").get(0).path("instrumentId").asText()).isEqualTo(id);
         assertThat(res.path("results").get(0).path("instrument").asText()).isEqualTo(inst.path("code").asText());
+        // code saisi en texte libre (casse différente) : résolu en lien, compté dans l'effet instrument
+        String insp2Id = call(post("/api/inspections"), TERRAIN, Map.of("lotId", lot.path("id").asText(),
+                "controlPlanId", plan.path("id").asText(), "point", "RECEPTION"), 201).path("id").asText();
+        JsonNode res2 = call(put("/api/inspections/" + insp2Id + "/results"), TERRAIN, List.of(Map.of(
+                "characteristic", "DIAM", "values", List.of(10.0), "instrument",
+                inst.path("code").asText().toLowerCase())), 200);
+        assertThat(res2.path("results").get(0).path("instrumentId").asText()).isEqualTo(id);
 
         // étalonnage non conforme : blocage, NC, notification
         JsonNode bad = calibrate(id, LocalDate.now(), 10.0, 50.05, 100.0);
@@ -107,20 +114,25 @@ class MetrologyIT extends M4Support {
         JsonNode notifs = call(get("/api/notifications"), QUALITE, null, 200);
         assertThat(notifs.path("items")).anySatisfy(n -> {
             assertThat(n.path("type").asText()).isEqualTo("INSTRUMENT_BLOCKED");
-            assertThat(n.path("link").asText()).isEqualTo("/ressources/instruments/" + id);
+            assertThat(n.path("link").asText()).isEqualTo("/equipements/" + id);
         });
 
         // 409 : instrument bloqué non sélectionnable
         JsonNode err = call(put("/api/inspections/" + inspId + "/results"), TERRAIN, List.of(Map.of(
                 "characteristic", "DIAM", "values", List.of(10.0), "instrumentId", id)), 409);
         assertThat(err.path("error").asText()).isEqualTo("instrument_unavailable");
+        JsonNode errFree = call(put("/api/inspections/" + inspId + "/results"), TERRAIN, List.of(Map.of(
+                "characteristic", "DIAM", "values", List.of(10.0), "instrument",
+                " " + inst.path("code").asText().toLowerCase())), 409);
+        assertThat(errFree.path("error").asText()).isEqualTo("instrument_unavailable");
         assertThat(call(get("/api/instruments").param("selectable", "true").param("q", inst.path("code").asText()),
                 TERRAIN, null, 200).size()).isZero();
 
         // effet instrument depuis le dernier étalonnage conforme
         JsonNode impact = call(get("/api/instruments/" + id + "/impact"), QUALITE, null, 200);
         assertThat(impact.path("since").asText()).isEqualTo(LocalDate.now().minusDays(30).toString());
-        assertThat(impact.path("inspections")).extracting(i -> i.path("id").asText()).containsExactly(inspId);
+        assertThat(impact.path("inspections")).extracting(i -> i.path("id").asText())
+                .containsExactlyInAnyOrder(inspId, insp2Id);
         assertThat(impact.path("lots")).extracting(l -> l.path("id").asText())
                 .containsExactly(lot.path("id").asText());
         ApiExamples.write("effet-instrument", impact);
@@ -142,6 +154,28 @@ class MetrologyIT extends M4Support {
         assertThat(calibrate(id, LocalDate.now(), 10.0, 50.0, 100.0).path("verdict").asText()).isEqualTo("conforme");
         assertThat(call(get("/api/instruments/" + id), QUALITE, null, 200).path("instrument").path("status").asText())
                 .isEqualTo("en_service");
+    }
+
+    @Test
+    void planExigeantUnInstrumentRefuseUnCodeInconnu() throws Exception {
+        String site = siteId(TERRAIN);
+        JsonNode art = article(uniq("ART"));
+        JsonNode lot = call(post("/api/lots"), TERRAIN, Map.of("articleId", art.path("id").asText(), "numero",
+                uniq("L"), "quantity", 10, "siteId", site), 201);
+        JsonNode plan = call(post("/api/control-plans"), QUALITE, Map.of("code", uniq("PC"), "label", "Plan",
+                "point", "RECEPTION", "target", Map.of("type", "article", "id", art.path("id").asText()),
+                "characteristics", List.of(Map.of("code", "DIAM", "libelle", "Diamètre", "type", "mesure",
+                        "nominal", 10.0, "tolMin", 9.0, "tolMax", 11.0, "unite", "mm",
+                        "instrumentRequis", "pied à coulisse", "criticite", "majeure")),
+                "sampling", Map.of("mode", "fixe", "taille", 1)), 201);
+        String inspId = call(post("/api/inspections"), TERRAIN, Map.of("lotId", lot.path("id").asText(),
+                "controlPlanId", plan.path("id").asText(), "point", "RECEPTION"), 201).path("id").asText();
+        for (Map<String, Object> r : List.<Map<String, Object>>of(
+                Map.of("characteristic", "DIAM", "values", List.of(10.0), "instrument", "PAC-INCONNU"),
+                Map.of("characteristic", "DIAM", "values", List.of(10.0)))) {
+            JsonNode err = call(put("/api/inspections/" + inspId + "/results"), TERRAIN, List.of(r), 400);
+            assertThat(err.path("error").asText()).isEqualTo("instrument_required");
+        }
     }
 
     @Test

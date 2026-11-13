@@ -10,6 +10,7 @@ import 'package:essor_mobile/core/m3/audits_repository.dart' show decodeList;
 import 'package:essor_mobile/core/sync/sync_database.dart';
 
 const instrumentsCacheKey = 'm4.instruments';
+const selectableInstrumentsCacheKey = 'm4.instruments.selectable';
 
 String? _str(Object? v) => v == null || '$v'.isEmpty ? null : '$v';
 
@@ -135,8 +136,13 @@ class InstrumentsApi {
   const InstrumentsApi(this._dio);
   final Dio _dio;
 
-  Future<List<Instrument>> list() async {
-    final r = await _dio.get<Object>('/instruments');
+  /// Parc complet, ou seulement les instruments choisissables
+  /// (`selectable=true` : en service et non échus selon le serveur).
+  Future<List<Instrument>> list({bool selectable = false}) async {
+    final r = await _dio.get<Object>(
+      '/instruments',
+      queryParameters: selectable ? const {'selectable': 'true'} : null,
+    );
     return [
       for (final j in _items(r.data))
         Instrument.fromJson(j as Map<String, dynamic>),
@@ -166,13 +172,31 @@ class InstrumentsRepository {
     jsonEncode([for (final i in all) i.raw]),
   );
 
-  Future<void> refresh(InstrumentsApi api) async => _put(await api.list());
+  /// Parc complet (scan, fiche) et liste de choix du serveur
+  /// (`GET /instruments?selectable=true`).
+  Future<void> refresh(InstrumentsApi api) async {
+    await _put(await api.list());
+    final choice = await api.list(selectable: true);
+    await _db.putCache(
+      selectableInstrumentsCacheKey,
+      jsonEncode([for (final i in choice) i.raw]),
+    );
+  }
 
-  /// Instruments choisissables dans un contrôle, triés par code.
-  Future<List<Instrument>> usable(DateTime now) async => [
-    for (final i in await cached())
-      if (i.usable(now)) i,
-  ]..sort((a, b) => a.code.compareTo(b.code));
+  /// Instruments choisissables dans un contrôle, triés par code : liste
+  /// `selectable` du serveur (parc complet à défaut), échéance et statut
+  /// revérifiés hors ligne.
+  Future<List<Instrument>> usable(DateTime now) async {
+    final raw = await _db.getCache(selectableInstrumentsCacheKey);
+    final source = raw == null
+        ? await cached()
+        : decodeList(raw, Instrument.fromJson);
+    final fresh = {for (final i in await cached()) i.id: i};
+    return [
+      for (final i in source)
+        if ((fresh[i.id] ?? i).usable(now)) fresh[i.id] ?? i,
+    ]..sort((a, b) => a.code.compareTo(b.code));
+  }
 
   /// Retrouve un instrument par id ou code : serveur d'abord s'il répond
   /// (statut frais), cache sinon.

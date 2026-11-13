@@ -223,8 +223,15 @@ class InspectionService {
             if (instrument != null && instrument.length() > 120) {
                 throw ApiException.badRequest("Instrument : 120 caractères maximum");
             }
-            if (in.instrumentId() != null) {
-                instrument = usableInstrument(in.instrumentId());
+            UUID instrumentId = in.instrumentId();
+            if (instrumentId == null && instrument != null) {
+                instrumentId = instrumentByCode(instrument); // code saisi en texte libre : même blocage
+            }
+            if (instrumentId != null) {
+                instrument = usableInstrument(instrumentId);
+            } else if (LotService.blankToNull(c.instrumentRequis()) != null) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "instrument_required",
+                        "Caractéristique " + c.code() + " : un instrument connu du parc est obligatoire");
             }
             jdbc.sql("""
                     insert into inspection_result (tenant_id, inspection_id, characteristic, values_json, ok, instrument,
@@ -234,12 +241,18 @@ class InspectionService {
                     on conflict (tenant_id, inspection_id, characteristic) do update set values_json = excluded.values_json,
                       ok = excluded.ok, instrument = excluded.instrument, instrument_id = excluded.instrument_id, author_id = excluded.author_id, at = now()""")
                     .param("id", id).param("c", c.code()).param("v", write(values)).param("ok", ok)
-                    .param("instr", instrument).param("instrId", in.instrumentId()).param("ver", insp.controlPlan().version())
+                    .param("instr", instrument).param("instrId", instrumentId).param("ver", insp.controlPlan().version())
                     .param("site", insp.lot().site() == null ? null : insp.lot().site().id()).update();
         }
         audit.record("INSPECTION_RESULTS_SAVED", "inspection", id.toString(),
                 write(Map.of("count", input.size())));
         return get(id);
+    }
+
+    /** Instrument du tenant dont le code correspond, sans tenir compte de la casse (RLS : tenant courant). */
+    private UUID instrumentByCode(String code) {
+        return jdbc.sql("select id from instrument where lower(code) = lower(:code) limit 1")
+                .param("code", code.trim()).query(UUID.class).optional().orElse(null);
     }
 
     /**

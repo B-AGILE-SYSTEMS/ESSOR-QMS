@@ -349,7 +349,7 @@ class MetrologyService {
                 .update();
         events.publishEvent(new Alert(AlertKind.INSTRUMENT_BLOCKED,
                 "Instrument " + inst.get("code") + " bloqué : étalonnage non conforme",
-                "/ressources/instruments/" + instrumentId, Set.of(), List.of(CurrentUser.QUALITY_MANAGER), null,
+                "/equipements/" + instrumentId, Set.of(), List.of(CurrentUser.QUALITY_MANAGER), null,
                 ExecutionContext.userId()));
     }
 

@@ -249,7 +249,10 @@ export function toCompliance(raw: unknown): SiteCompliance[] {
     const site = (c['site'] ?? {}) as Raw;
     const counts = (c['counts'] ?? {}) as Raw;
     const cnt: Record<string, number> = {};
-    for (const k of ['conforme', 'non_conforme', 'partiel', 'na']) cnt[k] = Number(counts[k] ?? c[k] ?? 0);
+    const camel: Record<string, string> = { non_conforme: 'nonConforme' };
+    for (const k of ['conforme', 'non_conforme', 'partiel', 'na']) {
+      cnt[k] = Number(counts[k] ?? (camel[k] ? counts[camel[k]] : undefined) ?? c[k] ?? (camel[k] ? c[camel[k]] : undefined) ?? 0);
+    }
     let rate = num(pick(c, 'rate', 'taux', 'complianceRate'));
     if (rate !== null && rate <= 1 && !Number.isInteger(rate)) rate *= 100;
     return { siteId: String(c['siteId'] ?? site['id'] ?? ''), siteName: String(site['name'] ?? site['code'] ?? c['siteName'] ?? ''),
@@ -475,7 +478,7 @@ export function toEvaluation(raw: Raw): PartnerEvaluation {
   const partner = raw['partner'] as Raw | undefined;
   const grid = raw['grid'] as Raw | undefined;
   return {
-    id: String(raw['id'] ?? ''), partnerId: str(raw['partnerId'] ?? partner?.['id']), gridId: str(raw['gridId'] ?? grid?.['id']),
+    id: String(raw['id'] ?? raw['evaluationId'] ?? ''), partnerId: str(raw['partnerId'] ?? partner?.['id']), gridId: str(raw['gridId'] ?? grid?.['id']),
     period: String(raw['period'] ?? raw['periode'] ?? ''), status: String(raw['status'] ?? (pick(raw, 'globalScore', 'score', 'noteGlobale') !== undefined ? 'terminee' : 'a_faire')),
     scores, indicators: toIndicators(pick(raw, 'indicators', 'indicateurs', 'kpis')),
     score: num(pick(raw, 'globalScore', 'score', 'noteGlobale')), cls: str(pick(raw, 'class', 'grade', 'classe', 'cls')),

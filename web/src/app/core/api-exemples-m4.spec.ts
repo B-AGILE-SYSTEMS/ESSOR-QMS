@@ -1,12 +1,13 @@
 /**
- * Garde-fou M4 : exemples RÉELS de l'API métrologie publiés par le back (origin/m4/back, docs/api-exemples/*.json, commit a792be7),
- * recopiés dans `exemples-m4/` tant que la branche back n'est pas intégrée. À l'intégration, pointer vers docs/api-exemples.
+ * Garde-fou M4 : exemples RÉELS de l'API publiés par les tests d'intégration du back dans docs/api-exemples/*.json.
  */
-import effet from './exemples-m4/effet-instrument.json';
-import etalonnage from './exemples-m4/etalonnage.json';
-import instrument from './exemples-m4/instrument.json';
-import quarantaine from './exemples-m4/quarantaine-instrument.json';
-import { isUsable, lotsToQuarantine, toCalibration, toImpact, toInstrument, toQuarantine } from './m4.models';
+import conformite from '../../../../docs/api-exemples/conformite-reglementaire.json';
+import effet from '../../../../docs/api-exemples/effet-instrument.json';
+import etalonnage from '../../../../docs/api-exemples/etalonnage.json';
+import instrument from '../../../../docs/api-exemples/instrument.json';
+import quarantaine from '../../../../docs/api-exemples/quarantaine-instrument.json';
+import scorecard from '../../../../docs/api-exemples/scorecard.json';
+import { isUsable, lotsToQuarantine, toCalibration, toCompliance, toImpact, toInstrument, toQuarantine, toScorecard } from './m4.models';
 
 type Raw = Record<string, unknown>;
 const raw = (x: unknown) => x as Raw;
@@ -55,5 +56,20 @@ describe('Lecture des exemples réels M4 (métrologie)', () => {
     const q = toQuarantine(raw(quarantaine));
     expect(q.quarantined).toEqual([{ id: quarantaine.quarantined[0].id, numero: quarantaine.quarantined[0].numero, previousStatus: 'EN_ATTENTE' }]);
     expect(q.ncId).toBe(quarantaine.ncId);
+  });
+
+  it('conformité réglementaire : compte nonConforme lu', () => {
+    const c = toCompliance(conformite as unknown);
+    const withNc = c.find((x) => x.counts['non_conforme'] > 0);
+    expect(withNc).toBeDefined();
+    expect(withNc!.counts['non_conforme']).toBe(conformite.sites[0].nonConforme);
+  });
+
+  it("scorecard : id et plan de progrès dans l'historique", () => {
+    const sc = toScorecard(raw(scorecard));
+    const h = scorecard.history[0] as unknown as { id: string; action: { id: string; reference: string } };
+    expect(sc.evaluations[0].id).toBe(h.id);
+    expect(sc.evaluations[0].actions[0].id).toBe(h.action.id);
+    expect(sc.evaluations[0].actions[0].reference).toBe(h.action.reference);
   });
 });

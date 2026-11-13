@@ -277,12 +277,14 @@ class PartnerEvaluationService {
         out.put("partner", partner);
         out.put("history", done.stream().map(e -> {
             Map<String, Object> h = new LinkedHashMap<>();
+            h.put("id", e.get("id"));
             h.put("evaluationId", e.get("id"));
             h.put("grid", e.get("grid"));
             h.put("period", e.get("period"));
             h.put("globalScore", e.get("globalScore"));
             h.put("class", e.get("class"));
             h.put("indicators", e.get("indicators"));
+            h.put("action", e.get("action")); // plan de progrès : {id, reference, status} ou null
             return h;
         }).toList());
         out.put("latest", done.isEmpty() ? null : done.get(done.size() - 1));
