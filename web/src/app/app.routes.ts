@@ -56,6 +56,43 @@ export const routes: Routes = [
         loadComponent: () => import('./features/audits/audits-programme.component').then((m) => m.AuditsProgrammeComponent),
         data: { crumbs: ['Terrain', 'Audits & inspections'] },
       },
+      {
+        path: 'controles/carte',
+        loadComponent: () => import('./features/controles/carte-controle.component').then((m) => m.CarteControleComponent),
+        data: { crumbs: ['Terrain', 'Contrôles', 'Carte de contrôle'] },
+      },
+      {
+        path: 'controles/:id',
+        loadComponent: () => import('./features/controles/controle-saisie.component').then((m) => m.ControleSaisieComponent),
+        data: { crumbs: ['Terrain', 'Contrôles', 'Saisie'] },
+      },
+      {
+        path: 'controles',
+        loadComponent: () => import('./features/controles/controles-liste.component').then((m) => m.ControlesListeComponent),
+        data: { crumbs: ['Terrain', 'Contrôles'] },
+      },
+      {
+        path: 'lots/:id',
+        loadComponent: () => import('./features/lots/lot-fiche.component').then((m) => m.LotFicheComponent),
+        data: { crumbs: ['Ressources', 'Lots & traçabilité', 'Fiche lot'] },
+      },
+      {
+        path: 'lots',
+        loadComponent: () => import('./features/lots/lots-liste.component').then((m) => m.LotsListeComponent),
+        data: { crumbs: ['Ressources', 'Lots & traçabilité'] },
+      },
+      {
+        path: 'parametrage/plans-controle',
+        canMatch: [roleGuard('ADMIN', 'QUALITY_MANAGER')],
+        loadComponent: () => import('./features/parametrage/plans-controle.component').then((m) => m.PlansControleComponent),
+        data: { crumbs: ['Administration', 'Paramétrage', 'Plans de contrôle'] },
+      },
+      {
+        path: 'parametrage/donnees-base',
+        canMatch: [roleGuard('ADMIN')],
+        loadComponent: () => import('./features/parametrage/donnees-base.component').then((m) => m.DonneesBaseComponent),
+        data: { crumbs: ['Administration', 'Paramétrage', 'Données de base & connecteurs'] },
+      },
       aVenir('indicateurs', 'Pilotage', 'Indicateurs'),
       aVenir('risques', 'Pilotage', 'Risques & conformité'),
       aVenir('equipements', 'Ressources', 'Équipements'),
