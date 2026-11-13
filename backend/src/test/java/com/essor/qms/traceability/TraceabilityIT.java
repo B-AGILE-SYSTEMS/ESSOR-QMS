@@ -126,6 +126,15 @@ class TraceabilityIT extends AbstractIntegrationTest {
         call(post("/api/lots/" + from.path("id").asText() + "/links"), TERRAIN, body, 201);
     }
 
+    /** Instrument en service du parc (M4), exigé par la caractéristique DIAM du plan. */
+    private String instrumentCode(String site) throws Exception {
+        String code = uniq("PAC");
+        call(post("/api/instruments"), QUALITE, Map.of("code", code, "label", "Pied à coulisse", "emt", 0.03,
+                "periodMonths", 12, "siteId", site, "nextDue", java.time.LocalDate.now().plusMonths(6).toString()),
+                201);
+        return code;
+    }
+
     private JsonNode plan(String point, JsonNode target, Map<String, Object> sampling, Object frequency)
             throws Exception {
         Map<String, Object> body = new java.util.HashMap<>();
@@ -193,8 +202,9 @@ class TraceabilityIT extends AbstractIntegrationTest {
 
         // Résultats : verdict calculé selon les tolérances, idempotence mobile.
         String key = UUID.randomUUID().toString();
+        String pac = instrumentCode(site);
         List<Map<String, Object>> results = List.of(
-                Map.of("characteristic", "DIAM", "values", List.of(10.1, 11.5), "instrument", "PAC-01"),
+                Map.of("characteristic", "DIAM", "values", List.of(10.1, 11.5), "instrument", pac.toLowerCase()),
                 Map.of("characteristic", "ASPECT", "values", List.of(), "ok", true));
         JsonNode r1 = call(put("/api/inspections/" + id + "/results").header("Idempotency-Key", key), TERRAIN,
                 results, 200);
@@ -207,7 +217,8 @@ class TraceabilityIT extends AbstractIntegrationTest {
             }
         }
         assertThat(diam.path("ok").asBoolean()).isFalse();
-        assertThat(diam.path("instrument").asText()).isEqualTo("PAC-01");
+        assertThat(diam.path("instrument").asText()).isEqualTo(pac); // code libre résolu sans casse
+        assertThat(diam.path("instrumentId").asText()).isNotBlank();
         assertThat(diam.path("planVersion").asInt()).isEqualTo(1);
         assertThat(diam.path("author").asText()).isNotBlank();
         assertThat(r1.path("proposedDecision").asText()).isEqualTo("REFUSE");
@@ -288,13 +299,14 @@ class TraceabilityIT extends AbstractIntegrationTest {
         JsonNode lot = lot(art, uniq("L"), null, 500, site);
         JsonNode plan = plan("PRODUCTION_ENCOURS", art, Map.of("mode", "fixe", "taille", 5),
                 Map.of("pieces", 50));
+        String pac = instrumentCode(site);
         double[] means = {10.0, 10.1, 9.9, 10.0, 10.05, 9.95, 10.0, 10.9};
         for (double m : means) {
             JsonNode insp = call(post("/api/inspections"), TERRAIN, Map.of("lotId", lot.path("id").asText(),
                     "controlPlanId", plan.path("id").asText(), "point", "PRODUCTION_ENCOURS"), 201);
             List<Double> values = List.of(m - 0.1, m, m + 0.1, m, m);
             call(put("/api/inspections/" + insp.path("id").asText() + "/results"), TERRAIN,
-                    List.of(Map.of("characteristic", "DIAM", "values", values)), 200);
+                    List.of(Map.of("characteristic", "DIAM", "values", values, "instrument", pac)), 200);
         }
         JsonNode spc = call(get("/api/inspections/spc").param("controlPlanId", plan.path("id").asText())
                 .param("characteristic", "DIAM"), TERRAIN, null, 200);

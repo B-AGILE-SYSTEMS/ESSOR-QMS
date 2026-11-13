@@ -74,6 +74,9 @@ Future<Harness> pumpM2(WidgetTester tester, {bool online = false}) async {
       }),
       qrScannerProvider.overrideWithValue((_) async => 'essor://zone/L2'),
       lotScannerProvider.overrideWithValue((_) async => lotLabel),
+      instrumentScannerProvider.overrideWithValue(
+        (_) async => server.instrumentQr,
+      ),
       apiClientFactoryProvider.overrideWith(
         (ref) =>
             (s) => ApiClient(

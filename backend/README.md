@@ -145,6 +145,41 @@ transaction, en tâche de fond, 3 essais (attente `essor.webhook.backoff-ms` × 
 Démo (profil `demo`) : 6 articles, 3 fournisseurs, 4 clients, 3 plans, lot LF-2026-0311 → OF-2026-0142 →
 PF-2026-0142 (10 sous-groupes en-cours) → 2 clients. RLS FORCE sur les 10 tables M3b.
 
+## API (M4) — voir `docs/pilotage/cartes/M4-contrat.md`
+
+Modules `metrology`, `risks`, `regulatory`, `partners` (dépendent de `records` : `Actions`, `NonConformities`,
+`DailyTask`, `DashboardKpis`, événement `Alert` ; `metrology` de `traceability.Lots`). Écriture : sauf READER ;
+paramétrage, imports, quarantaine, campagnes : ADMIN ou QUALITY_MANAGER. Imports : xlsx ou csv `;`, `?dryRun=`,
+rapport `{created,updated,errors:[{line,message}],applied,dryRun}`, tout ou rien.
+
+| Méthode | Chemin |
+|---|---|
+| GET / POST / PUT | `/api/instruments?q=&status=&siteId=&selectable=true` ; `/{id}` → `{instrument, calibrations}` (`qr` = `essor://instrument/<id>`, `dueState` ok/bientot/echu/aucune, `selectable`) ; POST `/api/instruments/import` (`code;designation;type;site;emplacement;numero_serie;plage_min;plage_max;unite;resolution;emt;periodicite_mois;prestataire;prochaine_echeance`) |
+| POST | `/api/instruments/{id}/calibrations` `{calibratedOn,provider,internal,certificateNumber,points:[{nominal,mesure}],comment}` → verdict serveur (\|mesure−nominal\| ≤ EMT pour chaque point), `nextDue` = date + périodicité ; non conforme → `bloque`, NC (`data.origine:"etalonnage"`), notification `INSTRUMENT_BLOCKED` |
+| POST / GET | `/api/calibrations/{id}/certificate` (multipart PDF/JPEG/PNG ≤ 10 Mo) |
+| GET / POST | `/api/instruments/{id}/impact?since=` (défaut : dernier étalonnage conforme) → `{instrument,since,lastConformingCalibration,inspections,lots}` ; `/impact/quarantine` `{reason?}` → `{quarantined,skipped,ncId}` (API lots M3b, webhooks) |
+| PUT | `/api/inspections/{id}/results` : `instrumentId` (instrument bloqué, en étalonnage, réformé ou échu → 409 `instrument_unavailable`) |
+| GET / PUT | `/api/risk-scales` ; `/api/risk-scales/{code}` `{label,dimensions:[{code,label,inFormula,levels:[{value,label}]}],thresholds:[{level,label,min,color}]}` (échelle `DEFAUT` créée à la volée) |
+| GET / POST / PUT | `/api/risks?siteId=&type=&level=` ; `/{id}` (+ `history`) `{type,siteId,scaleCode,workUnit,process,hazard,situation,existingMeasures,gross:{gravite:4,...},residual,reassessmentDate,requirementIds}` ; POST `/{id}/actions` `{title,ownerId?,dueDate,actionType?}` |
+| GET | `/api/risks/matrix?siteId=&type=&basis=residual|gross` (2 premières dimensions de la formule, `cells:[{row,col,score,level,color,count,risks}]`) ; `/api/risks/duer.pdf?siteId=` ; POST `/api/risks/import` (`type;site;unite_travail;processus;danger;situation;mesures;cotation_brute;cotation_residuelle;reevaluation;echelle`, cotation `gravite=3,probabilite=2`) |
+| GET / POST / PUT | `/api/regulations?domain=&siteId=&status=&q=` (`siteEvaluation` si `siteId`) ; `/{id}` (+ `requirements[].applicability`, `evaluations`) ; PUT `/{id}/applicability` `[{requirementId,siteId,applicable,justification}]` ; POST `/api/regulations/import` (une ligne par exigence) |
+| POST | `/api/regulations/{id}/evaluations` `{siteId,result,evidence,comment,action?:{title,ownerId,dueDate}}` ; `non_conforme` → action M1 (J+30) ; `nextDue` = date + `reviewMonths` |
+| GET | `/api/regulations/compliance?siteId=` → `{rate, sites:[{site,applicable,evaluated,notEvaluated,conforme,partiel,nonConforme,na,overdue,rate}]}` ; taux = (conformes + ½ partiels) / (conformes + partiels + non conformes), dernière évaluation, textes en vigueur applicables |
+| GET / POST / PUT | `/api/evaluation-grids` ; POST `{code,...}` ; PUT `/{code}` `{label,partnerType,scaleMax,criteria:[{code,label,weight,auto?,bands?:[{max,score}]}],classes:[{code,label,min}],improvementClasses}` (grilles `FOURNISSEUR`, `CLIENT` créées à la volée) |
+| GET / POST | `/api/partners/{id}/evaluations` `{evaluationId?|gridId?|grid, period:"2026-T3"|"2026-S1"|"2026-09"|"2026", scores:{code:note}, comment}` ; classe de `improvementClasses` → plan de progrès (ACTION) ; `/api/partners/{id}/scorecard` → `{partner,history,latest,currentPeriod}` |
+| POST / GET | `/api/evaluation-campaigns` `{grid,partnerIds,period}` → évaluations `a_faire` ; `/api/partner-evaluations?status=a_faire` |
+
+Indicateurs automatiques : NC (`data.supplierId`), lots reçus, % refusés, dérogations (statut atteint sur la
+période), retards (`expectedDate` du lot, nouveau champ facultatif de `POST /api/lots`) ; client : réclamations
+(NC `data.clientId`). Tâche quotidienne M1 : alertes `CALIBRATION_DUE` (J-15, échu) et `REGULATION_DUE` (J-15,
+échue), sans doublon. `/api/dashboard/summary` gagne `regulatoryCompliance`, `calibrationsDue15`,
+`calibrationsOverdue`. Démo (`R__z_m4_demo.sql`) : DES-02 bloqué ayant mesuré LF-2026-0311, RSK-0001 critique avec
+action, 10 textes (Loi 65-99 non conforme), FOU-MOULINS (lot refusé, NC, retard) et campagne du trimestre.
+RLS FORCE sur les 14 tables M4.
+
+Exemples d'API : les tests écrivent `target/api-exemples/` et comparent la STRUCTURE à `docs/api-exemples/`
+(échec si une clé ou un type change) ; régénération volontaire : `mvn -B -Papi-exemples verify`.
+
 ## Multi-tenant et RLS
 
 - Un utilisateur appartient à un seul tenant (`app_user.tenant_id`), donné par l'attribut Keycloak `tenant`

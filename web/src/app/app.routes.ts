@@ -94,8 +94,63 @@ export const routes: Routes = [
         data: { crumbs: ['Administration', 'Paramétrage', 'Données de base & connecteurs'] },
       },
       aVenir('indicateurs', 'Pilotage', 'Indicateurs'),
-      aVenir('risques', 'Pilotage', 'Risques & conformité'),
-      aVenir('equipements', 'Ressources', 'Équipements'),
+      {
+        path: 'risques/:id',
+        loadComponent: () => import('./features/risques/risque-fiche.component').then((m) => m.RisqueFicheComponent),
+        data: { crumbs: ['Pilotage', 'Risques', 'Fiche risque'] },
+      },
+      {
+        path: 'risques',
+        loadComponent: () => import('./features/risques/risques.component').then((m) => m.RisquesComponent),
+        data: { crumbs: ['Pilotage', 'Risques'] },
+      },
+      {
+        path: 'veille/:id',
+        loadComponent: () => import('./features/veille/reglement-fiche.component').then((m) => m.ReglementFicheComponent),
+        data: { crumbs: ['Pilotage', 'Veille réglementaire', 'Fiche texte'] },
+      },
+      {
+        path: 'veille',
+        loadComponent: () => import('./features/veille/veille.component').then((m) => m.VeilleComponent),
+        data: { crumbs: ['Pilotage', 'Veille réglementaire'] },
+      },
+      {
+        path: 'equipements/:id/impact',
+        loadComponent: () => import('./features/equipements/effet-instrument.component').then((m) => m.EffetInstrumentComponent),
+        data: { crumbs: ['Ressources', 'Équipements', 'Effet instrument'] },
+      },
+      {
+        path: 'equipements/:id',
+        loadComponent: () => import('./features/equipements/instrument-fiche.component').then((m) => m.InstrumentFicheComponent),
+        data: { crumbs: ['Ressources', 'Équipements', 'Fiche instrument'] },
+      },
+      {
+        path: 'equipements',
+        loadComponent: () => import('./features/equipements/equipements.component').then((m) => m.EquipementsComponent),
+        data: { crumbs: ['Ressources', 'Équipements'] },
+      },
+      {
+        path: 'partenaires/:id',
+        loadComponent: () => import('./features/partenaires/scorecard.component').then((m) => m.ScorecardComponent),
+        data: { crumbs: ['Ressources', 'Clients & fournisseurs', 'Scorecard'] },
+      },
+      {
+        path: 'partenaires',
+        loadComponent: () => import('./features/partenaires/partenaires.component').then((m) => m.PartenairesComponent),
+        data: { crumbs: ['Ressources', 'Clients & fournisseurs'] },
+      },
+      {
+        path: 'parametrage/echelles-risque',
+        canMatch: [roleGuard('ADMIN', 'QUALITY_MANAGER')],
+        loadComponent: () => import('./features/parametrage/echelles-risque.component').then((m) => m.EchellesRisqueComponent),
+        data: { crumbs: ['Administration', 'Paramétrage', 'Échelles de risque'] },
+      },
+      {
+        path: 'parametrage/grilles-evaluation',
+        canMatch: [roleGuard('ADMIN', 'QUALITY_MANAGER')],
+        loadComponent: () => import('./features/parametrage/grilles-evaluation.component').then((m) => m.GrillesEvaluationComponent),
+        data: { crumbs: ['Administration', 'Paramétrage', "Grilles d'évaluation"] },
+      },
       {
         path: 'documents/:id',
         loadComponent: () => import('./features/nc/nc-fiche.component').then((m) => m.NcFicheComponent),

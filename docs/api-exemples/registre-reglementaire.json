@@ -1,0 +1,95 @@
+[ {
+  "id" : "939e8d74-870e-42bd-8731-cb59d63fc697",
+  "reference" : "Arrêté 93-08-c04c5e39",
+  "title" : "Code du travail — protection des salariés",
+  "domain" : "sst",
+  "jurisdiction" : "Maroc",
+  "publishedOn" : "2004-09-08",
+  "effectiveOn" : "2004-06-08",
+  "summary" : "Résumé maison.",
+  "sourceUrl" : "https://www.sgg.gov.ma",
+  "status" : "en_vigueur",
+  "reviewMonths" : 12,
+  "updatedAt" : "2026-11-13T15:34:51.117634Z",
+  "siteEvaluation" : {
+    "id" : "44b2156e-a577-487c-9153-a15e2b90654e",
+    "regulationId" : "939e8d74-870e-42bd-8731-cb59d63fc697",
+    "site" : {
+      "code" : "SIEGE",
+      "id" : "f0fee262-a8f6-4bbd-9717-44260445c3f7",
+      "name" : "Siège"
+    },
+    "result" : "conforme",
+    "evidence" : null,
+    "comment" : null,
+    "evaluatedAt" : "2026-11-13T15:34:51.149269Z",
+    "evaluatedBy" : "Nom m4.qualite",
+    "nextDue" : "2026-11-12",
+    "overdue" : true,
+    "action" : null
+  }
+}, {
+  "id" : "7c5d169b-6ccc-4222-b1cf-10e6066c5e1e",
+  "reference" : "Décret 2-12-172-5ff026f4",
+  "title" : "Code du travail — protection des salariés",
+  "domain" : "sst",
+  "jurisdiction" : "Maroc",
+  "publishedOn" : "2004-09-08",
+  "effectiveOn" : "2004-06-08",
+  "summary" : "Résumé maison.",
+  "sourceUrl" : "https://www.sgg.gov.ma",
+  "status" : "en_vigueur",
+  "reviewMonths" : 12,
+  "updatedAt" : "2026-11-13T15:34:51.235750Z",
+  "siteEvaluation" : {
+    "id" : "2acb4b8b-51de-44f4-a4d3-9d5de26e9316",
+    "regulationId" : "7c5d169b-6ccc-4222-b1cf-10e6066c5e1e",
+    "site" : {
+      "code" : "SIEGE",
+      "id" : "f0fee262-a8f6-4bbd-9717-44260445c3f7",
+      "name" : "Siège"
+    },
+    "result" : "conforme",
+    "evidence" : null,
+    "comment" : null,
+    "evaluatedAt" : "2026-11-13T15:34:51.306145Z",
+    "evaluatedBy" : "Nom m4.qualite",
+    "nextDue" : "2027-11-13",
+    "overdue" : false,
+    "action" : null
+  }
+}, {
+  "id" : "86b8d268-db8c-4705-96c6-1c8fa90e90ca",
+  "reference" : "Loi 65-99 art. 281-bf6fe583",
+  "title" : "Code du travail — protection des salariés",
+  "domain" : "sst",
+  "jurisdiction" : "Maroc",
+  "publishedOn" : "2004-09-08",
+  "effectiveOn" : "2004-06-08",
+  "summary" : "Résumé maison.",
+  "sourceUrl" : "https://www.sgg.gov.ma",
+  "status" : "en_vigueur",
+  "reviewMonths" : 12,
+  "updatedAt" : "2026-11-13T15:34:51.225294Z",
+  "siteEvaluation" : {
+    "id" : "a67854f2-1b6b-4f47-86a5-28196ee892c7",
+    "regulationId" : "86b8d268-db8c-4705-96c6-1c8fa90e90ca",
+    "site" : {
+      "code" : "SIEGE",
+      "id" : "f0fee262-a8f6-4bbd-9717-44260445c3f7",
+      "name" : "Siège"
+    },
+    "result" : "non_conforme",
+    "evidence" : "Visite du 12/11",
+    "comment" : "DUER non mis à jour",
+    "evaluatedAt" : "2026-11-13T15:34:51.287093Z",
+    "evaluatedBy" : "Nom m4.qualite",
+    "nextDue" : "2027-11-13",
+    "overdue" : false,
+    "action" : {
+      "reference" : "ACT-2026-0005",
+      "id" : "67b5e79c-0686-4e3c-a5fb-5ae3c185cde7",
+      "status" : "A_FAIRE"
+    }
+  }
+} ]

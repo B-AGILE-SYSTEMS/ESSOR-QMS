@@ -84,3 +84,17 @@ En déploiement : `docker compose --profile web up -d` depuis `deploy/` ; le Ngi
   - Hypothèses restantes : `GET /api/inspections/{id}`, `GET /api/master-data/{articles|partners}`, champs des points SPC `{index, mean, range}`.
   - E2E : `e2e/m3b-lots-controles.spec.ts` sur `e2e/mock-api-m3b.ts`.
 - Design system : variables CSS dans `src/styles.scss`. Polices Archivo et IBM Plex Mono embarquées via `@fontsource` (aucun CDN).
+- M4 (contrat `docs/pilotage/cartes/M4-contrat.md`, `core/m4.models.ts`, `core/m4.service.ts`) — risques, veille, métrologie, partenaires :
+  - `features/risques` (Pilotage → Risques) : matrice interactive `GET /api/risks/matrix?siteId=&type=` (grille complétée et colorée par l'échelle,
+    clic sur une case → liste), registre, création `POST /api/risks {gross:{values}}`, fiche (cotations, actions M1 liées, historique), DUER PDF.
+  - `features/veille` : registre filtrable, taux par site (`GET /api/regulations/compliance`, chemin supposé), fiche texte, évaluation
+    `POST …/evaluations {siteId, result, evidence, comment}` — non conforme → action M1 affichée.
+  - `features/equipements` : parc, fiche + historique, saisie d'étalonnage (verdict prévisionnel |mesure − nominal| ≤ EMT ; verdict officiel serveur),
+    « effet instrument » (`GET …/impact`) et quarantaine `POST /api/instruments/{id}/impact/quarantine {reason, since}` → `{quarantined, skipped, ncId}`. Saisie de contrôle M3b : instruments
+    en service non échus proposés, `instrumentId` ajouté au résultat, bloqué/échu refusé avant envoi.
+  - `features/partenaires` : liste, campagne `POST /api/evaluation-campaigns`, scorecard (`GET …/scorecard`), évaluation `POST …/evaluations`.
+  - Paramétrage : Échelles de risque (`/api/risk-scales`), Grilles d'évaluation (`/api/evaluation-grids`, chemin supposé). Tableau de bord :
+    KPI conformité réglementaire et étalonnages sous 15 jours lus dans `/api/dashboard/summary` quand présents.
+  - Formats : métrologie prise des exemples réels du back (`core/exemples-m4/`, copie de `origin/m4/back:docs/api-exemples` @a792be7, lus par
+    `api-exemples-m4.spec.ts` ; à repointer sur docs/api-exemples à l'intégration). Risques, veille, évaluations : contrat seul, lecteurs `to*`
+    tolérants (FR/EN) testés dans `m4.models.spec.ts`. e2e `m4-risques-metrologie.spec.ts` + `mock-api-m4.ts`.

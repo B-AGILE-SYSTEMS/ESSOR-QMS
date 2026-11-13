@@ -1,11 +1,16 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'package:essor_mobile/core/m3b/models.dart';
+import 'package:essor_mobile/core/m4/instruments.dart';
+import 'package:essor_mobile/core/media/device_services.dart';
+import 'package:essor_mobile/core/providers.dart';
+import 'package:essor_mobile/features/instruments/instrument_card.dart';
 import 'package:essor_mobile/core/widgets/terrain.dart';
 
 /// Un écran par caractéristique : valeurs mesurées et verdict automatique
 /// selon les tolérances, ou choix conforme / non conforme.
-class CharacteristicStep extends StatefulWidget {
+class CharacteristicStep extends ConsumerStatefulWidget {
   const CharacteristicStep({
     super.key,
     required this.characteristic,
@@ -19,12 +24,16 @@ class CharacteristicStep extends StatefulWidget {
   final ValueChanged<CharResult> onChanged;
 
   @override
-  State<CharacteristicStep> createState() => _CharacteristicStepState();
+  ConsumerState<CharacteristicStep> createState() => _CharacteristicStepState();
 }
 
-class _CharacteristicStepState extends State<CharacteristicStep> {
+class _CharacteristicStepState extends ConsumerState<CharacteristicStep> {
   late final List<TextEditingController> _values;
-  final _instrument = TextEditingController();
+
+  /// Instrument choisi (code, id M4) ; seuls en service et non échus.
+  String? _instCode;
+  String? _instId;
+  String? _instMessage;
   bool? _attr;
 
   Characteristic get _c => widget.characteristic;
@@ -42,7 +51,8 @@ class _CharacteristicStepState extends State<CharacteristicStep> {
       for (var i = 0; i < (n < 1 ? 1 : n); i++)
         TextEditingController(text: i < previous.length ? previous[i] : ''),
     ];
-    _instrument.text = init?.instrument ?? '';
+    _instCode = init?.instrument;
+    _instId = init?.instrumentId;
     if (_c.type != CharType.mesure) _attr = init?.ok;
   }
 
@@ -51,7 +61,6 @@ class _CharacteristicStepState extends State<CharacteristicStep> {
     for (final c in _values) {
       c.dispose();
     }
-    _instrument.dispose();
     super.dispose();
   }
 
@@ -61,8 +70,7 @@ class _CharacteristicStepState extends State<CharacteristicStep> {
   ];
 
   void _emit() {
-    final instrument = _instrument.text.trim();
-    final inst = instrument.isEmpty ? null : instrument;
+    final inst = _instCode;
     if (_c.type == CharType.mesure) {
       final values = _parsed;
       final ok = measureVerdict(_c, values);
@@ -73,6 +81,7 @@ class _CharacteristicStepState extends State<CharacteristicStep> {
           values: [for (final v in values) v!],
           ok: ok,
           instrument: inst,
+          instrumentId: _instId,
         ),
       );
     } else {
@@ -84,6 +93,7 @@ class _CharacteristicStepState extends State<CharacteristicStep> {
           values: [ok],
           ok: ok,
           instrument: inst,
+          instrumentId: _instId,
         ),
       );
     }
@@ -120,15 +130,7 @@ class _CharacteristicStepState extends State<CharacteristicStep> {
             key: const Key('instrumentRequired'),
           ),
           const SizedBox(height: 6),
-          TextField(
-            key: const Key('instrument'),
-            controller: _instrument,
-            onChanged: (_) => _changed(),
-            decoration: const InputDecoration(
-              labelText: 'Instrument utilisé (obligatoire)',
-              border: OutlineInputBorder(),
-            ),
-          ),
+          ..._instrumentPicker(),
         ],
       ],
     );
@@ -217,4 +219,105 @@ class _CharacteristicStepState extends State<CharacteristicStep> {
       ),
     ];
   }
+
+  DateTime get _now => ref.read(clockProvider)();
+
+  void _select(Instrument i) {
+    final refusal = i.refusal(_now);
+    setState(() {
+      _instMessage = refusal;
+      if (refusal == null) {
+        _instCode = i.code;
+        _instId = i.id;
+      }
+    });
+    if (refusal == null) _emit();
+  }
+
+  Future<void> _scanInstrument() async {
+    final raw = await ref.read(instrumentScannerProvider)(context);
+    final id = parseInstrumentQr(raw);
+    if (id == null) return;
+    final api = ref.read(apiClientProvider);
+    final found = await ref
+        .read(instrumentsRepositoryProvider)
+        .find(id, api == null ? null : InstrumentsApi(api.dio));
+    if (!mounted) return;
+    if (found == null) {
+      setState(() => _instMessage = 'Instrument inconnu sur le téléphone.');
+      return;
+    }
+    _select(found);
+  }
+
+  Future<void> _pickInstrument() async {
+    final usable = await ref.read(instrumentsRepositoryProvider).usable(_now);
+    if (!mounted) return;
+    if (usable.isEmpty) {
+      setState(() => _instMessage = 'Aucun instrument en service et non échu.');
+      return;
+    }
+    final chosen = await showModalBottomSheet<Instrument>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            for (final i in usable)
+              ListTile(
+                key: Key('inst-${i.code}'),
+                minTileHeight: 56,
+                title: Text('${i.code} · ${i.designation}'),
+                subtitle: Text(dueLabel(i, _now)),
+                onTap: () => Navigator.of(ctx).pop(i),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (chosen != null && mounted) _select(chosen);
+  }
+
+  List<Widget> _instrumentPicker() => [
+    Text(
+      _instCode == null
+          ? 'Aucun instrument choisi (obligatoire)'
+          : 'Instrument : $_instCode',
+      key: const Key('instrumentChosen'),
+      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+    ),
+    const SizedBox(height: 6),
+    Row(
+      children: [
+        Expanded(
+          child: OutlinedButton.icon(
+            key: const Key('instrumentScan'),
+            style: OutlinedButton.styleFrom(minimumSize: const Size(0, 56)),
+            onPressed: _scanInstrument,
+            icon: const Icon(Icons.qr_code_scanner),
+            label: const Text('Scanner'),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: OutlinedButton.icon(
+            key: const Key('instrumentPick'),
+            style: OutlinedButton.styleFrom(minimumSize: const Size(0, 56)),
+            onPressed: _pickInstrument,
+            icon: const Icon(Icons.list),
+            label: const Text('Liste'),
+          ),
+        ),
+      ],
+    ),
+    if (_instMessage case final m?)
+      Padding(
+        padding: const EdgeInsets.only(top: 6),
+        child: Text(
+          m,
+          key: const Key('instrumentRefusal'),
+          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+        ),
+      ),
+  ];
 }

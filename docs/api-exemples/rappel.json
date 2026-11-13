@@ -1,20 +1,20 @@
 {
   "source" : {
-    "id" : "dc88b0e6-0d23-4b97-8d3d-4e6f184a4337",
+    "id" : "2b2e1696-4230-46a1-a667-052cc8b50b76",
     "article" : {
-      "id" : "31e48cdf-4852-4143-99fb-a2c73b9ddd52",
-      "code" : "MP-d06f56b9",
-      "label" : "Article MP-d06f56b9",
+      "id" : "0a6d7278-b848-4183-af84-53601840aebd",
+      "code" : "MP-630b8b62",
+      "label" : "Article MP-630b8b62",
       "unit" : "kg",
       "family" : "FAM-T"
     },
-    "numero" : "LF-614ad0a3",
+    "numero" : "LF-cf264866",
     "supplier" : {
-      "id" : "b63bc6d7-9716-40fc-b392-d3c54ec888a6",
-      "code" : "FOU-d0e644cd",
-      "name" : "Nom FOU-d0e644cd"
+      "id" : "b33d6aef-bb8a-414a-87fb-e4abc1abadee",
+      "code" : "FOU-f79bbd09",
+      "name" : "Nom FOU-f79bbd09"
     },
-    "supplierLot" : "F-LF-614ad0a3",
+    "supplierLot" : "F-LF-cf264866",
     "quantity" : 100.0,
     "unit" : "kg",
     "dlc" : null,
@@ -24,34 +24,34 @@
       "name" : "Entrepôt de Tanger"
     },
     "qualityStatus" : "EN_ATTENTE",
-    "createdAt" : "2026-11-13T14:26:42.748931Z",
-    "updatedAt" : "2026-11-13T14:26:42.748931Z"
+    "createdAt" : "2026-11-13T15:35:36.036587Z",
+    "updatedAt" : "2026-11-13T15:35:36.036587Z"
   },
   "lotsImpactes" : [ {
-    "id" : "dc88b0e6-0d23-4b97-8d3d-4e6f184a4337",
-    "numero" : "LF-614ad0a3",
+    "id" : "2b2e1696-4230-46a1-a667-052cc8b50b76",
+    "numero" : "LF-cf264866",
     "article" : {
-      "id" : "31e48cdf-4852-4143-99fb-a2c73b9ddd52",
-      "code" : "MP-d06f56b9",
-      "label" : "Article MP-d06f56b9"
+      "id" : "0a6d7278-b848-4183-af84-53601840aebd",
+      "code" : "MP-630b8b62",
+      "label" : "Article MP-630b8b62"
     },
     "qualityStatus" : "EN_ATTENTE",
     "quantity" : 100.0,
     "remaining" : 10.0,
     "unit" : "kg",
     "supplier" : {
-      "id" : "b63bc6d7-9716-40fc-b392-d3c54ec888a6",
-      "code" : "FOU-d0e644cd",
-      "name" : "Nom FOU-d0e644cd"
+      "id" : "b33d6aef-bb8a-414a-87fb-e4abc1abadee",
+      "code" : "FOU-f79bbd09",
+      "name" : "Nom FOU-f79bbd09"
     },
-    "supplierLot" : "F-LF-614ad0a3"
+    "supplierLot" : "F-LF-cf264866"
   }, {
-    "id" : "814ac294-be6b-4c0a-a266-3423eedbad8a",
-    "numero" : "FINI-1a90452e",
+    "id" : "5313f07a-91f9-4efd-8493-348e250d349d",
+    "numero" : "FINI-d5cd67be",
     "article" : {
-      "id" : "0b382ab0-a75f-4ec7-a3ae-d9aa5958c2a9",
-      "code" : "PF-b029efbe",
-      "label" : "Article PF-b029efbe"
+      "id" : "59819960-a897-47fb-af56-11bf9e0c0fe9",
+      "code" : "PF-55c21046",
+      "label" : "Article PF-55c21046"
     },
     "qualityStatus" : "EN_ATTENTE",
     "quantity" : 60.0,
@@ -60,12 +60,12 @@
     "supplier" : null,
     "supplierLot" : null
   }, {
-    "id" : "71ba6b64-417e-4abd-a685-f06e05159cff",
-    "numero" : "SEMI-5ee14647",
+    "id" : "ea53ce1b-684a-4514-b2d9-373d18456031",
+    "numero" : "SEMI-d9e59a37",
     "article" : {
-      "id" : "0b382ab0-a75f-4ec7-a3ae-d9aa5958c2a9",
-      "code" : "PF-b029efbe",
-      "label" : "Article PF-b029efbe"
+      "id" : "59819960-a897-47fb-af56-11bf9e0c0fe9",
+      "code" : "PF-55c21046",
+      "label" : "Article PF-55c21046"
     },
     "qualityStatus" : "EN_ATTENTE",
     "quantity" : 80.0,
@@ -76,17 +76,17 @@
   } ],
   "clients" : [ {
     "partner" : {
-      "id" : "11167e68-6c8c-421c-b03f-b43bd94d2203",
-      "code" : "CLI-7a965e9a",
-      "name" : "Nom CLI-7a965e9a"
+      "id" : "83711454-30f8-428a-b09f-0ab16cd63911",
+      "code" : "CLI-b2271f7e",
+      "name" : "Nom CLI-b2271f7e"
     },
     "quantite" : 25.0,
     "references" : [ "BL-1", "BL-3" ]
   }, {
     "partner" : {
-      "id" : "85bc1579-619e-4a88-a03e-ead00251a436",
-      "code" : "CLI-98f46a74",
-      "name" : "Nom CLI-98f46a74"
+      "id" : "6566144e-42af-4355-ad9a-5c937fe6bb3d",
+      "code" : "CLI-9b3903ab",
+      "name" : "Nom CLI-9b3903ab"
     },
     "quantite" : 15.0,
     "references" : [ "BL-2 SSCC-0001" ]

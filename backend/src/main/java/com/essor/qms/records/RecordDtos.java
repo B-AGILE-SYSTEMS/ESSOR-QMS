@@ -67,6 +67,12 @@ final class RecordDtos {
                         Map<String, Object> diff) {
     }
 
-    record DashboardSummary(long ncOpen, long ncToQualify, long actionsOverdue, java.math.BigDecimal ncCostMonth) {
+    /**
+     * {@code regulatoryCompliance} : % (0-100, une décimale) des exigences applicables évaluées conformes
+     * (partiel = 0,5), nul sans évaluation ; {@code calibrationsDue15} : instruments en service à étalonner sous
+     * 15 jours ; {@code calibrationsOverdue} : instruments en service à échéance dépassée.
+     */
+    record DashboardSummary(long ncOpen, long ncToQualify, long actionsOverdue, java.math.BigDecimal ncCostMonth,
+                            Double regulatoryCompliance, long calibrationsDue15, long calibrationsOverdue) {
     }
 }

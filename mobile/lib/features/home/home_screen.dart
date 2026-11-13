@@ -226,6 +226,12 @@ class _Footer extends ConsumerWidget {
           icon: const Icon(Icons.inventory_2, size: 26),
           label: const Text('Contrôler un lot'),
         ),
+        OutlinedButton.icon(
+          key: const Key('instrumentButton'),
+          onPressed: () => context.go('/instrument'),
+          icon: const Icon(Icons.straighten, size: 26),
+          label: const Text('Vérifier un instrument'),
+        ),
         FilledButton.icon(
           key: const Key('reportButton'),
           style: FilledButton.styleFrom(

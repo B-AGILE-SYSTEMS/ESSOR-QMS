@@ -7,6 +7,7 @@ import 'package:essor_mobile/core/theme/app_theme.dart';
 import 'package:essor_mobile/features/audits/audit_run_screen.dart';
 import 'package:essor_mobile/features/audits/audits_screen.dart';
 import 'package:essor_mobile/features/controls/control_screen.dart';
+import 'package:essor_mobile/features/instruments/instrument_screen.dart';
 import 'package:essor_mobile/features/documents/documents_screen.dart';
 import 'package:essor_mobile/features/home/home_screen.dart';
 import 'package:essor_mobile/features/record/record_screen.dart';
@@ -56,6 +57,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, state) => AuditRunScreen(id: state.pathParameters['id']!),
       ),
       GoRoute(path: '/controle', builder: (_, _) => const ControlScreen()),
+      GoRoute(path: '/instrument', builder: (_, _) => const InstrumentScreen()),
       GoRoute(path: '/documents', builder: (_, _) => const DocumentsScreen()),
       GoRoute(path: '/envois', builder: (_, _) => const OperationsScreen()),
       GoRoute(

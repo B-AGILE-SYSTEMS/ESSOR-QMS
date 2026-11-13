@@ -76,4 +76,22 @@
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <!-- Régénère volontairement docs/api-exemples/ : mvn -B -Papi-exemples verify -->
+    <profile>
+      <id>api-exemples</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <configuration>
+              <systemPropertyVariables><essor.api-exemples.update>true</essor.api-exemples.update></systemPropertyVariables>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

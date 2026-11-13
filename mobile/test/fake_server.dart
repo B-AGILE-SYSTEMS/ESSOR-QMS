@@ -123,8 +123,59 @@ class FakeServer {
     },
   ];
 
+  // --- M4 (forme du contrat, en attendant docs/api-exemples/instrument.json)
+  /// QR renvoyé par le faux scanner d'instrument.
+  String? instrumentQr = 'essor://instrument/ins-31';
+
+  /// Appels `GET /instruments` : true si `selectable=true`.
+  final List<bool> selectableQueries = [];
+  List<Map<String, Object?>> instruments = [
+    {
+      'id': 'ins-31',
+      'code': 'PAC-031',
+      'designation': 'Micromètre 0-25 mm',
+      'type': 'micromètre',
+      'site': {'id': 's1', 'name': 'Entrepôt Nord'},
+      'location': 'Labo réception',
+      'emt': '0,004 mm',
+      'status': 'en_service',
+      'nextCalibrationDate': '2026-11-28',
+    },
+    {
+      'id': 'ins-42',
+      'code': 'PAC-042',
+      'designation': 'Pied à coulisse 150 mm',
+      'status': 'bloque',
+      'nextCalibrationDate': '2027-03-01',
+    },
+    {
+      'id': 'ins-50',
+      'code': 'PAC-050',
+      'designation': 'Micromètre 25-50 mm',
+      'status': 'en_service',
+      'nextCalibrationDate': '2026-11-12',
+    },
+  ];
+
   (int, Object?)? _m3b(RequestOptions o) {
     final p = o.path;
+    if (p == '/instruments') {
+      selectableQueries.add(o.queryParameters['selectable'] == 'true');
+      // selectable=true : le serveur ne garde que les instruments en service
+      // (son échéance du jour est revérifiée hors ligne par le mobile).
+      final list = o.queryParameters['selectable'] == 'true'
+          ? [
+              for (final i in instruments)
+                if (i['status'] == 'en_service') i,
+            ]
+          : instruments;
+      return (200, {'content': list});
+    }
+    final ins = RegExp(r'^/instruments/([^/]+)$').firstMatch(p);
+    if (ins != null) {
+      final hit = instruments.where((i) => i['id'] == ins.group(1));
+      return hit.isEmpty ? (404, null) : (200, hit.first);
+    }
     if (p == '/lots') return (200, lots);
     if (p == '/control-plans') return (200, plans);
     if (p == '/inspections' && o.method == 'POST') {

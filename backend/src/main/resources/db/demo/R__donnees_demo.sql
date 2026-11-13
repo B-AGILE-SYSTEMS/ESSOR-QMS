@@ -24,7 +24,7 @@ BEGIN
     SELECT t, 'pending:' || v.username, v.username, v.name, v.roles, v.email
     FROM (VALUES ('admin', 'Admin Démo', ARRAY['ADMIN', 'QUALITY_MANAGER'], 'admin@essor.local'),
                  ('qualite', 'Qualité Démo', ARRAY['QUALITY_MANAGER'], 'qualite@essor.local'),
-                 ('terrain', 'Terrain Démo', ARRAY['FIELD_USER', 'AUDITOR'], 'terrain@essor.local'))
+                 ('terrain', 'Terrain Démo', ARRAY['FIELD_USER'], 'terrain@essor.local'))
          AS v(username, name, roles, email)
     WHERE NOT EXISTS (SELECT 1 FROM app_user u WHERE u.tenant_id = t AND u.username = v.username);
 

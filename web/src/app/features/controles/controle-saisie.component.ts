@@ -8,6 +8,8 @@ import {
   pointLabel, proposeDecision, samplingLabel, statusLabel,
 } from '../../core/m3b.models';
 import { ControlPlansService, InspectionsService } from '../../core/m3b.service';
+import { Instrument, isUsable } from '../../core/m4.models';
+import { InstrumentsService } from '../../core/m4.service';
 import { newIdempotencyKey } from '../../core/records.service';
 
 /** Saisie d'une caractéristique : texte des mesures, nombre de défauts (attribut) ou présence (document). */
@@ -18,6 +20,7 @@ interface Entry { c: Characteristic; text: string; defects: number; present: boo
   selector: 'eq-controle-saisie',
   imports: [FormsModule, RouterLink],
   template: `
+    <datalist id="eq-instruments">@for (u of usable(); track u.id) { <option [value]="u.code">{{ u.designation }}</option> }</datalist>
     @if (error(); as msg) { <p class="err" role="alert">{{ msg }}</p> }
     @if (insp(); as i) {
       <div class="ph"><div><span class="ref">{{ point(i.point) }} · plan {{ plan()?.code }} v{{ i.planVersion ?? plan()?.version ?? 1 }}</span>
@@ -39,7 +42,7 @@ interface Entry { c: Characteristic; text: string; defects: number; present: boo
                   [(ngModel)]="e.defects" (ngModelChange)="touch()" [disabled]="closed()" /> }
                 @default { <label><input type="checkbox" [name]="'p-' + e.c.code" [(ngModel)]="e.present" (ngModelChange)="touch()" [disabled]="closed()" /> présent</label> }
               }</td>
-              <td><input class="in" [name]="'i-' + e.c.code" [attr.aria-label]="'Instrument ' + e.c.libelle" [(ngModel)]="e.instrument"
+              <td><input class="in" list="eq-instruments" [name]="'i-' + e.c.code" [attr.aria-label]="'Instrument ' + e.c.libelle" [(ngModel)]="e.instrument"
                 [required]="!!e.c.instrumentRequis" [placeholder]="e.c.instrumentRequis ?? ''" [disabled]="closed()" />
                 @if (e.c.instrumentRequis) { <span class="note">Requis : {{ e.c.instrumentRequis }}</span> }</td>
               <td>@if (result(e); as r) { <span class="st" [class]="r.ok ? 'ok' : 'crit'"><i></i>{{ r.ok ? 'Conforme' : 'Non conforme' }}</span> }</td></tr>
@@ -78,6 +81,7 @@ interface Entry { c: Characteristic; text: string; defects: number; present: boo
 export class ControleSaisieComponent {
   readonly id = input.required<string>();
   private readonly api = inject(InspectionsService);
+  private readonly instrumentsApi = inject(InstrumentsService);
   private readonly plansApi = inject(ControlPlansService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
@@ -116,7 +120,12 @@ export class ControleSaisieComponent {
   protected readonly decisions = computed(() =>
     Object.entries(DECISION_LABELS).filter(([k]) => k !== 'DEROGATION' || this.auth.hasRole('QUALITY_MANAGER')));
 
+  /** Parc M4 : le champ instrument devient un lien (`instrumentId`) ; seuls les instruments en service et non échus sont proposés. */
+  protected readonly instruments = signal<Instrument[]>([]);
+  protected readonly usable = computed(() => this.instruments().filter((i) => isUsable(i)));
+
   constructor() {
+    this.instrumentsApi.list().then((l) => this.instruments.set(l), () => this.instruments.set([]));
     effect(() => {
       const id = this.id();
       untracked(() => void this.load(id));
@@ -155,6 +164,12 @@ export class ControleSaisieComponent {
 
   protected result(e: Entry): InspectionResult {
     const instrument = e.instrument.trim() || null;
+    const known = this.instruments().find((x) => x.code === instrument);
+    if (known) return { ...this.rawResult(e, instrument), instrumentId: known.id };
+    return this.rawResult(e, instrument);
+  }
+
+  private rawResult(e: Entry, instrument: string | null): InspectionResult {
     if (e.c.type === 'mesure') {
       const values = parseValues(e.text);
       return { characteristic: e.c.code, values, ok: measureOk(e.c, values), instrument };
@@ -166,6 +181,12 @@ export class ControleSaisieComponent {
   async save(): Promise<void> {
     const i = this.insp();
     if (!i) return;
+    const refused = this.entries().map((e) => this.instruments().find((x) => x.code === e.instrument.trim()))
+      .filter((x): x is Instrument => !!x && !isUsable(x));
+    if (refused.length) {
+      this.error.set(`Instrument bloqué ou échu : ${refused.map((x) => x.code).join(', ')}. Choisissez un instrument en service.`);
+      return;
+    }
     const missing = this.entries().filter((e) => (e.c.type === 'mesure' && !parseValues(e.text).length) || (e.c.instrumentRequis && !e.instrument.trim()));
     if (missing.length) {
       this.error.set(`Saisie incomplète : ${missing.map((e) => e.c.libelle).join(', ')}.`);

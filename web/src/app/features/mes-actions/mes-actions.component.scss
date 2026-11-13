@@ -1,4 +1,4 @@
-.kpis { display: grid; grid-template-columns: repeat(4, 1fr); border: var(--bw) solid var(--line); background: var(--surf); }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); border: var(--bw) solid var(--line); background: var(--surf); }
 .kpi {
   padding: 16px 18px; border-right: var(--bw) solid var(--line);
   &:last-child { border-right: 0; }

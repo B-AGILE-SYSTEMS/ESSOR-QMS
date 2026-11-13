@@ -35,10 +35,11 @@ class InspectionService {
     record CreateInspection(UUID lotId, UUID controlPlanId, String point) {
     }
 
-    record ResultInput(String characteristic, List<Object> values, Boolean ok, String instrument) {
+    record ResultInput(String characteristic, List<Object> values, Boolean ok, String instrument, UUID instrumentId) {
     }
 
-    record Result(String characteristic, List<Object> values, boolean ok, String instrument, int planVersion,
+    record Result(String characteristic, List<Object> values, boolean ok, String instrument, UUID instrumentId,
+                  int planVersion,
                   UUID siteId, String author, Instant at) {
     }
 
@@ -183,11 +184,11 @@ class InspectionService {
     private List<Result> results(UUID id) {
         return jdbc.sql("""
                 select r.characteristic, r.values_json, r.ok, r.instrument, r.plan_version, r.site_id, u.display_name,
-                  r.at
+                  r.at, r.instrument_id
                 from inspection_result r left join app_user u on u.id = r.author_id
                 where r.inspection_id = :id order by r.at, r.characteristic""").param("id", id)
                 .query((rs, i) -> new Result(rs.getString(1), readList(rs.getString(2)), rs.getBoolean(3),
-                        rs.getString(4), rs.getInt(5), rs.getObject(6, UUID.class), rs.getString(7),
+                        rs.getString(4), rs.getObject(9, UUID.class), rs.getInt(5), rs.getObject(6, UUID.class), rs.getString(7),
                         rs.getTimestamp(8).toInstant())).list();
     }
 
@@ -222,20 +223,62 @@ class InspectionService {
             if (instrument != null && instrument.length() > 120) {
                 throw ApiException.badRequest("Instrument : 120 caractères maximum");
             }
+            UUID instrumentId = in.instrumentId();
+            if (instrumentId == null && instrument != null) {
+                instrumentId = instrumentByCode(instrument); // code saisi en texte libre : même blocage
+            }
+            if (instrumentId != null) {
+                instrument = usableInstrument(instrumentId);
+            } else if (LotService.blankToNull(c.instrumentRequis()) != null) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "instrument_required",
+                        "Caractéristique " + c.code() + " : un instrument connu du parc est obligatoire");
+            }
             jdbc.sql("""
                     insert into inspection_result (tenant_id, inspection_id, characteristic, values_json, ok, instrument,
-                      plan_version, site_id, author_id)
-                    values (app_current_tenant(), :id, :c, cast(:v as jsonb), :ok, :instr, :ver, :site,
+                      instrument_id, plan_version, site_id, author_id)
+                    values (app_current_tenant(), :id, :c, cast(:v as jsonb), :ok, :instr, :instrId, :ver, :site,
                       app_current_user())
                     on conflict (tenant_id, inspection_id, characteristic) do update set values_json = excluded.values_json,
-                      ok = excluded.ok, instrument = excluded.instrument, author_id = excluded.author_id, at = now()""")
+                      ok = excluded.ok, instrument = excluded.instrument, instrument_id = excluded.instrument_id, author_id = excluded.author_id, at = now()""")
                     .param("id", id).param("c", c.code()).param("v", write(values)).param("ok", ok)
-                    .param("instr", instrument).param("ver", insp.controlPlan().version())
+                    .param("instr", instrument).param("instrId", instrumentId).param("ver", insp.controlPlan().version())
                     .param("site", insp.lot().site() == null ? null : insp.lot().site().id()).update();
         }
         audit.record("INSPECTION_RESULTS_SAVED", "inspection", id.toString(),
                 write(Map.of("count", input.size())));
         return get(id);
+    }
+
+    /** Instrument du tenant dont le code correspond, sans tenir compte de la casse (RLS : tenant courant). */
+    private UUID instrumentByCode(String code) {
+        return jdbc.sql("select id from instrument where lower(code) = lower(:code) limit 1")
+                .param("code", code.trim()).query(UUID.class).optional().orElse(null);
+    }
+
+    /**
+     * Instrument choisi dans un résultat (M4) : il doit exister, être en service et non échu, sinon 409
+     * {@code instrument_unavailable}. Rend son code, recopié dans le champ libre {@code instrument}.
+     */
+    private String usableInstrument(UUID instrumentId) {
+        Map<String, Object> i = jdbc.sql("select code, status, next_due from instrument where id = :id")
+                .param("id", instrumentId)
+                .query((rs, n) -> {
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("code", rs.getString(1));
+                    m.put("status", rs.getString(2));
+                    m.put("due", rs.getObject(3, java.time.LocalDate.class));
+                    return m;
+                }).optional().orElseThrow(() -> ApiException.badRequest("Instrument inconnu"));
+        java.time.LocalDate due = (java.time.LocalDate) i.get("due");
+        boolean overdue = due != null
+                && due.isBefore(java.time.LocalDate.now(java.time.ZoneId.of("Africa/Casablanca")));
+        if (!"en_service".equals(i.get("status")) || overdue) {
+            throw new ApiException(HttpStatus.CONFLICT, "instrument_unavailable",
+                    "Instrument " + i.get("code") + (overdue ? " : étalonnage échu" : " : statut " + i.get("status"))
+                            + ", il ne peut pas être utilisé",
+                    Map.of("instrumentId", instrumentId, "status", i.get("status"), "overdue", overdue));
+        }
+        return (String) i.get("code");
     }
 
     /** Verdict d'une mesure : tolMin et tolMax sont des bornes ABSOLUES (pas des écarts au nominal). */

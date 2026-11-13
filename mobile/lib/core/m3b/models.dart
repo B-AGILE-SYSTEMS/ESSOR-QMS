@@ -224,17 +224,22 @@ class CharResult {
     required this.values,
     required this.ok,
     this.instrument,
+    this.instrumentId,
   });
   final String characteristic;
   final List<Object> values;
   final bool ok;
+
+  /// Code de l'instrument (lisible), et son identifiant M4 (lien).
   final String? instrument;
+  final String? instrumentId;
 
   Map<String, dynamic> toJson() => {
     'characteristic': characteristic,
     'values': values,
     'ok': ok,
     'instrument': ?instrument,
+    'instrumentId': ?instrumentId,
   };
 }
 

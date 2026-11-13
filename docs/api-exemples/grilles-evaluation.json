@@ -1,0 +1,136 @@
+[ {
+  "id" : "00000000-0000-0000-0000-00000000e602",
+  "code" : "CLIENT",
+  "label" : "Satisfaction client",
+  "partnerType" : "client",
+  "scaleMax" : 5,
+  "criteria" : [ {
+    "code" : "accueil",
+    "label" : "Accueil et écoute",
+    "weight" : 1.0,
+    "auto" : null,
+    "bands" : null
+  }, {
+    "code" : "delais",
+    "label" : "Respect des délais",
+    "weight" : 2.0,
+    "auto" : null,
+    "bands" : null
+  }, {
+    "code" : "qualite_produit",
+    "label" : "Qualité des produits",
+    "weight" : 3.0,
+    "auto" : null,
+    "bands" : null
+  }, {
+    "code" : "reclamations",
+    "label" : "Réclamations",
+    "weight" : 2.0,
+    "auto" : "complaints",
+    "bands" : [ {
+      "max" : 0.0,
+      "score" : 5
+    }, {
+      "max" : 2.0,
+      "score" : 3
+    }, {
+      "max" : null,
+      "score" : 0
+    } ]
+  } ],
+  "classes" : [ {
+    "code" : "A",
+    "label" : "Agréé",
+    "min" : 80.0
+  }, {
+    "code" : "B",
+    "label" : "Sous surveillance",
+    "min" : 60.0
+  }, {
+    "code" : "C",
+    "label" : "Refusé",
+    "min" : 0.0
+  } ],
+  "improvementClasses" : [ "C" ]
+}, {
+  "id" : "00000000-0000-0000-0000-00000000e601",
+  "code" : "FOURNISSEUR",
+  "label" : "Évaluation fournisseur trimestrielle",
+  "partnerType" : "fournisseur",
+  "scaleMax" : 4,
+  "criteria" : [ {
+    "code" : "qualite_service",
+    "label" : "Qualité de service",
+    "weight" : 3.0,
+    "auto" : null,
+    "bands" : null
+  }, {
+    "code" : "reactivite",
+    "label" : "Réactivité",
+    "weight" : 2.0,
+    "auto" : null,
+    "bands" : null
+  }, {
+    "code" : "nc",
+    "label" : "Non-conformités",
+    "weight" : 2.0,
+    "auto" : "nc_count",
+    "bands" : [ {
+      "max" : 0.0,
+      "score" : 4
+    }, {
+      "max" : 1.0,
+      "score" : 3
+    }, {
+      "max" : 3.0,
+      "score" : 1
+    }, {
+      "max" : null,
+      "score" : 0
+    } ]
+  }, {
+    "code" : "lots_refuses",
+    "label" : "Lots refusés",
+    "weight" : 2.0,
+    "auto" : "lots_refused_pct",
+    "bands" : [ {
+      "max" : 0.0,
+      "score" : 4
+    }, {
+      "max" : 5.0,
+      "score" : 2
+    }, {
+      "max" : null,
+      "score" : 0
+    } ]
+  }, {
+    "code" : "retards",
+    "label" : "Retards de livraison",
+    "weight" : 1.0,
+    "auto" : "late_deliveries",
+    "bands" : [ {
+      "max" : 0.0,
+      "score" : 4
+    }, {
+      "max" : 2.0,
+      "score" : 2
+    }, {
+      "max" : null,
+      "score" : 0
+    } ]
+  } ],
+  "classes" : [ {
+    "code" : "A",
+    "label" : "Agréé",
+    "min" : 80.0
+  }, {
+    "code" : "B",
+    "label" : "Sous surveillance",
+    "min" : 60.0
+  }, {
+    "code" : "C",
+    "label" : "Refusé",
+    "min" : 0.0
+  } ],
+  "improvementClasses" : [ "C" ]
+} ]

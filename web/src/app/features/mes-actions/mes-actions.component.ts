@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { DashboardSummary, MyTask, recordPath } from '../../core/api.models';
 import { errorMessage } from '../../core/api-error';
 import { formatDate, formatMad, statusTone } from '../../core/labels';
+import { toM4Kpis } from '../../core/m4.models';
 import { RecordsService } from '../../core/records.service';
 
 export type Filtre = 'a-faire' | 'en-retard' | 'a-valider';
@@ -57,8 +58,22 @@ export class MesActionsComponent {
       { k: 'NC ouvertes', v: String(s.ncOpen), d: `${s.ncToQualify} à qualifier`, dom: false },
       { k: 'NC à qualifier', v: String(s.ncToQualify), d: 'déclarées, non qualifiées', dom: false },
       { k: 'Coût NC (mois)', v: formatMad(s.ncCostMonth), d: 'MAD', dom: false },
+      ...this.m4Kpis(s),
     ];
   });
+  /** KPI M4 (conformité réglementaire, étalonnages), affichés quand le serveur les fournit. */
+  private m4Kpis(s: DashboardSummary): Kpi[] {
+    const m = toM4Kpis(s as unknown as Record<string, unknown>);
+    const out: Kpi[] = [];
+    if (m.regulatoryCompliance !== null) {
+      out.push({ k: 'Conformité réglementaire', v: `${Math.round(m.regulatoryCompliance)} %`, d: 'textes applicables évalués', dom: false });
+    }
+    if (m.calibrationsDue15 !== null) {
+      const late = m.calibrationsOverdue ?? 0;
+      out.push({ k: 'Étalonnages sous 15 jours', v: String(m.calibrationsDue15), d: late ? `${late} échu(s)` : 'aucun échu', dom: late > 0 });
+    }
+    return out;
+  }
   protected readonly today = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'full' }).format(new Date());
   protected readonly date = formatDate;
   protected readonly tone = statusTone;

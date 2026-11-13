@@ -1,0 +1,65 @@
+{
+  "id" : "1c4e15a5-9f15-4167-a749-fee729337c43",
+  "grid" : {
+    "code" : "CLIENT",
+    "label" : "Satisfaction client",
+    "id" : "00000000-0000-0000-0000-00000000e602"
+  },
+  "period" : "2026-S2",
+  "periodStart" : "2026-07-01",
+  "periodEnd" : "2026-12-31",
+  "created" : 2,
+  "evaluations" : [ {
+    "id" : "786abe03-c946-4ece-bd1f-9963d56ff3c0",
+    "partner" : {
+      "code" : "CLI-a59b0315",
+      "name" : "Nom CLI-a59b0315",
+      "id" : "10dc2d58-0790-41ab-9879-c4a0a3d4a2b4",
+      "type" : "client"
+    },
+    "grid" : {
+      "code" : "CLIENT",
+      "label" : "Satisfaction client",
+      "id" : "00000000-0000-0000-0000-00000000e602"
+    },
+    "campaignId" : "1c4e15a5-9f15-4167-a749-fee729337c43",
+    "period" : "2026-S2",
+    "periodStart" : "2026-07-01",
+    "periodEnd" : "2026-12-31",
+    "status" : "a_faire",
+    "scores" : null,
+    "indicators" : null,
+    "globalScore" : null,
+    "class" : null,
+    "comment" : null,
+    "action" : null,
+    "evaluatedBy" : null,
+    "evaluatedAt" : null
+  }, {
+    "id" : "a6dd90c7-238e-4e8a-bf37-e38f69c6a565",
+    "partner" : {
+      "code" : "CLI-f202f46b",
+      "name" : "Nom CLI-f202f46b",
+      "id" : "8386ff7d-4fa2-4ae8-883c-276f2ef5a60a",
+      "type" : "client"
+    },
+    "grid" : {
+      "code" : "CLIENT",
+      "label" : "Satisfaction client",
+      "id" : "00000000-0000-0000-0000-00000000e602"
+    },
+    "campaignId" : "1c4e15a5-9f15-4167-a749-fee729337c43",
+    "period" : "2026-S2",
+    "periodStart" : "2026-07-01",
+    "periodEnd" : "2026-12-31",
+    "status" : "a_faire",
+    "scores" : null,
+    "indicators" : null,
+    "globalScore" : null,
+    "class" : null,
+    "comment" : null,
+    "action" : null,
+    "evaluatedBy" : null,
+    "evaluatedAt" : null
+  } ]
+}
